@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>全球优选管理后台</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="admin-body">
+<header class="topbar admin-top">
+  <a class="brand" href="admin.html">
+    <span class="logo">管</span>
+    <span><strong>全球优选管理后台</strong><small>本机工作版</small></span>
+  </a>
+  <a href="index.html" class="ghost">查看网站</a>
+</header>
+
+<div class="admin-layout">
+  <nav class="admin-nav">
+    <button class="nav-btn active" data-panel="dashboard">数据概览</button>
+    <button class="nav-btn" data-panel="products">商品管理</button>
+    <button class="nav-btn" data-panel="orders">订单管理</button>
+    <button class="nav-btn" data-panel="settings">网站设置</button>
+  </nav>
+
+  <main class="admin-main">
+    <section id="dashboardPanel" class="admin-panel">
+      <div class="admin-title"><div><small>DASHBOARD</small><h1>数据概览</h1></div></div>
+      <div id="statsGrid" class="stats-grid"></div>
+      <div class="admin-card">
+        <h3>当前版本状态</h3>
+        <div class="check-list">
+          <span>✓ 商品新增、编辑、删除</span>
+          <span>✓ 有限库存与无限库存</span>
+          <span>✓ 创建订单与订单查询</span>
+          <span>✓ USDT支付页面与倒计时</span>
+          <span>✓ 模拟付款、库存扣减和自动交付</span>
+          <span>✓ 手机、平板、电脑自适应</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="productsPanel" class="admin-panel hidden">
+      <div class="admin-title">
+        <div><small>PRODUCTS</small><h1>商品管理</h1></div>
+        <button id="addProductBtn" class="primary">新增商品</button>
+      </div>
+      <div id="adminProductList" class="admin-list"></div>
+    </section>
+
+    <section id="ordersPanel" class="admin-panel hidden">
+      <div class="admin-title"><div><small>ORDERS</small><h1>订单管理</h1></div></div>
+      <div id="adminOrderList" class="admin-list"></div>
+    </section>
+
+    <section id="settingsPanel" class="admin-panel hidden">
+      <div class="admin-title"><div><small>SETTINGS</small><h1>网站设置</h1></div></div>
+      <form id="settingsForm" class="admin-card form-grid">
+        <label>网站名称<input id="settingName"></label>
+        <label>客服 Telegram 链接<input id="settingTelegram" placeholder="https://t.me/username"></label>
+        <label>USDT 网络
+          <select id="settingNetwork">
+            <option>USDT-TRC20</option>
+            <option>USDT-BEP20</option>
+            <option>USDT-ERC20</option>
+          </select>
+        </label>
+        <label>收款钱包地址<input id="settingWallet" placeholder="填写真实钱包地址"></label>
+        <label>订单有效分钟<input id="settingMinutes" type="number" min="1" max="120"></label>
+        <button class="primary" type="submit">保存设置</button>
+      </form>
+    </section>
+  </main>
+</div>
+
+<div id="productEditModal" class="modal hidden">
+  <div class="modal-card">
+    <button class="close" data-close="productEditModal">×</button>
+    <span class="pill dark">商品编辑</span>
+    <h2 id="editTitle">新增商品</h2>
+    <input id="editId" type="hidden">
+    <label>商品名称 *</label><input id="editName">
+    <label>商品介绍 *</label><textarea id="editDesc"></textarea>
+    <div class="two-cols">
+      <label>价格（USDT）<input id="editPrice" type="number" min="0" step="0.01"></label>
+      <label>分类<input id="editCategory" placeholder="模板 / 教程 / 软件"></label>
+    </div>
+    <div class="two-cols">
+      <label>商品图标<input id="editEmoji" placeholder="📦"></label>
+      <label>交付类型
+        <select id="editDeliveryType">
+          <option value="download">下载文件</option>
+          <option value="code">卡密</option>
+          <option value="account">账号密码</option>
+          <option value="link">在线链接</option>
+        </select>
+      </label>
+    </div>
+    <label>交付内容<input id="editDelivery" placeholder="downloads/demo.txt 或卡密内容"></label>
+    <div class="two-cols">
+      <label>库存类型
+        <select id="editStockType">
+          <option value="unlimited">无限库存</option>
+          <option value="limited">有限库存</option>
+        </select>
+      </label>
+      <label>库存数量<input id="editStock" type="number" min="0"></label>
+    </div>
+    <label class="switch-line"><input id="editActive" type="checkbox" checked> 上架销售</label>
+    <button id="saveProductBtn" class="primary full">保存商品</button>
+  </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>
