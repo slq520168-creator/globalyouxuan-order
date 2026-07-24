@@ -1,17 +1,17 @@
-GlobalYouXuan V1.0 预览确认包
+GlobalYouXuan V1.0 正式源码包
 
-本包用于锁定首页设计。
+部署方法（手机也能操作）：
+1. 解压 ZIP。
+2. 将整个文件夹上传到 Netlify Drop，或上传到 GitHub Pages。
+3. 首页文件为 index.html。
 
-包含：
-1. 首页设计说明
-2. 开发锁定规则
+文件：
+- index.html：页面结构
+- style.css：电脑版 + 手机版响应式样式
+- script.js：星空、搜索和按钮交互
+- assets/reference-home.jpeg：用户确认的原始首页参考图
 
-已确认的视觉：
-- 星空+地球背景
-- 双端统一风格（PC/手机）
-- AI搜索框
-- 四个功能卡片
-- 首页布局锁定
-
-下一步：
-基于该设计开发正式网站源码（index.html / style.css / script.js）。
+说明：
+- 同一个源码自动适配电脑和手机。
+- 首页文案、四张卡片名称和向上箭头已按确认截图设置。
+- 当前卡片和搜索框为前端交互展示，后续可接入真实后台/API。
