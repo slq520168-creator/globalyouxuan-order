@@ -4,77 +4,145 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#020816">
-  <title>GlobalYouXuan｜连接全球智慧</title>
-  <meta name="description" content="GlobalYouXuan 数字化智能服务平台">
+  <title>GlobalYouXuan｜全球优选</title>
+  <meta name="description" content="GlobalYouXuan 全球数字化智能服务平台">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <canvas id="stars" aria-hidden="true"></canvas>
+  <div class="page-glow" aria-hidden="true"></div>
 
   <header class="topbar">
-    <a class="brand" href="#" aria-label="GlobalYouXuan 首页">
+    <a class="brand" href="#home" aria-label="GlobalYouXuan 首页">
       <span class="brand-mark">G</span>
       <span class="brand-name">GlobalYouXuan</span>
     </a>
+
+    <nav class="desktop-nav" aria-label="主导航">
+      <a href="#home" data-i18n="navHome">首页</a>
+      <a href="#services" data-i18n="navServices">服务</a>
+      <a href="#solutions" data-i18n="navSolutions">解决方案</a>
+      <a href="#about" data-i18n="navAbout">关于我们</a>
+      <a href="#contact" data-i18n="navContact">联系我们</a>
+    </nav>
+
     <div class="top-actions">
-      <button class="language" type="button" aria-label="切换语言">
-        <span class="globe">◎</span><span>中文</span><span class="chevron">⌄</span>
-      </button>
-      <button class="menu" type="button" aria-label="打开菜单"><i></i><i></i><i></i></button>
+      <div class="lang-wrap">
+        <button class="language" id="languageButton" type="button" aria-expanded="false" aria-controls="languageMenu">
+          <span class="globe">◎</span><span id="currentLang">中文</span><span class="chevron">⌄</span>
+        </button>
+        <div class="language-menu" id="languageMenu" hidden>
+          <button type="button" data-lang="zh">中文</button>
+          <button type="button" data-lang="en">English</button>
+          <button type="button" data-lang="km">ខ្មែរ</button>
+        </div>
+      </div>
+      <button class="menu" id="menuButton" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="mobileMenu"><i></i><i></i><i></i></button>
     </div>
   </header>
 
-  <main>
+  <aside class="mobile-menu" id="mobileMenu" aria-hidden="true">
+    <div class="mobile-menu-head">
+      <strong>GlobalYouXuan</strong>
+      <button id="menuClose" type="button" aria-label="关闭菜单">×</button>
+    </div>
+    <nav>
+      <a href="#home" data-i18n="navHome">首页</a>
+      <a href="#services" data-i18n="navServices">服务</a>
+      <a href="#solutions" data-i18n="navSolutions">解决方案</a>
+      <a href="#about" data-i18n="navAbout">关于我们</a>
+      <a href="#contact" data-i18n="navContact">联系我们</a>
+    </nav>
+    <div class="menu-contact">
+      <span data-i18n="menuHelp">需要帮助？</span>
+      <a href="mailto:contact@globalyouxuan.com">contact@globalyouxuan.com</a>
+    </div>
+  </aside>
+  <div class="menu-overlay" id="menuOverlay" hidden></div>
+
+  <main id="home">
     <section class="hero">
       <div class="headline-wrap">
-        <h1>连接全球智慧<br>驱动数字<span class="future">未来</span></h1>
-        <p>助力企业与个人实现数字化升级</p>
+        <h1><span data-i18n="heroLine1">连接全球智慧</span><br><span data-i18n="heroLine2Prefix">驱动数字</span><span class="future" data-i18n="heroLine2Future">未来</span></h1>
+        <p data-i18n="heroSubtitle">助力企业与个人实现数字化升级</p>
       </div>
 
       <div class="earth" aria-hidden="true">
-        <div class="earth-grid"></div>
         <div class="sunrise"></div>
       </div>
 
       <form class="search" id="aiSearch">
         <span class="sparkles">✦</span>
-        <input id="query" type="search" placeholder="AI 智能搜索，探索解决方案..." autocomplete="off">
-        <button type="submit" aria-label="搜索">
-          <span></span>
-        </button>
+        <input id="query" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="AI 智能搜索，探索解决方案..." autocomplete="off">
+        <button type="submit" aria-label="搜索"><span></span></button>
       </form>
 
-      <section class="cards" aria-label="核心功能">
-        <a class="card blue" href="#website">
-          <div class="icon icon-browser">
-            <span class="browser-top"></span><span class="browser-line l1"></span><span class="browser-line l2"></span>
-          </div>
-          <h2>网站建设</h2>
+      <section class="cards" id="services" aria-label="核心功能">
+        <a class="card blue" href="#website" data-service="website">
+          <div class="icon icon-browser"><span class="browser-top"></span><span class="browser-line l1"></span><span class="browser-line l2"></span></div>
+          <h2 data-i18n="cardWebsite">网站建设</h2>
+          <p data-i18n="cardWebsiteDesc">品牌官网、电商展示与移动端体验</p>
           <span class="up">↑</span>
         </a>
-        <a class="card purple" href="#future">
-          <div class="icon icon-brain">☁</div>
-          <h2>智控未来</h2>
+        <a class="card purple" href="#future" data-service="future">
+          <div class="icon icon-cloud"><span class="cloud-main"></span><span class="cloud-small"></span></div>
+          <h2 data-i18n="cardFuture">智控未来</h2>
+          <p data-i18n="cardFutureDesc">AI 自动化、流程协作与智能管理</p>
           <span class="up">↑</span>
         </a>
-        <a class="card cyan" href="#data">
-          <div class="icon icon-chart">
-            <span class="bar b1"></span><span class="bar b2"></span><span class="bar b3"></span>
-            <span class="trend"></span>
-          </div>
-          <h2>量化感知</h2>
+        <a class="card cyan" href="#data" data-service="data">
+          <div class="icon icon-chart"><span class="bar b1"></span><span class="bar b2"></span><span class="bar b3"></span><span class="trend"></span></div>
+          <h2 data-i18n="cardData">量化感知</h2>
+          <p data-i18n="cardDataDesc">数据分析、业务洞察与趋势判断</p>
           <span class="up">↑</span>
         </a>
-        <a class="card orange" href="#academy">
-          <div class="icon icon-cap">
-            <span class="cap-top"></span><span class="cap-base"></span>
-          </div>
-          <h2>数字学院</h2>
+        <a class="card orange" href="#academy" data-service="academy">
+          <div class="icon icon-cap"><span class="cap-top"></span><span class="cap-base"></span></div>
+          <h2 data-i18n="cardAcademy">数字学院</h2>
+          <p data-i18n="cardAcademyDesc">数字技能、实战课程与企业培训</p>
           <span class="up">↑</span>
         </a>
       </section>
     </section>
+
+    <section class="content-section" id="solutions">
+      <div>
+        <span class="eyebrow" data-i18n="solutionEyebrow">GLOBAL DIGITAL SOLUTIONS</span>
+        <h2 data-i18n="solutionTitle">从展示网站到数字化业务系统</h2>
+        <p data-i18n="solutionText">围绕品牌、流量、数据和自动化，为企业搭建可持续增长的数字基础设施。</p>
+      </div>
+      <div class="solution-grid">
+        <article><strong>01</strong><span data-i18n="solution1">品牌展示与官网建设</span></article>
+        <article><strong>02</strong><span data-i18n="solution2">跨境电商与客户转化</span></article>
+        <article><strong>03</strong><span data-i18n="solution3">数据分析与决策支持</span></article>
+      </div>
+    </section>
+
+    <section class="content-section split" id="about">
+      <div>
+        <span class="eyebrow" data-i18n="aboutEyebrow">ABOUT GLOBALYOUXUAN</span>
+        <h2 data-i18n="aboutTitle">连接全球资源，服务数字增长</h2>
+      </div>
+      <p data-i18n="aboutText">GlobalYouXuan 致力于把网站、AI、数据与内容能力整合为真正可落地的服务，帮助个人和企业更高效地进入全球市场。</p>
+    </section>
+
+    <section class="contact-section" id="contact">
+      <div>
+        <span class="eyebrow" data-i18n="contactEyebrow">CONTACT</span>
+        <h2 data-i18n="contactTitle">开始你的数字化项目</h2>
+      </div>
+      <a class="contact-button" href="mailto:contact@globalyouxuan.com" data-i18n="contactButton">联系我们</a>
+    </section>
   </main>
+
+  <div class="service-modal" id="serviceModal" hidden>
+    <div class="service-modal-card">
+      <button id="modalClose" class="modal-close" type="button">×</button>
+      <h3 id="modalTitle"></h3>
+      <p id="modalText"></p>
+      <a href="#contact" id="modalAction" data-i18n="modalAction">立即咨询</a>
+    </div>
+  </div>
 
   <div class="toast" id="toast" role="status"></div>
   <script src="script.js"></script>
