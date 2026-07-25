@@ -3,148 +3,274 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#020816">
+  <meta name="theme-color" content="#07111f">
   <title>GlobalYouXuan｜全球优选</title>
-  <meta name="description" content="GlobalYouXuan 全球数字化智能服务平台">
-  <link rel="stylesheet" href="style.css">
+  <meta name="description" content="3分钟上手，用AI解决一个实际问题。">
+  <style>
+    *{box-sizing:border-box}
+    html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+    body{
+      color:#fff;
+      background:
+        radial-gradient(circle at 50% 0%,rgba(0,214,170,.20),transparent 35%),
+        radial-gradient(circle at 100% 100%,rgba(46,113,255,.18),transparent 38%),
+        #07111f;
+    }
+    button{font:inherit}
+    .page{
+      width:min(100%,620px);
+      min-height:100vh;
+      margin:auto;
+      padding:calc(22px + env(safe-area-inset-top)) 20px calc(30px + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight:800;
+      letter-spacing:.2px;
+    }
+    .logo{
+      width:38px;
+      height:38px;
+      border-radius:13px;
+      display:grid;
+      place-items:center;
+      color:#07111f;
+      background:linear-gradient(135deg,#45f3c0,#25a9ff);
+      box-shadow:0 10px 28px rgba(34,220,183,.28);
+      font-size:18px;
+      font-weight:900;
+    }
+    .badge{
+      padding:7px 11px;
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:999px;
+      color:#9fb0c6;
+      font-size:12px;
+      background:rgba(255,255,255,.045);
+    }
+    main{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      padding:42px 0 28px;
+    }
+    .eyebrow{
+      color:#43e7ba;
+      font-size:13px;
+      font-weight:750;
+      letter-spacing:1.5px;
+      margin-bottom:13px;
+    }
+    h1{
+      margin:0;
+      max-width:520px;
+      font-size:clamp(34px,9vw,56px);
+      line-height:1.08;
+      letter-spacing:-1.8px;
+    }
+    .highlight{
+      background:linear-gradient(90deg,#46efc0,#55a9ff);
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+    .subtitle{
+      margin:18px 0 30px;
+      color:#a8b6c9;
+      font-size:16px;
+      line-height:1.75;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:12px;
+    }
+    .card{
+      min-height:116px;
+      padding:18px;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:20px;
+      background:linear-gradient(145deg,rgba(255,255,255,.09),rgba(255,255,255,.035));
+      color:#fff;
+      text-align:left;
+      cursor:pointer;
+      transition:.2s ease;
+      box-shadow:0 14px 35px rgba(0,0,0,.15);
+    }
+    .card:active{
+      transform:scale(.97);
+      border-color:rgba(68,235,190,.55);
+    }
+    .icon{
+      width:38px;
+      height:38px;
+      border-radius:12px;
+      display:grid;
+      place-items:center;
+      margin-bottom:14px;
+      background:rgba(68,235,190,.13);
+      font-size:20px;
+    }
+    .card strong{
+      display:block;
+      font-size:18px;
+      margin-bottom:5px;
+    }
+    .card small{
+      color:#94a5ba;
+      font-size:12px;
+    }
+    .promise{
+      margin-top:24px;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      color:#9fb0c6;
+      font-size:13px;
+    }
+    .dot{
+      width:8px;
+      height:8px;
+      border-radius:50%;
+      background:#46efc0;
+      box-shadow:0 0 16px #46efc0;
+    }
+    footer{
+      text-align:center;
+      color:#64748b;
+      font-size:12px;
+      padding-top:12px;
+    }
+    .modal{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:flex-end;
+      justify-content:center;
+      padding:20px;
+      background:rgba(0,0,0,.64);
+      backdrop-filter:blur(8px);
+    }
+    .modal.show{display:flex}
+    .sheet{
+      width:min(100%,560px);
+      padding:24px;
+      border-radius:25px;
+      background:#101d2d;
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 25px 80px rgba(0,0,0,.45);
+    }
+    .sheet h2{margin:0 0 10px;font-size:24px}
+    .sheet p{margin:0 0 20px;color:#9fb0c6;line-height:1.65}
+    .close{
+      width:100%;
+      border:0;
+      border-radius:15px;
+      padding:14px;
+      font-weight:800;
+      color:#07111f;
+      background:linear-gradient(90deg,#46efc0,#55a9ff);
+    }
+    @media(max-width:360px){
+      .page{padding-left:15px;padding-right:15px}
+      .card{padding:15px;min-height:108px}
+    }
+  </style>
 </head>
+
 <body>
-  <canvas id="stars" aria-hidden="true"></canvas>
-  <div class="page-glow" aria-hidden="true"></div>
+  <div class="page">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">G</div>
+        <span>GlobalYouXuan</span>
+      </div>
+      <div class="badge">全球优选</div>
+    </header>
 
-  <header class="topbar">
-    <a class="brand" href="#home" aria-label="GlobalYouXuan 首页">
-      <span class="brand-mark">G</span>
-      <span class="brand-name">GlobalYouXuan</span>
-    </a>
+    <main>
+      <div class="eyebrow">AI 实用解决方案</div>
 
-    <nav class="desktop-nav" aria-label="主导航">
-      <a href="#home" data-i18n="navHome">首页</a>
-      <a href="#services" data-i18n="navServices">服务</a>
-      <a href="#solutions" data-i18n="navSolutions">解决方案</a>
-      <a href="#about" data-i18n="navAbout">关于我们</a>
-      <a href="#contact" data-i18n="navContact">联系我们</a>
-    </nav>
+      <h1>
+        今天，你想让 AI<br>
+        帮你<span class="highlight">解决什么？</span>
+      </h1>
 
-    <div class="top-actions">
-      <div class="lang-wrap">
-        <button class="language" id="languageButton" type="button" aria-expanded="false" aria-controls="languageMenu">
-          <span class="globe">◎</span><span id="currentLang">中文</span><span class="chevron">⌄</span>
+      <p class="subtitle">
+        不学复杂理论，不看几十页教程。<br>
+        一个问题，一个方案，3分钟马上使用。
+      </p>
+
+      <section class="grid">
+        <button class="card" onclick="openModule('工作')">
+          <span class="icon">💼</span>
+          <strong>工作</strong>
+          <small>文案、表格、总结</small>
         </button>
-        <div class="language-menu" id="languageMenu" hidden>
-          <button type="button" data-lang="zh">中文</button>
-          <button type="button" data-lang="en">English</button>
-          <button type="button" data-lang="km">ខ្មែរ</button>
-        </div>
-      </div>
-      <button class="menu" id="menuButton" type="button" aria-label="打开菜单" aria-expanded="false" aria-controls="mobileMenu"><i></i><i></i><i></i></button>
-    </div>
-  </header>
 
-  <aside class="mobile-menu" id="mobileMenu" aria-hidden="true">
-    <div class="mobile-menu-head">
-      <strong>GlobalYouXuan</strong>
-      <button id="menuClose" type="button" aria-label="关闭菜单">×</button>
-    </div>
-    <nav>
-      <a href="#home" data-i18n="navHome">首页</a>
-      <a href="#services" data-i18n="navServices">服务</a>
-      <a href="#solutions" data-i18n="navSolutions">解决方案</a>
-      <a href="#about" data-i18n="navAbout">关于我们</a>
-      <a href="#contact" data-i18n="navContact">联系我们</a>
-    </nav>
-    <div class="menu-contact">
-      <span data-i18n="menuHelp">需要帮助？</span>
-      <a href="mailto:contact@globalyouxuan.com">contact@globalyouxuan.com</a>
-    </div>
-  </aside>
-  <div class="menu-overlay" id="menuOverlay" hidden></div>
+        <button class="card" onclick="openModule('创作')">
+          <span class="icon">✨</span>
+          <strong>创作</strong>
+          <small>图片、视频、内容</small>
+        </button>
 
-  <main id="home">
-    <section class="hero">
-      <div class="headline-wrap">
-        <h1><span data-i18n="heroLine1">连接全球智慧</span><br><span data-i18n="heroLine2Prefix">驱动数字</span><span class="future" data-i18n="heroLine2Future">未来</span></h1>
-        <p data-i18n="heroSubtitle">助力企业与个人实现数字化升级</p>
-      </div>
+        <button class="card" onclick="openModule('商业')">
+          <span class="icon">📈</span>
+          <strong>商业</strong>
+          <small>营销、销售、获客</small>
+        </button>
 
-      <div class="earth" aria-hidden="true">
-        <div class="sunrise"></div>
-      </div>
-
-      <form class="search" id="aiSearch">
-        <span class="sparkles">✦</span>
-        <input id="query" type="search" data-i18n-placeholder="searchPlaceholder" placeholder="AI 智能搜索，探索解决方案..." autocomplete="off">
-        <button type="submit" aria-label="搜索"><span></span></button>
-      </form>
-
-      <section class="cards" id="services" aria-label="核心功能">
-        <a class="card blue" href="#website" data-service="website">
-          <div class="icon icon-browser"><span class="browser-top"></span><span class="browser-line l1"></span><span class="browser-line l2"></span></div>
-          <h2 data-i18n="cardWebsite">网站建设</h2>
-          <p data-i18n="cardWebsiteDesc">品牌官网、电商展示与移动端体验</p>
-          <span class="up">↑</span>
-        </a>
-        <a class="card purple" href="#future" data-service="future">
-          <div class="icon icon-cloud"><span class="cloud-main"></span><span class="cloud-small"></span></div>
-          <h2 data-i18n="cardFuture">智控未来</h2>
-          <p data-i18n="cardFutureDesc">AI 自动化、流程协作与智能管理</p>
-          <span class="up">↑</span>
-        </a>
-        <a class="card cyan" href="#data" data-service="data">
-          <div class="icon icon-chart"><span class="bar b1"></span><span class="bar b2"></span><span class="bar b3"></span><span class="trend"></span></div>
-          <h2 data-i18n="cardData">量化感知</h2>
-          <p data-i18n="cardDataDesc">数据分析、业务洞察与趋势判断</p>
-          <span class="up">↑</span>
-        </a>
-        <a class="card orange" href="#academy" data-service="academy">
-          <div class="icon icon-cap"><span class="cap-top"></span><span class="cap-base"></span></div>
-          <h2 data-i18n="cardAcademy">数字学院</h2>
-          <p data-i18n="cardAcademyDesc">数字技能、实战课程与企业培训</p>
-          <span class="up">↑</span>
-        </a>
+        <button class="card" onclick="openModule('自动化')">
+          <span class="icon">⚡</span>
+          <strong>自动化</strong>
+          <small>流程、提醒、执行</small>
+        </button>
       </section>
-    </section>
 
-    <section class="content-section" id="solutions">
-      <div>
-        <span class="eyebrow" data-i18n="solutionEyebrow">GLOBAL DIGITAL SOLUTIONS</span>
-        <h2 data-i18n="solutionTitle">从展示网站到数字化业务系统</h2>
-        <p data-i18n="solutionText">围绕品牌、流量、数据和自动化，为企业搭建可持续增长的数字基础设施。</p>
+      <div class="promise">
+        <span class="dot"></span>
+        <span>短小精悍 · 直接复制 · 马上能用</span>
       </div>
-      <div class="solution-grid">
-        <article><strong>01</strong><span data-i18n="solution1">品牌展示与官网建设</span></article>
-        <article><strong>02</strong><span data-i18n="solution2">跨境电商与客户转化</span></article>
-        <article><strong>03</strong><span data-i18n="solution3">数据分析与决策支持</span></article>
-      </div>
-    </section>
+    </main>
 
-    <section class="content-section split" id="about">
-      <div>
-        <span class="eyebrow" data-i18n="aboutEyebrow">ABOUT GLOBALYOUXUAN</span>
-        <h2 data-i18n="aboutTitle">连接全球资源，服务数字增长</h2>
-      </div>
-      <p data-i18n="aboutText">GlobalYouXuan 致力于把网站、AI、数据与内容能力整合为真正可落地的服务，帮助个人和企业更高效地进入全球市场。</p>
-    </section>
+    <footer>
+      © 2026 GlobalYouXuan
+    </footer>
+  </div>
 
-    <section class="contact-section" id="contact">
-      <div>
-        <span class="eyebrow" data-i18n="contactEyebrow">CONTACT</span>
-        <h2 data-i18n="contactTitle">开始你的数字化项目</h2>
-      </div>
-      <a class="contact-button" href="mailto:contact@globalyouxuan.com" data-i18n="contactButton">联系我们</a>
-    </section>
-  </main>
-
-  <div class="service-modal" id="serviceModal" hidden>
-    <div class="service-modal-card">
-      <button id="modalClose" class="modal-close" type="button">×</button>
-      <h3 id="modalTitle"></h3>
-      <p id="modalText"></p>
-      <a href="#contact" id="modalAction" data-i18n="modalAction">立即咨询</a>
+  <div class="modal" id="modal" onclick="closeOutside(event)">
+    <div class="sheet">
+      <h2 id="modalTitle">解决方案</h2>
+      <p>
+        该分类的实用解决方案正在陆续上架。网站交易系统完成后，可直接购买并自动接收内容。
+      </p>
+      <button class="close" onclick="closeModal()">知道了</button>
     </div>
   </div>
 
-  <div class="toast" id="toast" role="status"></div>
-  <script src="script.js"></script>
+  <script>
+    function openModule(name){
+      document.getElementById("modalTitle").textContent = name + "解决方案";
+      document.getElementById("modal").classList.add("show");
+    }
+
+    function closeModal(){
+      document.getElementById("modal").classList.remove("show");
+    }
+
+    function closeOutside(event){
+      if(event.target.id === "modal") closeModal();
+    }
+  </script>
 </body>
 </html>
