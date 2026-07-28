@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>AI实战资源中心</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    body {
+      color: #fff;
+      background: radial-gradient(circle at 50% 0%, rgba(0,214,170,.20), transparent 35%), 
+                  radial-gradient(circle at 100% 100%, rgba(46,113,255,.18), transparent 38%), 
+                  #07111f;
+      padding: 0;
+    }
+    .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; min-height: 100vh; }
+    .header { text-align: center; margin-bottom: 30px; padding-top: 20px; }
+    .header h1 { font-size: 28px; margin: 0 0 10px 0; }
+    .header p { color: #9fb0c6; margin: 0; font-size: 14px; }
+    
+    .product-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 30px; }
+    .product-card {
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 15px;
+      background: linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.035));
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+    .product-card:active { transform: scale(.98); border-color: rgba(68,235,190,.55); }
+    .product-card h3 { margin: 0 0 8px 0; font-size: 20px; }
+    .product-emoji { font-size: 32px; margin-bottom: 10px; }
+    .product-desc { color: #a8b6c9; font-size: 13px; margin: 0 0 10px 0; }
+    .product-count { color: #43e7ba; font-size: 12px; font-weight: 600; }
+    .product-price { font-size: 24px; font-weight: bold; color: #46efc0; margin-top: 12px; }
+    .product-action { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
+    .btn-buy { 
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(90deg, #46efc0, #55a9ff);
+      border: none;
+      border-radius: 8px;
+      color: #07111f;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-buy:active { transform: scale(.98); }
+
+    /* 订单模态框 */
+    .modal { position: fixed; inset: 0; display: none; align-items: flex-end; justify-content: center; padding: 20px; background: rgba(0,0,0,.7); backdrop-filter: blur(8px); z-index: 100; }
+    .modal.show { display: flex; }
+    .modal-content { width: 100%; max-width: 560px; padding: 24px; border-radius: 25px; background: #101d2d; border: 1px solid rgba(255,255,255,.12); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .modal-header h2 { margin: 0; font-size: 24px; }
+    .modal-close { background: none; border: none; color: #9fb0c6; font-size: 24px; cursor: pointer; }
+
+    .steps { display: flex; gap: 10px; margin-bottom: 20px; }
+    .step-btn { flex: 1; padding: 8px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; background: rgba(255,255,255,.05); color: #9fb0c6; cursor: pointer; font-size: 12px; transition: 0.2s; }
+    .step-btn.active { background: #46efc0; color: #07111f; border-color: #46efc0; font-weight: 600; }
+
+    .step-content { display: none; }
+    .step-content.show { display: block; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
+    .form-group input { width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; background: rgba(255,255,255,.05); color: #fff; font-size: 14px; }
+    .form-group input::placeholder { color: rgba(255,255,255,.4); }
+    .form-group input:focus { outline: none; border-color: #46efc0; background: rgba(255,255,255,.08); }
+
+    .payment-info {
+      background: rgba(68,235,190,.1);
+      border: 1px solid rgba(68,235,190,.3);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+      font-size: 13px;
+    }
+    .wallet-address {
+      background: rgba(0,0,0,.3);
+      padding: 12px;
+      border-radius: 8px;
+      word-break: break-all;
+      font-family: monospace;
+      margin: 10px 0;
+      position: relative;
+    }
+    .copy-btn { position: absolute; right: 8px; top: 8px; padding: 4px 8px; background: #46efc0; color: #07111f; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; }
+
+    .countdown { font-size: 32px; font-weight: bold; color: #ff6b6b; text-align: center; margin: 20px 0; }
+    .countdown-label { text-align: center; color: #9fb0c6; font-size: 12px; margin-bottom: 10px; }
+
+    .action-btn { 
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(90deg, #46efc0, #55a9ff);
+      color: #07111f;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .action-btn.secondary { background: rgba(255,255,255,.1); color: #fff; }
+
+    .success-content { text-align: center; }
+    .success-icon { font-size: 64px; margin: 20px 0; }
+    .success-text { color: #a8b6c9; line-height: 1.8; margin: 20px 0; }
+
+    .error-msg { color: #ff6b6b; font-size: 13px; margin-top: 10px; padding: 10px; background: rgba(255,107,107,.1); border-radius: 8px; display: none; }
+    .error-msg.show { display: block; }
+
+    .info-box {
+      background: rgba(68,235,190,.08);
+      border: 1px solid rgba(68,235,190,.2);
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #a8b6c9;
+      line-height: 1.6;
+      margin: 15px 0;
+    }
+
+    @media (max-width: 480px) {
+      .container { padding: 15px; }
+      .header h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>📚 AI实战资源中心</h1>
+    <p>精选资源，即刻下载</p>
+  </div>
+
+  <div class="product-grid">
+    <div class="product-card" onclick="openOrder('office')">
+      <div class="product-emoji">💼</div>
+      <h3>AI办公</h3>
+      <p class="product-desc">高效办公，提升工作效率</p>
+      <p class="product-count">6个资源</p>
+      <div class="product-price">¥9.9</div>
+      <div class="product-action">
+        <button class="btn-buy">进入购买</button>
+      </div>
+    </div>
+
+    <div class="product-card" onclick="openOrder('creation')">
+      <div class="product-emoji">🎨</div>
+      <h3>AI创作</h3>
+      <p class="product-desc">从图片到视频，一站式创作</p>
+      <p class="product-count">8个资源</p>
+      <div class="product-price">¥19.99</div>
+      <div class="product-action">
+        <button class="btn-buy">进入购买</button>
+      </div>
+    </div>
+
+    <div class="product-card" onclick="openOrder('business')">
+      <div class="product-emoji">🚀</div>
+      <h3>AI商业</h3>
+      <p class="product-desc">打造自己的AI商业系统</p>
+      <p class="product-count">10个资源</p>
+      <div class="product-price">¥29.99</div>
+      <div class="product-action">
+        <button class="btn-buy">进入购买</button>
+      </div>
+    </div>
+
+    <div class="product-card" onclick="openOrder('automation')">
+      <div class="product-emoji">⚙️</div>
+      <h3>AI自动化</h3>
+      <p class="product-desc">让AI帮你自动完成工作</p>
+      <p class="product-count">8个资源</p>
+      <div class="product-price">¥19.99</div>
+      <div class="product-action">
+        <button class="btn-buy">进入购买</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 订单模态框 -->
+<div class="modal" id="orderModal" onclick="if(event.target.id==='orderModal')closeOrder()">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2 id="modalTitle">💼 AI办公</h2>
+      <button class="modal-close" onclick="closeOrder()">✕</button>
+    </div>
+
+    <div class="steps">
+      <button class="step-btn active" onclick="switchOrderStep(1)">1️⃣ 信息</button>
+      <button class="step-btn" onclick="switchOrderStep(2)">2️⃣ 支付</button>
+      <button class="step-btn" onclick="switchOrderStep(3)">3️⃣ 完成</button>
+    </div>
+
+    <!-- 第一步：收集信息 -->
+    <div id="orderStep1" class="step-content show">
+      <div class="form-group">
+        <label>姓名 *</label>
+        <input id="orderName" type="text" placeholder="请输入姓名">
+      </div>
+      <div class="form-group">
+        <label>邮箱 *</label>
+        <input id="orderEmail" type="email" placeholder="请输入邮箱（重要，用于发货）">
+      </div>
+      <div class="form-group">
+        <label>电话 *</label>
+        <input id="orderPhone" type="tel" placeholder="请输入电话（便于后期服务）">
+      </div>
+      <button class="action-btn" onclick="proceedToPayment()">下一步：支付</button>
+    </div>
+
+    <!-- 第二步：支付 -->
+    <div id="orderStep2" class="step-content">
+      <div class="info-box">
+        <div>👤 <strong id="paymentName">-</strong></div>
+        <div>💰 金额：<strong id="paymentPrice">-</strong> USDT</div>
+        <div style="font-family: monospace; font-size: 11px; word-break: break-all;">📋 订单号：<strong id="paymentOrderNo">-</strong></div>
+      </div>
+
+      <div class="payment-info">
+        <div style="color: #43e7ba; font-weight: 600; margin-bottom: 10px;">💳 支付钱包地址</div>
+        <div class="wallet-address">
+          <span id="walletAddr">TKfQoN7kZirALGYxMkxU4SoqMWJRqXsh7k</span>
+          <button class="copy-btn" onclick="copyWallet()">复制</button>
+        </div>
+        <div style="margin-top: 10px; color: #9fb0c6;">
+          🔗 网络：USDT-TRC20<br>
+          ⏰ 请在 <span id="timerText">15:00</span> 内完成支付
+        </div>
+      </div>
+
+      <div class="countdown-label">⏱️ 剩余时间</div>
+      <div class="countdown" id="countdownDisplay">15:00</div>
+
+      <div class="info-box">
+        <strong style="color: #43e7ba;">✓ 支付步骤</strong><br>
+        1. 复制上面的钱包地址<br>
+        2. 用 Tronlink、币安钱包转账 USDT<br>
+        3. 支付后自动检测，邮件发送下载链接<br>
+        4. 问题联系：客服@qqyousubot
+      </div>
+
+      <button class="action-btn" id="checkPaymentBtn" onclick="checkPaymentStatus()">🔄 检测支付状态</button>
+      <button class="action-btn secondary" onclick="switchOrderStep(1)">← 返回修改</button>
+    </div>
+
+    <!-- 第三步：完成 -->
+    <div id="orderStep3" class="step-content">
+      <div class="success-content">
+        <div class="success-icon">✅</div>
+        <h3 style="color: #46efc0; margin: 0;">支付成功！</h3>
+        <div class="success-text">
+          感谢您的购买！<br>
+          下载链接已发送到您的邮箱：<br>
+          <strong id="successEmail">-</strong>
+        </div>
+        <div class="info-box">
+          📧 请检查邮箱（包括垃圾箱）<br>
+          📥 点击邮件中的下载链接获取资源<br>
+          💬 如有问题可联系客服
+        </div>
+        <div class="info-box" style="text-align: left; font-size: 12px;">
+          <div style="font-weight: 600; margin-bottom: 8px;">📋 订单详情</div>
+          <div>姓名：<strong id="finalName">-</strong></div>
+          <div>邮箱：<strong id="finalEmail">-</strong></div>
+          <div>电话：<strong id="finalPhone">-</strong></div>
+          <div>金额：<strong id="finalPrice">-</strong> USDT</div>
+          <div style="font-family: monospace; font-size: 11px; word-break: break-all;">订单号：<strong id="finalOrderNo">-</strong></div>
+        </div>
+        <button class="action-btn" onclick="closeOrder()">关闭</button>
+      </div>
+    </div>
+
+    <div class="error-msg" id="orderError"></div>
+  </div>
+</div>
+
+<script src="order.js"></script>
+</body>
+</html>
