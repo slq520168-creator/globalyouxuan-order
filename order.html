@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>AI实战教程VIP - 全球优选</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .order-page { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; }
+    .order-header { text-align: center; margin-bottom: 30px; }
+    .order-header h1 { font-size: 28px; margin: 0; }
+    .product-info { 
+      background: rgba(255,255,255,.05);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(255,255,255,.1);
+    }
+    .product-info h2 { margin: 0 0 10px 0; font-size: 22px; }
+    .product-price { font-size: 32px; font-weight: bold; color: #46efc0; margin: 15px 0; }
+    .product-desc { color: #a8b6c9; line-height: 1.6; font-size: 14px; }
+    .product-files { margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,.1); }
+    .product-files h3 { margin: 0 0 10px 0; font-size: 14px; color: #43e7ba; }
+    .file-list { margin: 0; padding-left: 20px; color: #9fb0c6; font-size: 13px; }
+    .file-list li { margin: 5px 0; }
+    
+    .form-section { margin-bottom: 25px; }
+    .form-section label { display: block; font-weight: 600; margin-bottom: 8px; color: #e2e8f0; }
+    .form-section input { 
+      width: 100%;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,.2);
+      border-radius: 10px;
+      background: rgba(255,255,255,.05);
+      color: #fff;
+      font-size: 16px;
+    }
+    .form-section input::placeholder { color: rgba(255,255,255,.4); }
+    .form-section input:focus { 
+      outline: none;
+      border-color: #46efc0;
+      background: rgba(255,255,255,.08);
+    }
+
+    .steps { display: flex; gap: 10px; margin-bottom: 30px; }
+    .step-btn { 
+      flex: 1; 
+      padding: 8px; 
+      border: 1px solid rgba(255,255,255,.2); 
+      border-radius: 10px; 
+      background: rgba(255,255,255,.05);
+      color: #9fb0c6;
+      cursor: pointer;
+      font-size: 12px;
+      transition: 0.2s;
+    }
+    .step-btn.active { 
+      background: #46efc0; 
+      color: #07111f;
+      border-color: #46efc0;
+      font-weight: 600;
+    }
+
+    .step-content { display: none; }
+    .step-content.show { display: block; }
+
+    .payment-address {
+      background: rgba(68,235,190,.1);
+      border: 1px solid rgba(68,235,190,.3);
+      padding: 15px;
+      border-radius: 10px;
+      margin: 15px 0;
+    }
+    .payment-address label { color: #43e7ba; font-size: 12px; font-weight: 600; }
+    .payment-address .address-display { 
+      background: rgba(0,0,0,.3);
+      padding: 12px;
+      border-radius: 8px;
+      word-break: break-all;
+      font-size: 14px;
+      font-family: monospace;
+      margin-top: 8px;
+      position: relative;
+    }
+    .copy-btn { 
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      padding: 5px 10px;
+      background: #46efc0;
+      color: #07111f;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .countdown { 
+      font-size: 18px; 
+      font-weight: bold; 
+      color: #ff6b6b;
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    .action-btn { 
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(90deg,#46efc0,#55a9ff);
+      color: #07111f;
+      font-weight: 800;
+      font-size: 16px;
+      cursor: pointer;
+      margin: 15px 0;
+      transition: 0.2s;
+    }
+    .action-btn:active { transform: scale(.98); }
+    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .back-btn {
+      background: rgba(255,255,255,.1);
+      color: #fff;
+      margin-top: 10px;
+    }
+
+    .success-section { text-align: center; }
+    .success-icon { font-size: 60px; margin: 20px 0; }
+    .success-text { color: #a8b6c9; line-height: 1.8; margin: 15px 0; }
+
+    .error { color: #ff6b6b; font-size: 14px; margin-top: 10px; }
+    .loading { text-align: center; color: #9fb0c6; }
+  </style>
+</head>
+<body class="admin-body">
+<div class="order-page">
+  <div class="order-header">
+    <div style="font-size: 48px; margin-bottom: 10px;">🎓</div>
+    <h1>AI实战教程VIP</h1>
+  </div>
+
+  <div class="product-info">
+    <h2>AI实战教程VIP</h2>
+    <div class="product-price">9.9 USDT</div>
+    <div class="product-desc">
+      完整的AI实战教程合集，包含ChatGPT、AI绘画、AI视频、AI剪辑、AI数字人等核心技能教程。适合初学者快速上手，也适合专业人士深度学习。
+    </div>
+    <div class="product-files">
+      <h3>📦 包含内容：</h3>
+      <ul class="file-list">
+        <li>✓ 01.ChatGPT教程.pdf</li>
+        <li>✓ 02.AI绘画.pdf</li>
+        <li>✓ 03.AI视频.pdf</li>
+        <li>✓ 04.AI剪辑.pdf</li>
+        <li>✓ 05.AI数字人.pdf</li>
+        <li>✓ 06.提示词.pdf</li>
+        <li>✓ 07.工作流.pdf</li>
+        <li>✓ AI实战教程VIP.zip（完整包）</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="steps">
+    <button class="step-btn active" onclick="switchStep(1)">1️⃣ 信息</button>
+    <button class="step-btn" onclick="switchStep(2)">2️⃣ 支付</button>
+    <button class="step-btn" onclick="switchStep(3)">3️⃣ 完成</button>
+  </div>
+
+  <!-- 第一步：填写信息 -->
+  <div id="step1" class="step-content show">
+    <div class="form-section">
+      <label>姓名 *</label>
+      <input id="customerName" type="text" placeholder="请输入您的姓名">
+    </div>
+
+    <div class="form-section">
+      <label>邮箱 *</label>
+      <input id="customerEmail" type="email" placeholder="请输入您的邮箱（重要，用于发货）">
+    </div>
+
+    <div class="form-section">
+      <label>电话 *</label>
+      <input id="customerPhone" type="tel" placeholder="请输入您的电话（便于后期服务）">
+    </div>
+
+    <button class="action-btn" onclick="goToPayment()">下一步：支付</button>
+  </div>
+
+  <!-- 第二步：支付 -->
+  <div id="step2" class="step-content">
+    <div style="background: rgba(255,255,255,.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,.1); margin-bottom: 20px;">
+      <div style="font-size: 14px; color: #a8b6c9; margin-bottom: 10px;">📝 订单信息：</div>
+      <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 14px;">
+        <span>客户：</span>
+        <strong id="displayName">-</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 14px;">
+        <span>金额：</span>
+        <strong>9.9 USDT</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin: 8px 0; font-size: 14px;">
+        <span>订单号：</span>
+        <strong id="displayOrderNo" style="font-family: monospace; font-size: 12px;">-</strong>
+      </div>
+    </div>
+
+    <div class="payment-address">
+      <label>💰 支付钱包地址</label>
+      <div class="address-display">
+        <span id="walletAddressDisplay">TKfQoN7kZirALGYxMkxU4SoqMWJRqXsh7k</span>
+        <button class="copy-btn" onclick="copyAddress()">复制</button>
+      </div>
+      <div style="font-size: 12px; color: #9fb0c6; margin-top: 10px;">
+        🔗 网络：USDT-TRC20<br>
+        ⏰ 请在 <span id="timerDisplay">15:00</span> 内完成支付
+      </div>
+    </div>
+
+    <div class="countdown" id="countdown">15:00</div>
+
+    <div style="background: rgba(68,235,190,.1); border: 1px solid rgba(68,235,190,.2); padding: 12px; border-radius: 8px; font-size: 13px; color: #a8b6c9; margin: 15px 0;">
+      <strong style="color: #43e7ba;">✓ 支付说明</strong><br>
+      1. 复制上面的钱包地址<br>
+      2. 使用 Tronlink、币安等钱包转账 9.9 USDT<br>
+      3. 支付后系统自动检测，邮件发送下载链接<br>
+      4. 如有问题联系客服：客服@qqyousubot
+    </div>
+
+    <button class="action-btn" onclick="checkPayment()" id="checkPaymentBtn">🔄 检测支付状态</button>
+    <button class="action-btn back-btn" onclick="switchStep(1)">← 返回修改信息</button>
+  </div>
+
+  <!-- 第三步：完成 -->
+  <div id="step3" class="step-content">
+    <div class="success-section">
+      <div class="success-icon">✅</div>
+      <h2 style="color: #46efc0; margin: 0;">支付成功！</h2>
+      <div class="success-text">
+        <div style="margin: 15px 0;">
+          感谢您的购买！<br>
+          下载链接已发送到您的邮箱：<br>
+          <strong id="successEmail">-</strong>
+        </div>
+        <div style="background: rgba(68,235,190,.1); padding: 12px; border-radius: 8px; margin: 15px 0; font-size: 13px;">
+          📧 请查看邮箱（包括垃圾箱）<br>
+          📥 点击邮件中的下载链接获取资源<br>
+          💬 如有问题可联系客服
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,.1); margin: 20px 0; text-align: left;">
+        <div style="font-size: 12px; color: #9fb0c6; margin-bottom: 10px;">📋 订单详情：</div>
+        <div style="font-size: 13px; line-height: 1.8;">
+          <div>订单号：<strong id="finalOrderNo" style="font-family: monospace;">-</strong></div>
+          <div>客户名：<strong id="finalName">-</strong></div>
+          <div>邮箱：<strong id="finalEmail">-</strong></div>
+          <div>金额：<strong>9.9 USDT</strong></div>
+        </div>
+      </div>
+
+      <button class="action-btn" onclick="location.href='index.html'">← 返回首页</button>
+    </div>
+  </div>
+
+  <div id="errorMsg" class="error" style="display:none;"></div>
+</div>
+
+<script src="order.js"></script>
+</body>
+</html>
