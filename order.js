@@ -1,5 +1,6 @@
 // ========== 配置 ==========
 const CONFIG = {
+  apiBase: 'https://globalyouxuan-order.pages.dev',
   products: {
     office: {
       id: 'office',
@@ -37,30 +38,70 @@ const CONFIG = {
   wallet: 'TKfQoN7kZirALGYxMkxU4SoqMWJRqXsh7k',
   network: 'USDT-TRC20',
   timeoutMinutes: 15,
-  supportEmail: '客服@qqyousubot',
-  notifyEmail: 'slq520168@gmail.com'
+  supportTelegram: '@qqyousubot'
 };
 
-// ========== 状态管理 ==========
+// ========== 状态 ==========
 let currentProduct = null;
 let currentOrder = null;
 let countdownInterval = null;
+let pollInterval = null;
+
+// ========== 工具函数 ==========
+function $(id) {
+  return document.getElementById(id);
+}
+
+function showError(msg) {
+  const el = $('orderError');
+  if (!el) return;
+  el.textContent = '❌ ' + msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+function clearError() {
+  const el = $('orderError');
+  if (el) el.classList.remove('show');
+}
+
+async function api(path, options = {}) {
+  const url = CONFIG.apiBase + path;
+  const res = await fetch(url, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    ...options
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.ok === false) {
+    throw new Error(data.message || ('请求失败 ' + res.status));
+  }
+  return data;
+}
 
 // ========== 打开订单弹窗 ==========
 function openOrder(productId) {
   currentProduct = CONFIG.products[productId];
   if (!currentProduct) return;
-  
-  document.getElementById('modalTitle').textContent = `${currentProduct.emoji} ${currentProduct.name}`;
-  document.getElementById('orderModal').classList.add('show');
+
+  currentOrder = null;
+  clearInterval(countdownInterval);
+  clearInterval(pollInterval);
+
+  $('modalTitle').textContent = `${currentProduct.emoji} ${currentProduct.name}`;
+  $('orderModal').classList.add('show');
   switchOrderStep(1);
   clearError();
+
+  $('orderName').value = '';
+  $('orderEmail').value = '';
+  $('orderPhone').value = '';
 }
 
 // ========== 关闭订单弹窗 ==========
 function closeOrder() {
-  document.getElementById('orderModal').classList.remove('show');
+  $('orderModal').classList.remove('show');
   clearInterval(countdownInterval);
+  clearInterval(pollInterval);
   currentOrder = null;
 }
 
@@ -68,103 +109,117 @@ function closeOrder() {
 function switchOrderStep(step) {
   document.querySelectorAll('.step-content').forEach(el => el.classList.remove('show'));
   document.querySelectorAll('.step-btn').forEach(el => el.classList.remove('active'));
-  
-  document.getElementById(`orderStep${step}`).classList.add('show');
-  document.querySelectorAll('.step-btn')[step - 1].classList.add('active');
+
+  const content = $(`orderStep${step}`);
+  if (content) content.classList.add('show');
+  const btns = document.querySelectorAll('.step-btn');
+  if (btns[step - 1]) btns[step - 1].classList.add('active');
 }
 
 // ========== 验证表单 ==========
 function validateForm() {
-  const name = document.getElementById('orderName').value.trim();
-  const email = document.getElementById('orderEmail').value.trim();
-  const phone = document.getElementById('orderPhone').value.trim();
-  
+  const name = $('orderName').value.trim();
+  const email = $('orderEmail').value.trim();
+  const phone = $('orderPhone').value.trim();
+
   if (!name) {
     showError('请输入姓名');
-    return false;
+    return null;
   }
-  
-  if (!email || !email.includes('@')) {
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     showError('请输入正确的邮箱');
-    return false;
+    return null;
   }
-  
   if (!phone || phone.length < 7) {
     showError('请输入正确的电话');
-    return false;
+    return null;
   }
-  
   return { name, email, phone };
 }
 
-// ========== 前往支付 ==========
-function proceedToPayment() {
+// ========== 创建订单并进入支付 ==========
+async function proceedToPayment() {
   const form = validateForm();
   if (!form) return;
-  
-  // 创建订单
-  const orderId = 'ORD-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-  currentOrder = {
-    id: orderId,
-    productId: currentProduct.id,
-    productName: currentProduct.name,
-    price: currentProduct.price,
-    name: form.name,
-    email: form.email,
-    phone: form.phone,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    wallet: CONFIG.wallet
-  };
-  
-  // 保存订单
-  saveOrder(currentOrder);
-  
-  // 更新支付界面
-  document.getElementById('paymentName').textContent = form.name;
-  document.getElementById('paymentPrice').textContent = currentProduct.price;
-  document.getElementById('paymentOrderNo').textContent = orderId;
-  document.getElementById('timerText').textContent = `${CONFIG.timeoutMinutes}:00`;
-  
-  // 更新完成界面
-  document.getElementById('finalName').textContent = form.name;
-  document.getElementById('finalEmail').textContent = form.email;
-  document.getElementById('finalPhone').textContent = form.phone;
-  document.getElementById('finalPrice').textContent = currentProduct.price;
-  document.getElementById('finalOrderNo').textContent = orderId;
-  document.getElementById('successEmail').textContent = form.email;
-  
-  // 启动倒计时
-  startCountdown(CONFIG.timeoutMinutes * 60);
-  
-  // 切换到支付步骤
-  switchOrderStep(2);
-  clearError();
+
+  const btn = document.querySelector('#orderStep1 .action-btn');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '创建订单中...';
+  }
+
+  try {
+    const data = await api('/api/create-order', {
+      method: 'POST',
+      body: JSON.stringify({
+        product: currentProduct.name,
+        amount: currentProduct.price
+      })
+    });
+
+    currentOrder = {
+      orderId: data.orderId,
+      product: data.product,
+      amount: data.amount,
+      baseAmount: currentProduct.price,
+      walletAddress: data.walletAddress || CONFIG.wallet,
+      network: data.network || CONFIG.network,
+      expiresAt: data.expiresAt,
+      status: data.status,
+      name: form.name,
+      email: form.email,
+      phone: form.phone
+    };
+
+    $('paymentName').textContent = form.name;
+    $('paymentPrice').textContent = currentOrder.amount.toFixed(2);
+    $('paymentOrderNo').textContent = currentOrder.orderId;
+    $('walletAddr').textContent = currentOrder.walletAddress;
+
+    $('finalName').textContent = form.name;
+    $('finalEmail').textContent = form.email;
+    $('finalPhone').textContent = form.phone;
+    $('finalPrice').textContent = currentOrder.amount.toFixed(2);
+    $('finalOrderNo').textContent = currentOrder.orderId;
+    $('successEmail').textContent = form.email;
+
+    const remainSec = Math.max(0, Math.floor((currentOrder.expiresAt - Date.now()) / 1000));
+    startCountdown(remainSec);
+
+    switchOrderStep(2);
+    clearError();
+  } catch (err) {
+    showError(err.message || '创建订单失败，请稍后重试');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '下一步：支付';
+    }
+  }
 }
 
-// ========== 启动倒计时 ==========
+// ========== 倒计时 ==========
 function startCountdown(seconds) {
   clearInterval(countdownInterval);
-  
+
   const update = () => {
+    if (seconds <= 0) {
+      clearInterval(countdownInterval);
+      clearInterval(pollInterval);
+      $('countdownDisplay').textContent = '00:00';
+      $('timerText').textContent = '00:00';
+      showError('订单已过期，请重新下单');
+      setTimeout(() => switchOrderStep(1), 2500);
+      return;
+    }
     const m = String(Math.floor(seconds / 60)).padStart(2, '0');
     const s = String(seconds % 60).padStart(2, '0');
     const display = `${m}:${s}`;
-    
-    document.getElementById('countdownDisplay').textContent = display;
-    document.getElementById('timerText').textContent = display;
-    
-    if (seconds <= 0) {
-      clearInterval(countdownInterval);
-      currentOrder.status = 'expired';
-      saveOrder(currentOrder);
-      showError('订单已过期，请重新下单');
-      setTimeout(() => switchOrderStep(1), 2000);
-      return;
-    }
+    $('countdownDisplay').textContent = display;
+    $('timerText').textContent = display;
     seconds--;
   };
-  
+
   update();
   countdownInterval = setInterval(update, 1000);
 }
@@ -172,84 +227,125 @@ function startCountdown(seconds) {
 // ========== 复制钱包地址 ==========
 async function copyWallet() {
   try {
-    await navigator.clipboard.writeText(CONFIG.wallet);
+    const addr = currentOrder?.walletAddress || CONFIG.wallet;
+    await navigator.clipboard.writeText(addr);
     const btn = event.target;
-    const originalText = btn.textContent;
+    const original = btn.textContent;
     btn.textContent = '✓ 已复制';
-    setTimeout(() => {
-      btn.textContent = originalText;
-    }, 2000);
+    setTimeout(() => { btn.textContent = original; }, 2000);
   } catch {
-    showError('复制失败，请手动复制');
+    showError('复制失败，请手动长按复制');
   }
 }
 
-// ========== 检测支付状态 ==========
+// ========== 提交付款信息 + 检测状态 ==========
 async function checkPaymentStatus() {
-  const btn = document.getElementById('checkPaymentBtn');
+  if (!currentOrder) {
+    showError('订单不存在，请重新下单');
+    return;
+  }
+
+  const btn = $('checkPaymentBtn');
   btn.disabled = true;
-  btn.textContent = '检测中...';
-  
+  btn.textContent = '提交中...';
+
   try {
-    // 模拟支付检测（实际需要集成 TronWeb API）
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // 发送邮件
-    await sendDeliveryEmail(currentOrder);
-    
-    // 标记支付完成
-    currentOrder.status = 'completed';
-    currentOrder.paidAt = new Date().toISOString();
-    saveOrder(currentOrder);
-    
-    clearInterval(countdownInterval);
-    switchOrderStep(3);
-  } catch (error) {
-    showError('检测失败: ' + error.message);
-  } finally {
+    await api('/api/payment-submitted', {
+      method: 'POST',
+      body: JSON.stringify({
+        orderId: currentOrder.orderId,
+        contact: `${currentOrder.name} | ${currentOrder.email} | ${currentOrder.phone}`,
+        amount: currentOrder.amount
+      })
+    });
+
+    btn.textContent = '核对中...';
+    startPolling();
+  } catch (err) {
+    showError(err.message || '提交失败');
     btn.disabled = false;
     btn.textContent = '🔄 检测支付状态';
   }
 }
 
-// ========== 发送发货邮件 ==========
-async function sendDeliveryEmail(order) {
-  // TODO: 集成邮件服务 (SendGrid/Mailgun)
-  console.log('📧 准备发送邮件:', {
-    to: order.email,
-    subject: `【订单 ${order.id}】${order.productName} 已发货`,
-    items: CONFIG.products[order.productId].items
-  });
-  
-  // 暂时返回成功（等文件准备好后集成真实邮件服务）
-  return Promise.resolve();
+// ========== 轮询订单状态 ==========
+function startPolling() {
+  clearInterval(pollInterval);
+  let tries = 0;
+  const maxTries = 60;
+
+  const poll = async () => {
+    tries++;
+    try {
+      const data = await api(`/api/order-status?orderId=${encodeURIComponent(currentOrder.orderId)}`);
+
+      if (data.status === 'paid') {
+        clearInterval(pollInterval);
+        clearInterval(countdownInterval);
+        await finishDelivery();
+        return;
+      }
+
+      if (data.status === 'expired') {
+        clearInterval(pollInterval);
+        showError('订单已过期');
+        const btn = $('checkPaymentBtn');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 检测支付状态';
+        }
+        return;
+      }
+
+      if (tries >= maxTries) {
+        clearInterval(pollInterval);
+        showError('核对超时，请联系客服 ' + CONFIG.supportTelegram);
+        const btn = $('checkPaymentBtn');
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 检测支付状态';
+        }
+      }
+    } catch (err) {
+      console.warn('轮询失败', err);
+    }
+  };
+
+  poll();
+  pollInterval = setInterval(poll, 5000);
 }
 
-// ========== 保存订单 ==========
-function saveOrder(order) {
-  let orders = [];
+// ========== 完成交付 ==========
+async function finishDelivery() {
   try {
-    const stored = localStorage.getItem('gyx_orders');
-    orders = stored ? JSON.parse(stored) : [];
-  } catch (e) {
-    orders = [];
+    const data = await api(`/api/delivery?orderId=${encodeURIComponent(currentOrder.orderId)}`);
+    switchOrderStep(3);
+
+    if (data.deliveryUrl) {
+      const box = document.querySelector('#orderStep3 .info-box');
+      if (box) {
+        const linkEl = document.createElement('div');
+        linkEl.style.marginTop = '12px';
+        linkEl.innerHTML = `<a href="${data.deliveryUrl}" target="_blank" style="color:#46efc0;font-weight:700;">点击获取资源 →</a>`;
+        box.appendChild(linkEl);
+      }
+    }
+  } catch (err) {
+    switchOrderStep(3);
+    showError('交付链接获取失败，请联系客服 ' + CONFIG.supportTelegram);
+  } finally {
+    const btn = $('checkPaymentBtn');
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '🔄 检测支付状态';
+    }
   }
-  orders.push(order);
-  localStorage.setItem('gyx_orders', JSON.stringify(orders));
-  console.log('✅ 订单已保存:', order);
 }
 
-// ========== 显示错误 ==========
-function showError(msg) {
-  const $error = document.getElementById('orderError');
-  $error.textContent = '❌ ' + msg;
-  $error.classList.add('show');
-  setTimeout(() => {
-    $error.classList.remove('show');
-  }, 5000);
-}
-
-// ========== 清除错误 ==========
-function clearError() {
-  document.getElementById('orderError').classList.remove('show');
-}
+// 暴露给 HTML 调用
+window.openOrder = openOrder;
+window.closeOrder = closeOrder;
+window.switchOrderStep = switchOrderStep;
+window.proceedToPayment = proceedToPayment;
+window.copyWallet = copyWallet;
+window.checkPaymentStatus = checkPaymentStatus;
