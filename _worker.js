@@ -1,6 +1,8 @@
 const CONFIG = {
   walletAddress: "TKfQoN7kZirALGYxMkxU4SoqMWJRqXsh7k",
   network: "TRC20",
+  usdtContract: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+  trongridBase: "https://api.trongrid.io",
 
   // 付款确认后才会返回此链接
   deliveryUrl: "https://globalyouxuan-order.pages.dev/#delivery",
@@ -11,7 +13,10 @@ const CONFIG = {
   orderExpireMinutes: 15,
 
   // 付款提交后，订单最多保留7天
-  orderRetentionSeconds: 7 * 24 * 60 * 60
+  orderRetentionSeconds: 7 * 24 * 60 * 60,
+
+  // 自动检测时最多回溯多少分钟的交易
+  autoCheckLookbackMinutes: 30
 };
 
 export default {
@@ -32,9 +37,10 @@ export default {
         return json(
           {
             ok: true,
-            service: "GlobalYouXuan API V2",
+            service: "GlobalYouXuan API V3 - Auto Confirm",
             network: CONFIG.network,
             walletAddress: CONFIG.walletAddress,
+            autoConfirmEnabled: true,
             orderStorage: Boolean(env.ORDERS),
             telegramConfigured: Boolean(
               env.TELEGRAM_BOT_TOKEN &&
@@ -111,7 +117,8 @@ export default {
           transactionHash: "",
           paymentSubmittedAt: null,
           paidAt: null,
-          deliveredAt: null
+          deliveredAt: null,
+          autoConfirmed: false
         };
 
         await saveOrder(env, order);
@@ -126,7 +133,7 @@ export default {
             `应付金额：${payableAmount.toFixed(2)} USDT`,
             `网络：${CONFIG.network}`,
             `收款地址：${CONFIG.walletAddress}`,
-            "状态：等待付款"
+            "状态：等待付款（已开启自动确认）"
           ].join("\n")
         );
 
@@ -167,7 +174,7 @@ export default {
           );
         }
 
-        const order = await getOrder(env, orderId);
+        let order = await getOrder(env, orderId);
 
         if (!order) {
           return json(
@@ -228,6 +235,9 @@ export default {
 
         await saveOrder(env, order);
 
+        // 提交后立刻尝试一次自动检测
+        order = await tryAutoConfirm(env, order);
+
         await safeNotifyTelegram(
           env,
           [
@@ -235,15 +245,12 @@ export default {
             `订单号：${order.orderId}`,
             `商品：${order.product}`,
             `应付金额：${order.payableAmount.toFixed(2)} USDT`,
-            `客户填写金额：${
-              body.amount
-                ? cleanText(String(body.amount), 30)
-                : "未填写"
-            } USDT`,
             `客户联系方式：${contact || "未填写"}`,
             `交易哈希：${transactionHash || "未填写"}`,
             `网络：${order.network}`,
-            "状态：等待管理员核对到账"
+            order.status === "paid"
+              ? "状态：已自动确认到账 ✅"
+              : "状态：正在自动检测链上到账..."
           ].join("\n")
         );
 
@@ -251,15 +258,18 @@ export default {
           {
             ok: true,
             orderId: order.orderId,
-            status: "checking",
-            message: "付款信息已提交，正在核对到账"
+            status: order.status,
+            message:
+              order.status === "paid"
+                ? "已自动确认到账"
+                : "付款信息已提交，正在自动核对到账"
           },
           200,
           corsHeaders
         );
       }
 
-      // 查询订单状态
+      // 查询订单状态（带自动确认）
       if (
         url.pathname === "/api/order-status" &&
         request.method === "GET"
@@ -281,7 +291,7 @@ export default {
           );
         }
 
-        const order = await getOrder(env, orderId);
+        let order = await getOrder(env, orderId);
 
         if (!order) {
           return json(
@@ -294,12 +304,18 @@ export default {
           );
         }
 
+        // 过期处理
         if (
           Date.now() > order.expiresAt &&
-          order.status === "pending"
+          (order.status === "pending" || order.status === "checking")
         ) {
           order.status = "expired";
           await saveOrder(env, order);
+        }
+
+        // 核心：如果还没付，就自动检测链上
+        if (order.status === "pending" || order.status === "checking") {
+          order = await tryAutoConfirm(env, order);
         }
 
         return json(
@@ -311,14 +327,15 @@ export default {
             network: order.network,
             status: order.status,
             expiresAt: order.expiresAt,
-            paidAt: order.paidAt
+            paidAt: order.paidAt,
+            autoConfirmed: Boolean(order.autoConfirmed)
           },
           200,
           corsHeaders
         );
       }
 
-      // 管理员确认到账
+      // 管理员确认到账（保留手动兜底）
       if (
         url.pathname === "/api/admin/confirm-payment" &&
         request.method === "POST"
@@ -355,6 +372,7 @@ export default {
 
         order.status = "paid";
         order.paidAt = Date.now();
+        order.autoConfirmed = false;
 
         if (body.transactionHash || body.txid) {
           order.transactionHash = cleanText(
@@ -368,7 +386,7 @@ export default {
         await safeNotifyTelegram(
           env,
           [
-            "✅ 管理员已确认到账",
+            "✅ 管理员已手动确认到账",
             `订单号：${order.orderId}`,
             `商品：${order.product}`,
             `金额：${order.payableAmount.toFixed(2)} USDT`,
@@ -410,7 +428,7 @@ export default {
           );
         }
 
-        const order = await getOrder(env, orderId);
+        let order = await getOrder(env, orderId);
 
         if (!order) {
           return json(
@@ -423,6 +441,11 @@ export default {
           );
         }
 
+        // 交付前再尝试一次自动确认
+        if (order.status === "pending" || order.status === "checking") {
+          order = await tryAutoConfirm(env, order);
+        }
+
         if (order.status !== "paid") {
           return json(
             {
@@ -431,7 +454,7 @@ export default {
               status: order.status,
               message:
                 order.status === "checking"
-                  ? "付款正在核对，请稍后刷新"
+                  ? "付款正在自动核对，请稍后刷新"
                   : "订单尚未确认付款"
             },
             403,
@@ -451,7 +474,8 @@ export default {
               `商品：${order.product}`,
               `交付时间：${new Date(
                 order.deliveredAt
-              ).toISOString()}`
+              ).toISOString()}`,
+              order.autoConfirmed ? "确认方式：自动链上确认" : "确认方式：手动"
             ].join("\n")
           );
         }
@@ -484,7 +508,7 @@ export default {
         return env.ASSETS.fetch(request);
       }
 
-      return new Response("GlobalYouXuan API V2", {
+      return new Response("GlobalYouXuan API V3 - Auto Confirm Enabled", {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8"
@@ -520,6 +544,108 @@ export default {
     }
   }
 };
+
+/**
+ * 核心：尝试自动确认到账
+ * 查询 TronGrid 最近 USDT 转账，匹配金额 + 时间窗口
+ */
+async function tryAutoConfirm(env, order) {
+  if (order.status === "paid" || order.status === "expired") {
+    return order;
+  }
+
+  try {
+    const match = await findMatchingUsdtTransfer(order);
+
+    if (!match) {
+      return order;
+    }
+
+    // 找到匹配交易 → 自动确认
+    order.status = "paid";
+    order.paidAt = Date.now();
+    order.transactionHash = match.txid;
+    order.autoConfirmed = true;
+
+    await saveOrder(env, order);
+
+    await safeNotifyTelegram(
+      env,
+      [
+        "✅ 自动确认到账成功",
+        `订单号：${order.orderId}`,
+        `商品：${order.product}`,
+        `金额：${order.payableAmount.toFixed(2)} USDT`,
+        `交易哈希：${match.txid}`,
+        `确认时间：${new Date(order.paidAt).toISOString()}`,
+        "状态：已自动付款，可立即发货"
+      ].join("\n")
+    );
+
+    return order;
+  } catch (err) {
+    console.error("自动确认失败:", err?.message || err);
+    return order;
+  }
+}
+
+/**
+ * 查询 TronGrid 获取匹配的 USDT 转账
+ */
+async function findMatchingUsdtTransfer(order) {
+  const address = CONFIG.walletAddress;
+  const targetAmountSun = Math.round(order.payableAmount * 1e6); // USDT 6位小数
+  const minTimestamp = order.createdAt - 60 * 1000; // 允许提前1分钟
+  const maxTimestamp = order.expiresAt + 5 * 60 * 1000; // 过期后多给5分钟缓冲
+
+  const url =
+    `${CONFIG.trongridBase}/v1/accounts/${address}/transactions/trc20` +
+    `?limit=50` +
+    `&contract_address=${CONFIG.usdtContract}` +
+    `&only_to=true` +
+    `&min_timestamp=${minTimestamp}` +
+    `&max_timestamp=${maxTimestamp}` +
+    `&only_confirmed=true`;
+
+  const response = await fetch(url, {
+    headers: {
+      "Accept": "application/json"
+    }
+  });
+
+  if (!response.ok) {
+    console.error("TronGrid 请求失败", response.status);
+    return null;
+  }
+
+  const data = await response.json().catch(() => null);
+  if (!data || !Array.isArray(data.data)) {
+    return null;
+  }
+
+  for (const tx of data.data) {
+    // 只看转入本地址的
+    if (tx.to !== address) continue;
+
+    // 金额必须完全匹配（包含随机尾数）
+    const value = Number(tx.value || 0);
+    if (value !== targetAmountSun) continue;
+
+    // 时间窗口
+    const ts = Number(tx.block_timestamp || 0);
+    if (ts < minTimestamp || ts > maxTimestamp) continue;
+
+    // 找到匹配
+    return {
+      txid: tx.transaction_id || tx.txID || "",
+      amount: value / 1e6,
+      timestamp: ts,
+      from: tx.from || ""
+    };
+  }
+
+  return null;
+}
 
 function getCorsHeaders(request, env) {
   const requestOrigin = request.headers.get("Origin");
