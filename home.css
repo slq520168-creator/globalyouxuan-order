@@ -298,9 +298,16 @@
 .home-page .footer-inner a,
 .home-page .footer-support { color: #70b5ff; }
 .home-page .music-toggle {
-  color: #eef5ff;
-  border-color: rgba(104, 157, 255, .35);
-  background: rgba(4, 14, 36, .92);
+  color: #eef5ff !important;
+  border-color: rgba(104, 157, 255, .4);
+  background: rgba(4, 14, 36, .94);
+  min-width: 110px;
+  white-space: nowrap;
+}
+.home-page .music-toggle.playing {
+  color: #06131d !important;
+  background: #49efc2;
+  border-color: #49efc2;
 }
 
 @media (max-width: 960px) {
