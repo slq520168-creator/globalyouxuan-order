@@ -31,66 +31,83 @@
   });
 
   async function inspectRecovery() {
-    // 1. 先看当前 session
+    const finishOk = () => {
+      setReady(true);
+      try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+    };
+
+    // 已有会话
     try {
       const { data } = await db.auth.getSession();
-      if (data?.session?.user) {
-        setReady(true);
-        return;
-      }
+      if (data?.session?.user) { finishOk(); return; }
     } catch (e) {}
 
-    const hash = window.location.hash || '';
     const search = window.location.search || '';
+    const hash = window.location.hash || '';
     const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
-    const code = params.get('code');
+    // 有些客户端会把 hash 转进 search，一并解析
+    const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
 
-    // 2. PKCE：URL 带 ?code= 时交换会话
+    const code = params.get('code') || hashParams.get('code');
+    const tokenHash = params.get('token_hash') || hashParams.get('token_hash');
+    const type = params.get('type') || hashParams.get('type') || 'recovery';
+    const accessToken = hashParams.get('access_token') || params.get('access_token');
+    const refreshToken = hashParams.get('refresh_token') || params.get('refresh_token');
+
+    // PKCE code
     if (code) {
       try {
         const { data, error } = await db.auth.exchangeCodeForSession(code);
-        if (!error && (data?.session?.user || data?.user)) {
-          setReady(true);
-          history.replaceState(null, '', window.location.pathname);
-          return;
-        }
-        if (error) {
-          showMessage(error.message || t('resetLinkInvalid'));
-          return;
-        }
+        if (error) throw error;
+        if (data?.session?.user || data?.user) { finishOk(); return; }
       } catch (e) {
-        showMessage(String(e?.message || e) || t('resetLinkInvalid'));
+        showMessage(String(e?.message || e || t('resetLinkInvalid')));
         return;
       }
     }
 
-    // 3. hash token（旧格式）
-    if (hash.includes('access_token') || hash.includes('type=recovery') || hash.includes('refresh_token')) {
-      setTimeout(async () => {
-        try {
-          const retry = await db.auth.getSession();
-          if (retry.data?.session?.user) {
-            setReady(true);
-            history.replaceState(null, '', window.location.pathname + window.location.search);
-            return;
-          }
-        } catch (e) {}
-        showMessage(t('resetLinkInvalid'));
-      }, 1200);
-      return;
+    // token_hash + type=recovery
+    if (tokenHash) {
+      try {
+        const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: type === 'recovery' ? 'recovery' : type });
+        if (error) throw error;
+        if (data?.session?.user || data?.user) { finishOk(); return; }
+      } catch (e) {
+        showMessage(String(e?.message || e || t('resetLinkInvalid')));
+        return;
+      }
     }
 
-    // 4. 再等 onAuthStateChange / 自动解析
-    setTimeout(async () => {
+    // 旧版 hash access_token
+    if (accessToken && refreshToken) {
       try {
-        const retry = await db.auth.getSession();
-        if (retry.data?.session?.user) {
-          setReady(true);
-          return;
+        const { data, error } = await db.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (error) throw error;
+        if (data?.session?.user) { finishOk(); return; }
+      } catch (e) {
+        showMessage(String(e?.message || e || t('resetLinkInvalid')));
+        return;
+      }
+    }
+
+    // 等待 supabase 自动解析
+    let tries = 0;
+    const timer = setInterval(async () => {
+      tries += 1;
+      try {
+        const { data } = await db.auth.getSession();
+        if (data?.session?.user) {
+          clearInterval(timer);
+          finishOk();
         }
       } catch (e) {}
-      showMessage(t('resetLinkInvalid'));
-    }, 2000);
+      if (tries >= 8) {
+        clearInterval(timer);
+        if (!recoveryReady) {
+          showMessage('重置链接无效、已过期，或被邮箱客户端截断。请返回登录页重新发送，并用系统浏览器打开链接。');
+        }
+      }
+    }, 500);
   }
 
   async function submitNewPassword(event) {

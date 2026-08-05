@@ -93,26 +93,46 @@
       const phone = document.getElementById('orderPhone');
       if (phone && i18n?.locale === 'zh-CN') phone.placeholder = '联系电话（选填）';
     });
-    // 密码重置：令牌可能落在首页，强制转到重置页
-    const goResetIfNeeded = (event) => {
-      const path = location.pathname || '';
-      if (path.endsWith('/reset-password.html') || path.endsWith('reset-password.html')) return;
+    // 密码重置：链接常先落到首页。必须等会话建立后再去重置页，
+    // 且跳转时去掉 code，避免 code 被消费两次导致一直「正在验证」。
+    const path = location.pathname || '';
+    const onResetPage = path.endsWith('/reset-password.html') || path.endsWith('reset-password.html');
+    if (!onResetPage && window.gyxSupabase) {
       const hash = location.hash || '';
       const search = location.search || '';
-      const hasRecovery =
-        event === 'PASSWORD_RECOVERY' ||
+      const hasRecoveryParams =
         hash.includes('type=recovery') ||
         hash.includes('access_token') ||
-        search.includes('type=recovery');
-      if (hasRecovery) {
-        location.replace('reset-password.html' + hash + search);
+        search.includes('type=recovery') ||
+        search.includes('code=') ||
+        search.includes('token_hash=');
+
+      const goResetClean = () => {
+        location.replace('reset-password.html');
+      };
+
+      window.gyxSupabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY' || (session && hasRecoveryParams)) {
+          goResetClean();
+        }
+      });
+
+      if (hasRecoveryParams) {
+        // 给 detectSessionInUrl / exchangeCode 一点时间
+        let tries = 0;
+        const timer = setInterval(async () => {
+          tries += 1;
+          try {
+            const { data } = await window.gyxSupabase.auth.getSession();
+            if (data?.session?.user) {
+              clearInterval(timer);
+              goResetClean();
+            }
+          } catch (e) {}
+          if (tries >= 12) clearInterval(timer);
+        }, 300);
       }
-    };
-    window.gyxSupabase?.auth.onAuthStateChange((event) => {
-      goResetIfNeeded(event);
-    });
-    // 页面加载时也检查一次（避免事件已错过）
-    goResetIfNeeded(null);
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
