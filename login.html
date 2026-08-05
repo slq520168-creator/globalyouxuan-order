@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#06101d">
+  <meta name="robots" content="noindex">
+  <title>会员注册与登录｜全球优选</title>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="shop.html">
+        <span class="brand-mark">GY</span>
+        <span data-i18n="brand">全球优选</span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="shop.html" data-i18n="navShop">方案中心</a>
+        <a href="knowledge.html" data-i18n="navKnowledge">问答资料库</a>
+        <a href="member.html" data-i18n="navMember">会员中心</a>
+      </nav>
+      <div class="header-actions">
+        <select class="language-select" data-language-select aria-label="Language">
+          <option value="zh-CN">中文</option>
+          <option value="en">English</option>
+          <option value="km">ខ្មែរ</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <main class="auth-main">
+    <div class="shell auth-layout">
+      <section class="auth-copy">
+        <p class="eyebrow" data-i18n="brand">全球优选</p>
+        <h1 class="gradient-text" data-i18n="authTitle">会员注册与登录</h1>
+        <p data-i18n="authLead">登录后才能下单，并且只能查看自己的资料和订单。</p>
+        <div class="auth-points" aria-hidden="true">
+          <div class="auth-point"><span>✓</span><div data-i18n="memberLead">只显示当前账号自己的资料、订单和私人资料库。</div></div>
+          <div class="auth-point"><span>✓</span><div data-i18n="browseKnowledge">进入 120 条问答资料库</div></div>
+          <div class="auth-point"><span>✓</span><div>Supabase Auth + RLS</div></div>
+        </div>
+      </section>
+
+      <section class="auth-card">
+        <div class="auth-tabs" role="tablist">
+          <button id="loginTab" class="auth-tab active" type="button" role="tab" aria-selected="true" data-mode="login" data-i18n="loginTab">登录</button>
+          <button id="registerTab" class="auth-tab" type="button" role="tab" aria-selected="false" data-mode="register" data-i18n="registerTab">注册</button>
+        </div>
+
+        <div id="activeSession" class="session-card">
+          <div data-i18n="haveSession">这个浏览器已经登录。</div>
+          <div id="sessionEmail" class="session-email"></div>
+          <div class="modal-actions">
+            <button id="switchAccountButton" class="btn btn-secondary" type="button" data-i18n="useAnother">切换账号</button>
+            <a id="continueButton" class="btn" href="member.html" data-i18n="enterMember">进入会员中心</a>
+          </div>
+        </div>
+
+        <form id="authForm" class="form-stack" novalidate>
+          <div id="displayNameGroup" class="form-group hidden">
+            <label for="displayName" data-i18n="displayName">会员名称</label>
+            <input id="displayName" class="field" type="text" maxlength="80" autocomplete="name"
+              data-i18n-placeholder="displayNamePlaceholder" placeholder="请输入会员名称">
+          </div>
+          <div class="form-group">
+            <label for="authEmail" data-i18n="email">邮箱</label>
+            <input id="authEmail" class="field" type="email" maxlength="254" autocomplete="email"
+              data-i18n-placeholder="emailPlaceholder" placeholder="请输入常用邮箱" required>
+          </div>
+          <div class="form-group">
+            <label for="authPassword" data-i18n="password">密码</label>
+            <input id="authPassword" class="field" type="password" minlength="8" maxlength="72"
+              autocomplete="current-password" data-i18n-placeholder="passwordPlaceholder" placeholder="至少 8 位密码" required>
+          </div>
+          <div id="confirmPasswordGroup" class="form-group hidden">
+            <label for="confirmPassword" data-i18n="confirmPassword">确认密码</label>
+            <input id="confirmPassword" class="field" type="password" minlength="8" maxlength="72"
+              autocomplete="new-password" data-i18n-placeholder="confirmPasswordPlaceholder" placeholder="再次输入密码">
+          </div>
+          <div id="authMessage" class="form-message" aria-live="polite"></div>
+          <button id="authSubmit" class="btn btn-block" type="submit" data-i18n="signIn">登录会员账号</button>
+        </form>
+        <p class="privacy-note" data-i18n="authPrivacy">账户使用 Supabase Auth；密码不会保存到网页代码或订单表。</p>
+      </section>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="i18n.js"></script>
+  <script src="auth.js"></script>
+</body>
+</html>

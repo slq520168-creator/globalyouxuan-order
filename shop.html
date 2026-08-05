@@ -3,285 +3,204 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#0f172a">
-  <title>AI实战资源中心</title>
-  <style>
-    * { box-sizing: border-box; }
-    html, body { margin: 0; min-height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
-    body {
-      color: #fff;
-      background: radial-gradient(circle at 50% 0%, rgba(0,214,170,.20), transparent 35%), 
-                  radial-gradient(circle at 100% 100%, rgba(46,113,255,.18), transparent 38%), 
-                  #07111f;
-      padding: 0;
-    }
-    .container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; min-height: 100vh; }
-    .header { text-align: center; margin-bottom: 30px; padding-top: 20px; }
-    .header h1 { font-size: 28px; margin: 0 0 10px 0; }
-    .header p { color: #9fb0c6; margin: 0; font-size: 14px; }
-    
-    .product-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 30px; }
-    .product-card {
-      padding: 20px;
-      border: 1px solid rgba(255,255,255,.1);
-      border-radius: 15px;
-      background: linear-gradient(145deg, rgba(255,255,255,.09), rgba(255,255,255,.035));
-      cursor: pointer;
-      transition: 0.2s ease;
-    }
-    .product-card:active { transform: scale(.98); border-color: rgba(68,235,190,.55); }
-    .product-card h3 { margin: 0 0 8px 0; font-size: 20px; }
-    .product-emoji { font-size: 32px; margin-bottom: 10px; }
-    .product-desc { color: #a8b6c9; font-size: 13px; margin: 0 0 10px 0; }
-    .product-count { color: #43e7ba; font-size: 12px; font-weight: 600; }
-    .product-price { font-size: 24px; font-weight: bold; color: #46efc0; margin-top: 12px; }
-    .product-action { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.1); }
-    .btn-buy { 
-      width: 100%;
-      padding: 10px;
-      background: linear-gradient(90deg, #46efc0, #55a9ff);
-      border: none;
-      border-radius: 8px;
-      color: #07111f;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    .btn-buy:active { transform: scale(.98); }
-
-    /* 订单模态框 */
-    .modal { position: fixed; inset: 0; display: none; align-items: flex-end; justify-content: center; padding: 20px; background: rgba(0,0,0,.7); backdrop-filter: blur(8px); z-index: 100; }
-    .modal.show { display: flex; }
-    .modal-content { width: 100%; max-width: 560px; padding: 24px; border-radius: 25px; background: #101d2d; border: 1px solid rgba(255,255,255,.12); }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .modal-header h2 { margin: 0; font-size: 24px; }
-    .modal-close { background: none; border: none; color: #9fb0c6; font-size: 24px; cursor: pointer; }
-
-    .steps { display: flex; gap: 10px; margin-bottom: 20px; }
-    .step-btn { flex: 1; padding: 8px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; background: rgba(255,255,255,.05); color: #9fb0c6; cursor: pointer; font-size: 12px; transition: 0.2s; }
-    .step-btn.active { background: #46efc0; color: #07111f; border-color: #46efc0; font-weight: 600; }
-
-    .step-content { display: none; }
-    .step-content.show { display: block; }
-
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 14px; }
-    .form-group input { width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; background: rgba(255,255,255,.05); color: #fff; font-size: 14px; }
-    .form-group input::placeholder { color: rgba(255,255,255,.4); }
-    .form-group input:focus { outline: none; border-color: #46efc0; background: rgba(255,255,255,.08); }
-
-    .payment-info {
-      background: rgba(68,235,190,.1);
-      border: 1px solid rgba(68,235,190,.3);
-      padding: 15px;
-      border-radius: 10px;
-      margin: 15px 0;
-      font-size: 13px;
-    }
-    .wallet-address {
-      background: rgba(0,0,0,.3);
-      padding: 12px;
-      border-radius: 8px;
-      word-break: break-all;
-      font-family: monospace;
-      margin: 10px 0;
-      position: relative;
-    }
-    .copy-btn { position: absolute; right: 8px; top: 8px; padding: 4px 8px; background: #46efc0; color: #07111f; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: 600; }
-
-    .countdown { font-size: 32px; font-weight: bold; color: #ff6b6b; text-align: center; margin: 20px 0; }
-    .countdown-label { text-align: center; color: #9fb0c6; font-size: 12px; margin-bottom: 10px; }
-
-    .action-btn { 
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background: linear-gradient(90deg, #46efc0, #55a9ff);
-      color: #07111f;
-      font-weight: 700;
-      cursor: pointer;
-      font-size: 14px;
-      margin-top: 10px;
-    }
-    .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .action-btn.secondary { background: rgba(255,255,255,.1); color: #fff; }
-
-    .success-content { text-align: center; }
-    .success-icon { font-size: 64px; margin: 20px 0; }
-    .success-text { color: #a8b6c9; line-height: 1.8; margin: 20px 0; }
-
-    .error-msg { color: #ff6b6b; font-size: 13px; margin-top: 10px; padding: 10px; background: rgba(255,107,107,.1); border-radius: 8px; display: none; }
-    .error-msg.show { display: block; }
-
-    .info-box {
-      background: rgba(68,235,190,.08);
-      border: 1px solid rgba(68,235,190,.2);
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      color: #a8b6c9;
-      line-height: 1.6;
-      margin: 15px 0;
-    }
-
-    @media (max-width: 480px) {
-      .container { padding: 15px; }
-      .header h1 { font-size: 24px; }
-    }
-  </style>
+  <meta name="theme-color" content="#06101d">
+  <meta name="description" content="全球优选 AI 实战资源、会员订单与问答资料库">
+  <title>全球优选｜AI 实战资源中心</title>
+  <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<div class="container">
-  <div class="header">
-    <h1>📚 AI实战资源中心</h1>
-    <p>精选资源，即刻下载</p>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="shop.html" aria-label="Global Youxuan">
+        <span class="brand-mark">GY</span>
+        <span data-i18n="brand">全球优选</span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="shop.html" aria-current="page" data-i18n="navShop">方案中心</a>
+        <a href="knowledge.html" data-i18n="navKnowledge">问答资料库</a>
+        <a href="member.html" data-i18n="navMember">会员中心</a>
+      </nav>
+      <div class="header-actions">
+        <select class="language-select" data-language-select aria-label="Language">
+          <option value="zh-CN">中文</option>
+          <option value="en">English</option>
+          <option value="km">ខ្មែរ</option>
+        </select>
+        <a id="accountLink" class="btn btn-secondary" href="login.html" data-i18n="login">登录</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="shell hero-grid">
+        <div>
+          <p class="eyebrow" data-i18n="shopEyebrow">真实会员 · 真实订单 · 数据库资料</p>
+          <h1 class="gradient-text" data-i18n="shopTitle">AI 实战资源与服务中心</h1>
+          <p class="hero-lead" data-i18n="shopLead">按需求查资料、选择方案、登录下单，并在会员中心查看自己的订单和资料。</p>
+          <div class="hero-actions">
+            <a class="btn" href="knowledge.html" data-i18n="browseKnowledge">进入 120 条问答资料库</a>
+            <a class="btn btn-secondary" href="member.html" data-i18n="viewMember">查看会员中心</a>
+          </div>
+        </div>
+
+        <aside class="hero-card">
+          <h2 class="search-card-label" data-i18n="quickSearchTitle">先说你想解决什么问题</h2>
+          <p class="search-card-copy" data-i18n="quickSearchLead">搜索全部数据库问答和你自己保存的资料。</p>
+          <form id="quickSearchForm" class="search-row">
+            <input id="quickSearchInput" class="field" type="search" maxlength="160" autocomplete="off"
+              data-i18n-placeholder="quickSearchPlaceholder" placeholder="例如：AI 视频、网站建设、自动回复、营销获客">
+            <button class="btn" type="submit" data-i18n="search">搜索资料</button>
+          </form>
+          <div class="hero-stats">
+            <div class="stat"><strong>120</strong><span data-i18n="statAnswers">数据库问答</span></div>
+            <div class="stat"><strong>4</strong><span data-i18n="statModules">实战模块</span></div>
+            <div class="stat"><strong>3</strong><span data-i18n="statLanguages">网站语言</span></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="section" id="solutions">
+      <div class="shell">
+        <div class="section-head">
+          <div>
+            <h2 data-i18n="solutionsTitle">选择实战模块</h2>
+            <p data-i18n="solutionsLead">价格和方案从数据库实时读取，订单归属于当前登录会员。</p>
+          </div>
+        </div>
+
+        <div class="category-grid" id="categoryGrid">
+          <button class="category-card active" type="button" data-category="work">
+            <span class="category-icon">💼</span>
+            <h3 data-i18n="catWork">AI 办公</h3>
+            <p data-i18n="catWorkDesc">办公提效、知识管理与企业助手</p>
+            <span class="category-meta" data-count-for="work">—</span>
+          </button>
+          <button class="category-card" type="button" data-category="creation">
+            <span class="category-icon">🎨</span>
+            <h3 data-i18n="catCreation">AI 创作</h3>
+            <p data-i18n="catCreationDesc">内容、图片、视频与数字资料</p>
+            <span class="category-meta" data-count-for="creation">—</span>
+          </button>
+          <button class="category-card" type="button" data-category="business">
+            <span class="category-icon">🚀</span>
+            <h3 data-i18n="catBusiness">AI 商业</h3>
+            <p data-i18n="catBusinessDesc">网站、品牌、营销与商业系统</p>
+            <span class="category-meta" data-count-for="business">—</span>
+          </button>
+          <button class="category-card" type="button" data-category="automation">
+            <span class="category-icon">⚙️</span>
+            <h3 data-i18n="catAutomation">AI 自动化</h3>
+            <p data-i18n="catAutomationDesc">工作流、通知、同步与智能执行</p>
+            <span class="category-meta" data-count-for="automation">—</span>
+          </button>
+        </div>
+
+        <div class="plans-area" id="plansArea">
+          <div id="planGrid" class="plan-grid" aria-live="polite">
+            <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell" data-i18n="footer">全球优选 · 安全会员与数字交付</div>
+  </footer>
+
+  <div id="orderModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <h2 id="orderModalTitle" data-i18n="checkoutTitle">确认订单</h2>
+          <p data-i18n="checkoutAccount">订单将保存到你的会员账号</p>
+        </div>
+        <button id="closeOrderButton" class="icon-btn" type="button" aria-label="Close">✕</button>
+      </div>
+
+      <div class="modal-product">
+        <div>
+          <h3 id="orderProductName">—</h3>
+          <p id="orderProductDescription">—</p>
+        </div>
+        <div class="modal-price"><span id="orderProductPrice">—</span> <small>USDT</small></div>
+      </div>
+
+      <section id="orderStepDetails" class="modal-step active">
+        <form id="orderDetailsForm" class="form-stack">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="orderName" data-i18n="name">姓名</label>
+              <input id="orderName" class="field" type="text" maxlength="120" autocomplete="name"
+                data-i18n-placeholder="namePlaceholder" placeholder="请输入姓名" required>
+            </div>
+            <div class="form-group">
+              <label for="orderPhone" data-i18n="phone">电话</label>
+              <input id="orderPhone" class="field" type="tel" maxlength="40" autocomplete="tel"
+                data-i18n-placeholder="phonePlaceholder" placeholder="请输入联系电话" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="orderEmail" data-i18n="email">邮箱</label>
+            <input id="orderEmail" class="field" type="email" maxlength="254" autocomplete="email"
+              data-i18n-placeholder="emailPlaceholder" placeholder="请输入常用邮箱" required>
+          </div>
+          <div id="orderFormMessage" class="form-message" aria-live="polite"></div>
+          <div class="modal-actions">
+            <button id="cancelOrderButton" class="btn btn-secondary" type="button" data-i18n="cancel">取消</button>
+            <button id="createOrderButton" class="btn" type="submit" data-i18n="createOrder">创建真实订单</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="orderStepPayment" class="modal-step">
+        <div class="order-summary">
+          <div class="summary-row"><span data-i18n="orderNo">订单号</span><strong id="paymentOrderNo">—</strong></div>
+          <div class="summary-row"><span data-i18n="amount">应付金额</span><strong><span id="paymentAmount">—</span> USDT</strong></div>
+          <div class="summary-row"><span data-i18n="network">网络</span><strong id="paymentNetwork">USDT-TRC20</strong></div>
+        </div>
+        <div class="form-group">
+          <label data-i18n="wallet">收款地址</label>
+          <div class="wallet-box">
+            <span id="paymentWallet">—</span>
+            <button id="copyWalletButton" class="btn btn-small" type="button" data-i18n="copy">复制</button>
+          </div>
+        </div>
+        <p class="payment-note" data-i18n="payHelp">请按显示的精确金额转账；完成后粘贴 TXID，系统会通过链上数据核验。</p>
+        <form id="paymentForm" class="form-stack">
+          <div class="form-group">
+            <label for="paymentTxid" data-i18n="txid">交易哈希 TXID</label>
+            <input id="paymentTxid" class="field" type="text" maxlength="64" autocapitalize="characters" autocomplete="off"
+              data-i18n-placeholder="txidPlaceholder" placeholder="粘贴 64 位 TRON 交易哈希">
+          </div>
+          <div id="paymentMessage" class="form-message" aria-live="polite"></div>
+          <div class="modal-actions">
+            <button id="paymentBackButton" class="btn btn-secondary" type="button" data-i18n="back">返回</button>
+            <button id="submitPaymentButton" class="btn" type="submit" data-i18n="submitPayment">提交并核验付款</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="orderStepSuccess" class="modal-step success-view">
+        <div class="success-icon">✓</div>
+        <h3 data-i18n="paymentSuccess">付款已确认</h3>
+        <p id="successCopy"></p>
+        <div class="modal-actions">
+          <button id="successCloseButton" class="btn btn-secondary" type="button" data-i18n="close">关闭</button>
+          <a class="btn" href="member.html#orders" data-i18n="goMemberOrders">查看我的订单</a>
+        </div>
+      </section>
+    </div>
   </div>
 
-  <div class="product-grid">
-    <div class="product-card" onclick="openOrder('office')">
-      <div class="product-emoji">💼</div>
-      <h3>AI办公</h3>
-      <p class="product-desc">高效办公，提升工作效率</p>
-      <p class="product-count">6个资源</p>
-      <div class="product-price">¥9.9</div>
-      <div class="product-action">
-        <button class="btn-buy">进入购买</button>
-      </div>
-    </div>
+  <button id="musicToggle" class="music-toggle" type="button" aria-pressed="false" data-i18n="musicOff">♫ 轻音乐</button>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <div class="product-card" onclick="openOrder('creation')">
-      <div class="product-emoji">🎨</div>
-      <h3>AI创作</h3>
-      <p class="product-desc">从图片到视频，一站式创作</p>
-      <p class="product-count">8个资源</p>
-      <div class="product-price">¥19.99</div>
-      <div class="product-action">
-        <button class="btn-buy">进入购买</button>
-      </div>
-    </div>
-
-    <div class="product-card" onclick="openOrder('business')">
-      <div class="product-emoji">🚀</div>
-      <h3>AI商业</h3>
-      <p class="product-desc">打造自己的AI商业系统</p>
-      <p class="product-count">10个资源</p>
-      <div class="product-price">¥29.99</div>
-      <div class="product-action">
-        <button class="btn-buy">进入购买</button>
-      </div>
-    </div>
-
-    <div class="product-card" onclick="openOrder('automation')">
-      <div class="product-emoji">⚙️</div>
-      <h3>AI自动化</h3>
-      <p class="product-desc">让AI帮你自动完成工作</p>
-      <p class="product-count">8个资源</p>
-      <div class="product-price">¥19.99</div>
-      <div class="product-action">
-        <button class="btn-buy">进入购买</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 订单模态框 -->
-<div class="modal" id="orderModal" onclick="if(event.target.id==='orderModal')closeOrder()">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2 id="modalTitle">💼 AI办公</h2>
-      <button class="modal-close" onclick="closeOrder()">✕</button>
-    </div>
-
-    <div class="steps">
-      <button class="step-btn active" onclick="switchOrderStep(1)">1️⃣ 信息</button>
-      <button class="step-btn" onclick="switchOrderStep(2)">2️⃣ 支付</button>
-      <button class="step-btn" onclick="switchOrderStep(3)">3️⃣ 完成</button>
-    </div>
-
-    <!-- 第一步：收集信息 -->
-    <div id="orderStep1" class="step-content show">
-      <div class="form-group">
-        <label>姓名 *</label>
-        <input id="orderName" type="text" placeholder="请输入姓名">
-      </div>
-      <div class="form-group">
-        <label>邮箱 *</label>
-        <input id="orderEmail" type="email" placeholder="请输入邮箱（重要，用于发货）">
-      </div>
-      <div class="form-group">
-        <label>电话 *</label>
-        <input id="orderPhone" type="tel" placeholder="请输入电话（便于后期服务）">
-      </div>
-      <button class="action-btn" onclick="proceedToPayment()">下一步：支付</button>
-    </div>
-
-    <!-- 第二步：支付 -->
-    <div id="orderStep2" class="step-content">
-      <div class="info-box">
-        <div>👤 <strong id="paymentName">-</strong></div>
-        <div>💰 金额：<strong id="paymentPrice">-</strong> USDT</div>
-        <div style="font-family: monospace; font-size: 11px; word-break: break-all;">📋 订单号：<strong id="paymentOrderNo">-</strong></div>
-      </div>
-
-      <div class="payment-info">
-        <div style="color: #43e7ba; font-weight: 600; margin-bottom: 10px;">💳 支付钱包地址</div>
-        <div class="wallet-address">
-          <span id="walletAddr">TKfQoN7kZirALGYxMkxU4SoqMWJRqXsh7k</span>
-          <button class="copy-btn" onclick="copyWallet()">复制</button>
-        </div>
-        <div style="margin-top: 10px; color: #9fb0c6;">
-          🔗 网络：USDT-TRC20<br>
-          ⏰ 请在 <span id="timerText">15:00</span> 内完成支付
-        </div>
-      </div>
-
-      <div class="countdown-label">⏱️ 剩余时间</div>
-      <div class="countdown" id="countdownDisplay">15:00</div>
-
-      <div class="info-box">
-        <strong style="color: #43e7ba;">✓ 支付步骤</strong><br>
-        1. 复制上面的钱包地址<br>
-        2. 用 Tronlink、币安钱包转账 USDT<br>
-        3. 支付后自动检测，邮件发送下载链接<br>
-        4. 问题联系：客服@qqyousubot
-      </div>
-
-      <button class="action-btn" id="checkPaymentBtn" onclick="checkPaymentStatus()">🔄 检测支付状态</button>
-      <button class="action-btn secondary" onclick="switchOrderStep(1)">← 返回修改</button>
-    </div>
-
-    <!-- 第三步：完成 -->
-    <div id="orderStep3" class="step-content">
-      <div class="success-content">
-        <div class="success-icon">✅</div>
-        <h3 style="color: #46efc0; margin: 0;">支付成功！</h3>
-        <div class="success-text">
-          感谢您的购买！<br>
-          下载链接已发送到您的邮箱：<br>
-          <strong id="successEmail">-</strong>
-        </div>
-        <div class="info-box">
-          📧 请检查邮箱（包括垃圾箱）<br>
-          📥 点击邮件中的下载链接获取资源<br>
-          💬 如有问题可联系客服
-        </div>
-        <div class="info-box" style="text-align: left; font-size: 12px;">
-          <div style="font-weight: 600; margin-bottom: 8px;">📋 订单详情</div>
-          <div>姓名：<strong id="finalName">-</strong></div>
-          <div>邮箱：<strong id="finalEmail">-</strong></div>
-          <div>电话：<strong id="finalPhone">-</strong></div>
-          <div>金额：<strong id="finalPrice">-</strong> USDT</div>
-          <div style="font-family: monospace; font-size: 11px; word-break: break-all;">订单号：<strong id="finalOrderNo">-</strong></div>
-        </div>
-        <button class="action-btn" onclick="closeOrder()">关闭</button>
-      </div>
-    </div>
-
-    <div class="error-msg" id="orderError"></div>
-  </div>
-</div>
-
-<script src="order.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="i18n.js"></script>
+  <script src="order.js"></script>
 </body>
 </html>

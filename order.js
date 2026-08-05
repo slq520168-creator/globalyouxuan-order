@@ -1,351 +1,517 @@
-// ========== 配置 ==========
-const CONFIG = {
-  apiBase: 'https://globalyouxuan-order.pages.dev',
-  products: {
-    office: {
-      id: 'office',
-      name: 'AI办公',
-      emoji: '💼',
-      price: 9.9,
-      count: '6个资源',
-      items: ['ChatGPT办公实战', 'AI文案创作', 'Excel智能办公', 'PPT一键生成', '数据分析', '办公提示词库']
+(() => {
+  'use strict';
+
+  const db = window.gyxSupabase;
+  const i18n = window.GYXI18N;
+  const config = window.GYX_CONFIG;
+  if (!db || !i18n) return;
+
+  const categoryByPrefix = {
+    web: 'business', automation: 'automation', ai: 'work', digital: 'creation'
+  };
+  const productLabels = {
+    en: {
+      'web-photo': 'Personal Gallery', 'web-merchant': 'Merchant Showcase', 'web-brand': 'Brand Website',
+      'web-enterprise': 'Enterprise System', 'automation-trial': 'Automation Trial',
+      'automation-small': 'Small Business Automation', 'automation-team': 'Team Collaboration',
+      'automation-enterprise': 'Enterprise Automation', 'ai-trial': 'AI Trial',
+      'ai-content': 'Content Marketing', 'ai-office': 'Enterprise Office', 'ai-enterprise': 'Enterprise AI',
+      'digital-trial': 'Trial Pack', 'digital-study': 'Study Pack', 'digital-expert': 'Expert Pack',
+      'digital-private': 'Private Coaching'
     },
-    creation: {
-      id: 'creation',
-      name: 'AI创作',
-      emoji: '🎨',
-      price: 19.99,
-      count: '8个资源',
-      items: ['AI绘画', 'AI视频生成', 'AI剪辑', 'AI数字人', 'AI配音', 'AI图片修复', '爆款内容制作', '创作提示词大全']
-    },
-    business: {
-      id: 'business',
-      name: 'AI商业',
-      emoji: '🚀',
-      price: 29.99,
-      count: '10个资源',
-      items: ['大模型实战教程', 'AI智能体开发', 'AI网站建设', 'AI知识库搭建', 'AI客服系统', 'AI营销获客', 'AI销售自动化', 'AI项目实战', 'AI创业案例', '企业级AI解决方案']
-    },
-    automation: {
-      id: 'automation',
-      name: 'AI自动化',
-      emoji: '⚙️',
-      price: 19.99,
-      count: '8个资源',
-      items: ['AI工作流', '多Agent协同', '自动内容生成', '自动发布系统', '自动数据采集', '自动回复系统', '自动执行任务', '企业级自动化实战']
+    km: {
+      'web-photo': 'វេបសាយអាល់ប៊ុមផ្ទាល់ខ្លួន', 'web-merchant': 'វេបសាយបង្ហាញអាជីវករ',
+      'web-brand': 'វេបសាយម៉ាក', 'web-enterprise': 'ប្រព័ន្ធសហគ្រាស',
+      'automation-trial': 'សាកល្បងស្វ័យប្រវត្តិកម្ម', 'automation-small': 'ស្វ័យប្រវត្តិកម្មអាជីវកម្មតូច',
+      'automation-team': 'សហការក្រុម', 'automation-enterprise': 'ស្វ័យប្រវត្តិកម្មសហគ្រាស',
+      'ai-trial': 'សាកល្បង AI', 'ai-content': 'ទីផ្សារមាតិកា', 'ai-office': 'ការិយាល័យសហគ្រាស',
+      'ai-enterprise': 'AI សហគ្រាស', 'digital-trial': 'កញ្ចប់សាកល្បង', 'digital-study': 'កញ្ចប់សិក្សា',
+      'digital-expert': 'កញ្ចប់ជំនាញ', 'digital-private': 'ការបង្រៀនផ្ទាល់ខ្លួន'
     }
-  },
-  wallet: 'TKfQoN7kZirALGYxMkxU4SoqMWJRqXsh7k',
-  network: 'USDT-TRC20',
-  timeoutMinutes: 15,
-  supportTelegram: '@qqyousubot'
-};
+  };
 
-// ========== 状态 ==========
-let currentProduct = null;
-let currentOrder = null;
-let countdownInterval = null;
-let pollInterval = null;
+  let products = [];
+  let selectedCategory = new URLSearchParams(location.search).get('category') || 'work';
+  let currentProduct = null;
+  let currentOrder = null;
+  let currentUser = null;
+  let paymentPoll = null;
 
-// ========== 工具函数 ==========
-function $(id) {
-  return document.getElementById(id);
-}
+  const $ = (id) => document.getElementById(id);
+  const t = (key, vars) => i18n.t(key, vars);
 
-function showError(msg) {
-  const el = $('orderError');
-  if (!el) return;
-  el.textContent = '❌ ' + msg;
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 6000);
-}
-
-function clearError() {
-  const el = $('orderError');
-  if (el) el.classList.remove('show');
-}
-
-async function api(path, options = {}) {
-  const url = CONFIG.apiBase + path;
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-    ...options
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.ok === false) {
-    throw new Error(data.message || ('请求失败 ' + res.status));
-  }
-  return data;
-}
-
-// ========== 打开订单弹窗 ==========
-function openOrder(productId) {
-  currentProduct = CONFIG.products[productId];
-  if (!currentProduct) return;
-
-  currentOrder = null;
-  clearInterval(countdownInterval);
-  clearInterval(pollInterval);
-
-  $('modalTitle').textContent = `${currentProduct.emoji} ${currentProduct.name}`;
-  $('orderModal').classList.add('show');
-  switchOrderStep(1);
-  clearError();
-
-  $('orderName').value = '';
-  $('orderEmail').value = '';
-  $('orderPhone').value = '';
-}
-
-// ========== 关闭订单弹窗 ==========
-function closeOrder() {
-  $('orderModal').classList.remove('show');
-  clearInterval(countdownInterval);
-  clearInterval(pollInterval);
-  currentOrder = null;
-}
-
-// ========== 切换步骤 ==========
-function switchOrderStep(step) {
-  document.querySelectorAll('.step-content').forEach(el => el.classList.remove('show'));
-  document.querySelectorAll('.step-btn').forEach(el => el.classList.remove('active'));
-
-  const content = $(`orderStep${step}`);
-  if (content) content.classList.add('show');
-  const btns = document.querySelectorAll('.step-btn');
-  if (btns[step - 1]) btns[step - 1].classList.add('active');
-}
-
-// ========== 验证表单 ==========
-function validateForm() {
-  const name = $('orderName').value.trim();
-  const email = $('orderEmail').value.trim();
-  const phone = $('orderPhone').value.trim();
-
-  if (!name) {
-    showError('请输入姓名');
-    return null;
-  }
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showError('请输入正确的邮箱');
-    return null;
-  }
-  if (!phone || phone.length < 7) {
-    showError('请输入正确的电话');
-    return null;
-  }
-  return { name, email, phone };
-}
-
-// ========== 创建订单并进入支付 ==========
-async function proceedToPayment() {
-  const form = validateForm();
-  if (!form) return;
-
-  const btn = document.querySelector('#orderStep1 .action-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '创建订单中...';
+  function productCategory(productId) {
+    return categoryByPrefix[String(productId).split('-')[0]] || 'work';
   }
 
-  try {
-    const data = await api('/api/create-order', {
-      method: 'POST',
-      body: JSON.stringify({
-        product: currentProduct.name,
-        amount: currentProduct.price
-      })
-    });
+  function localizedProductName(product) {
+    const locale = i18n.locale;
+    if (locale === 'zh-CN') return product.product_name;
+    return productLabels[locale]?.[product.id] || product.product_name;
+  }
 
-    currentOrder = {
-      orderId: data.orderId,
-      product: data.product,
-      amount: data.amount,
-      baseAmount: currentProduct.price,
-      walletAddress: data.walletAddress || CONFIG.wallet,
-      network: data.network || CONFIG.network,
-      expiresAt: data.expiresAt,
-      status: data.status,
-      name: form.name,
-      email: form.email,
-      phone: form.phone
-    };
+  function localizedDescription(product) {
+    if (i18n.locale === 'zh-CN') return product.description || '';
+    const category = productCategory(product.id);
+    return t({ work: 'catWorkDesc', creation: 'catCreationDesc', business: 'catBusinessDesc', automation: 'catAutomationDesc' }[category]);
+  }
 
-    $('paymentName').textContent = form.name;
-    $('paymentPrice').textContent = currentOrder.amount.toFixed(2);
-    $('paymentOrderNo').textContent = currentOrder.orderId;
-    $('walletAddr').textContent = currentOrder.walletAddress;
+  function formatPrice(value) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number.toFixed(2) : String(value || '0.00');
+  }
 
-    $('finalName').textContent = form.name;
-    $('finalEmail').textContent = form.email;
-    $('finalPhone').textContent = form.phone;
-    $('finalPrice').textContent = currentOrder.amount.toFixed(2);
-    $('finalOrderNo').textContent = currentOrder.orderId;
-    $('successEmail').textContent = form.email;
+  function showToast(message, isError = false) {
+    const toast = $('toast');
+    if (!toast) return;
+    toast.textContent = message;
+    toast.className = `toast show${isError ? ' error' : ''}`;
+    clearTimeout(showToast.timer);
+    showToast.timer = setTimeout(() => { toast.className = 'toast'; }, 4200);
+  }
 
-    const remainSec = Math.max(0, Math.floor((currentOrder.expiresAt - Date.now()) / 1000));
-    startCountdown(remainSec);
+  function showMessage(id, message, kind = 'error') {
+    const element = $(id);
+    if (!element) return;
+    element.textContent = message;
+    element.className = `form-message show ${kind}`;
+  }
 
-    switchOrderStep(2);
-    clearError();
-  } catch (err) {
-    showError(err.message || '创建订单失败，请稍后重试');
-  } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '下一步：支付';
+  function clearMessage(id) {
+    const element = $(id);
+    if (!element) return;
+    element.textContent = '';
+    element.className = 'form-message';
+  }
+
+  function errorText(error) {
+    const code = String(error?.code || error?.message || '').toUpperCase();
+    if (code.includes('AUTH') || code.includes('SESSION') || code.includes('JWT')) return t('errorAuth');
+    if (code.includes('OPEN_ORDER')) return t('errorOpenOrder');
+    if (code.includes('RATE')) return t('errorRate');
+    if (code.includes('PAYMENT_DETAILS_MISMATCH')) return t('errorPaymentMismatch');
+    if (code.includes('TXID_ALREADY') || code.includes('DIFFERENT_TXID')) return t('errorTxidUsed');
+    if (code.includes('FETCH') || code.includes('NETWORK')) return t('errorNetwork');
+    return t('errorGeneric');
+  }
+
+  async function syncAccount() {
+    currentUser = await window.gyxGetVerifiedUser();
+    const link = $('accountLink');
+    if (!link) return;
+    if (currentUser) {
+      link.href = 'member.html';
+      link.textContent = t('navMember');
+    } else {
+      link.href = 'login.html';
+      link.textContent = t('login');
     }
   }
-}
 
-// ========== 倒计时 ==========
-function startCountdown(seconds) {
-  clearInterval(countdownInterval);
+  async function loadProducts() {
+    const { data, error } = await db
+      .from('products')
+      .select('id,product_name,product_price,currency,description,sort_order')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true });
 
-  const update = () => {
-    if (seconds <= 0) {
-      clearInterval(countdownInterval);
-      clearInterval(pollInterval);
-      $('countdownDisplay').textContent = '00:00';
-      $('timerText').textContent = '00:00';
-      showError('订单已过期，请重新下单');
-      setTimeout(() => switchOrderStep(1), 2500);
+    if (error) {
+      const grid = $('planGrid');
+      grid.replaceChildren();
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = t('errorNetwork');
+      const retry = document.createElement('button');
+      retry.className = 'btn btn-small';
+      retry.type = 'button';
+      retry.textContent = t('retry');
+      retry.addEventListener('click', loadProducts);
+      empty.append(document.createElement('br'), document.createElement('br'), retry);
+      grid.appendChild(empty);
       return;
     }
-    const m = String(Math.floor(seconds / 60)).padStart(2, '0');
-    const s = String(seconds % 60).padStart(2, '0');
-    const display = `${m}:${s}`;
-    $('countdownDisplay').textContent = display;
-    $('timerText').textContent = display;
-    seconds--;
-  };
 
-  update();
-  countdownInterval = setInterval(update, 1000);
-}
+    products = data || [];
+    updateCategoryCounts();
+    selectCategory(selectedCategory, false);
 
-// ========== 复制钱包地址 ==========
-async function copyWallet() {
-  try {
-    const addr = currentOrder?.walletAddress || CONFIG.wallet;
-    await navigator.clipboard.writeText(addr);
-    const btn = event.target;
-    const original = btn.textContent;
-    btn.textContent = '✓ 已复制';
-    setTimeout(() => { btn.textContent = original; }, 2000);
-  } catch {
-    showError('复制失败，请手动长按复制');
-  }
-}
-
-// ========== 提交付款信息 + 检测状态 ==========
-async function checkPaymentStatus() {
-  if (!currentOrder) {
-    showError('订单不存在，请重新下单');
-    return;
+    const requestedProduct = new URLSearchParams(location.search).get('product');
+    if (requestedProduct && products.some((item) => item.id === requestedProduct)) {
+      selectedCategory = productCategory(requestedProduct);
+      selectCategory(selectedCategory, false);
+      await openOrder(requestedProduct);
+    }
   }
 
-  const btn = $('checkPaymentBtn');
-  btn.disabled = true;
-  btn.textContent = '提交中...';
-
-  try {
-    await api('/api/payment-submitted', {
-      method: 'POST',
-      body: JSON.stringify({
-        orderId: currentOrder.orderId,
-        contact: `${currentOrder.name} | ${currentOrder.email} | ${currentOrder.phone}`,
-        amount: currentOrder.amount
-      })
+  function updateCategoryCounts() {
+    ['work', 'creation', 'business', 'automation'].forEach((category) => {
+      const count = products.filter((product) => productCategory(product.id) === category).length;
+      const element = document.querySelector(`[data-count-for="${category}"]`);
+      if (element) element.textContent = t('planCount', { count });
     });
-
-    btn.textContent = '核对中...';
-    startPolling();
-  } catch (err) {
-    showError(err.message || '提交失败');
-    btn.disabled = false;
-    btn.textContent = '🔄 检测支付状态';
   }
-}
 
-// ========== 轮询订单状态 ==========
-function startPolling() {
-  clearInterval(pollInterval);
-  let tries = 0;
-  const maxTries = 60;
+  function selectCategory(category, scroll = true) {
+    if (!['work', 'creation', 'business', 'automation'].includes(category)) category = 'work';
+    selectedCategory = category;
+    document.querySelectorAll('[data-category]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.category === category);
+    });
+    renderPlans();
+    if (scroll) $('plansArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
-  const poll = async () => {
-    tries++;
+  function renderPlans() {
+    const grid = $('planGrid');
+    if (!grid) return;
+    grid.replaceChildren();
+    const rows = products.filter((product) => productCategory(product.id) === selectedCategory);
+    if (!rows.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = t('noPlans');
+      grid.appendChild(empty);
+      return;
+    }
+
+    rows.forEach((product, index) => {
+      const article = document.createElement('article');
+      article.className = 'plan-card';
+
+      const tag = document.createElement('span');
+      tag.className = 'plan-tag';
+      tag.textContent = `${selectedCategory.toUpperCase()} · ${String(index + 1).padStart(2, '0')}`;
+
+      const heading = document.createElement('h3');
+      heading.textContent = localizedProductName(product);
+
+      const description = document.createElement('p');
+      description.textContent = localizedDescription(product);
+
+      const price = document.createElement('div');
+      price.className = 'price';
+      price.append(document.createTextNode(formatPrice(product.product_price)));
+      const unit = document.createElement('small');
+      unit.textContent = product.currency || 'USDT';
+      price.appendChild(unit);
+
+      const button = document.createElement('button');
+      button.className = 'btn btn-block';
+      button.type = 'button';
+      button.textContent = t('choosePlan');
+      button.addEventListener('click', () => openOrder(product.id));
+
+      article.append(tag, heading, description, price, button);
+      grid.appendChild(article);
+    });
+  }
+
+  async function openOrder(productId) {
+    const product = products.find((item) => item.id === productId);
+    if (!product) return;
+
+    currentUser = await window.gyxGetVerifiedUser();
+    if (!currentUser) {
+      const next = `shop.html?product=${encodeURIComponent(productId)}`;
+      location.href = `login.html?next=${encodeURIComponent(next)}`;
+      return;
+    }
+
+    currentProduct = product;
+    currentOrder = null;
+    clearInterval(paymentPoll);
+    clearMessage('orderFormMessage');
+    clearMessage('paymentMessage');
+    $('paymentTxid').value = '';
+    $('orderProductName').textContent = localizedProductName(product);
+    $('orderProductDescription').textContent = localizedDescription(product);
+    $('orderProductPrice').textContent = formatPrice(product.product_price);
+
+    const { data: profile } = await db
+      .from('profiles')
+      .select('display_name,phone')
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+
+    $('orderName').value = profile?.display_name || currentUser.user_metadata?.display_name || '';
+    $('orderPhone').value = profile?.phone || '';
+    $('orderEmail').value = currentUser.email || '';
+    switchModalStep('details');
+    $('orderModal').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeOrder() {
+    $('orderModal').classList.remove('show');
+    document.body.style.overflow = '';
+    clearInterval(paymentPoll);
+    paymentPoll = null;
+  }
+
+  function switchModalStep(step) {
+    const map = {
+      details: 'orderStepDetails', payment: 'orderStepPayment', success: 'orderStepSuccess'
+    };
+    Object.values(map).forEach((id) => $(id)?.classList.remove('active'));
+    $(map[step])?.classList.add('active');
+  }
+
+  function validateOrderForm() {
+    const name = $('orderName').value.trim();
+    const email = $('orderEmail').value.trim().toLowerCase();
+    const phone = $('orderPhone').value.trim();
+    if (!name) throw new Error('FORM_NAME');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('FORM_EMAIL');
+    if (phone.length < 6) throw new Error('FORM_PHONE');
+    return { name, email, phone };
+  }
+
+  function formErrorText(error) {
+    if (error.message === 'FORM_NAME') return t('errorName');
+    if (error.message === 'FORM_EMAIL') return t('errorEmail');
+    if (error.message === 'FORM_PHONE') return t('errorPhone');
+    return errorText(error);
+  }
+
+  async function createOrder(event) {
+    event.preventDefault();
+    clearMessage('orderFormMessage');
+    let form;
     try {
-      const data = await api(`/api/order-status?orderId=${encodeURIComponent(currentOrder.orderId)}`);
-
-      if (data.status === 'paid') {
-        clearInterval(pollInterval);
-        clearInterval(countdownInterval);
-        await finishDelivery();
-        return;
-      }
-
-      if (data.status === 'expired') {
-        clearInterval(pollInterval);
-        showError('订单已过期');
-        const btn = $('checkPaymentBtn');
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = '🔄 检测支付状态';
-        }
-        return;
-      }
-
-      if (tries >= maxTries) {
-        clearInterval(pollInterval);
-        showError('核对超时，请联系客服 ' + CONFIG.supportTelegram);
-        const btn = $('checkPaymentBtn');
-        if (btn) {
-          btn.disabled = false;
-          btn.textContent = '🔄 检测支付状态';
-        }
-      }
-    } catch (err) {
-      console.warn('轮询失败', err);
+      form = validateOrderForm();
+    } catch (error) {
+      showMessage('orderFormMessage', formErrorText(error));
+      return;
     }
-  };
 
-  poll();
-  pollInterval = setInterval(poll, 5000);
-}
-
-// ========== 完成交付 ==========
-async function finishDelivery() {
-  try {
-    const data = await api(`/api/delivery?orderId=${encodeURIComponent(currentOrder.orderId)}`);
-    switchOrderStep(3);
-
-    if (data.deliveryUrl) {
-      const box = document.querySelector('#orderStep3 .info-box');
-      if (box) {
-        const linkEl = document.createElement('div');
-        linkEl.style.marginTop = '12px';
-        linkEl.innerHTML = `<a href="${data.deliveryUrl}" target="_blank" style="color:#46efc0;font-weight:700;">点击获取资源 →</a>`;
-        box.appendChild(linkEl);
+    const button = $('createOrderButton');
+    button.disabled = true;
+    button.textContent = t('creatingOrder');
+    try {
+      const payload = await window.gyxInvokeFunction('create-order', {
+        product_id: currentProduct.id,
+        customer_name: form.name,
+        customer_email: form.email,
+        customer_phone: form.phone
+      });
+      currentOrder = payload?.order;
+      if (!currentOrder) throw new Error('ORDER_CREATE_FAILED');
+      await db.from('profiles').update({
+        display_name: form.name,
+        phone: form.phone,
+        locale: i18n.locale
+      }).eq('user_id', currentUser.id);
+      showPaymentStep();
+    } catch (error) {
+      const code = String(error.code || error.message || '');
+      if (code.includes('OPEN_ORDER_ALREADY_EXISTS')) {
+        const existing = await loadOpenOrder(currentProduct.id);
+        if (existing) {
+          currentOrder = existing;
+          showMessage('paymentMessage', t('errorOpenOrder'), 'success');
+          showPaymentStep();
+          return;
+        }
       }
-    }
-  } catch (err) {
-    switchOrderStep(3);
-    showError('交付链接获取失败，请联系客服 ' + CONFIG.supportTelegram);
-  } finally {
-    const btn = $('checkPaymentBtn');
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = '🔄 检测支付状态';
+      showMessage('orderFormMessage', errorText(error));
+    } finally {
+      button.disabled = false;
+      button.textContent = t('createOrder');
     }
   }
-}
 
-// 暴露给 HTML 调用
-window.openOrder = openOrder;
-window.closeOrder = closeOrder;
-window.switchOrderStep = switchOrderStep;
-window.proceedToPayment = proceedToPayment;
-window.copyWallet = copyWallet;
-window.checkPaymentStatus = checkPaymentStatus;
+  async function loadOpenOrder(productId) {
+    const { data } = await db
+      .from('orders')
+      .select('id,order_no,product_id,product_name,product_price,payable_amount,currency,network,wallet_address,status,txid,created_at')
+      .eq('product_id', productId)
+      .in('status', ['pending', 'checking'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    return data || null;
+  }
+
+  function showPaymentStep() {
+    $('paymentOrderNo').textContent = currentOrder.order_no;
+    $('paymentAmount').textContent = formatPrice(currentOrder.payable_amount);
+    $('paymentNetwork').textContent = currentOrder.network || config.network;
+    $('paymentWallet').textContent = currentOrder.wallet_address || config.wallet;
+    $('paymentTxid').value = currentOrder.txid || '';
+    switchModalStep('payment');
+  }
+
+  async function copyWallet() {
+    const value = $('paymentWallet').textContent.trim();
+    try {
+      await navigator.clipboard.writeText(value);
+      $('copyWalletButton').textContent = t('copied');
+      setTimeout(() => { $('copyWalletButton').textContent = t('copy'); }, 1700);
+    } catch {
+      showToast(value);
+    }
+  }
+
+  async function submitPayment(event) {
+    event.preventDefault();
+    clearMessage('paymentMessage');
+    const txid = $('paymentTxid').value.trim().toUpperCase();
+    if (!/^[0-9A-F]{64}$/.test(txid)) {
+      showMessage('paymentMessage', t('errorTxid'));
+      return;
+    }
+
+    const button = $('submitPaymentButton');
+    button.disabled = true;
+    button.textContent = t('checkingPayment');
+    try {
+      const result = await window.gyxInvokeFunction('submit-payment', {
+        order_id: currentOrder.id,
+        order_no: currentOrder.order_no,
+        txid
+      });
+      currentOrder.txid = txid;
+      currentOrder.status = result?.status || 'checking';
+      if (['paid', 'delivered'].includes(currentOrder.status)) {
+        showSuccess();
+      } else {
+        showMessage('paymentMessage', t('paymentPending'), 'success');
+        startPaymentPolling();
+      }
+    } catch (error) {
+      showMessage('paymentMessage', errorText(error));
+    } finally {
+      button.disabled = false;
+      button.textContent = t('submitPayment');
+    }
+  }
+
+  function startPaymentPolling() {
+    clearInterval(paymentPoll);
+    let attempts = 0;
+    const check = async () => {
+      attempts += 1;
+      const { data } = await db
+        .from('orders')
+        .select('status,updated_at')
+        .eq('id', currentOrder.id)
+        .maybeSingle();
+      if (data?.status) currentOrder.status = data.status;
+      if (['paid', 'delivered'].includes(currentOrder.status)) {
+        clearInterval(paymentPoll);
+        showSuccess();
+      } else if (['failed', 'expired', 'cancelled'].includes(currentOrder.status) || attempts >= 24) {
+        clearInterval(paymentPoll);
+      }
+    };
+    paymentPoll = setInterval(check, 5000);
+  }
+
+  function showSuccess() {
+    clearInterval(paymentPoll);
+    $('successCopy').textContent = `${t('orderNo')}: ${currentOrder.order_no}`;
+    switchModalStep('success');
+  }
+
+  function setupSearch() {
+    $('quickSearchForm')?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const query = $('quickSearchInput').value.trim();
+      location.href = `knowledge.html${query ? `?q=${encodeURIComponent(query)}` : ''}`;
+    });
+  }
+
+  function setupMusic() {
+    const button = $('musicToggle');
+    if (!button) return;
+    let context = null;
+    let gain = null;
+    let timer = null;
+    let index = 0;
+    let playing = false;
+    const notes = [261.63, 329.63, 392, 523.25, 392, 349.23, 293.66, 329.63];
+
+    const update = () => {
+      button.classList.toggle('playing', playing);
+      button.setAttribute('aria-pressed', String(playing));
+      button.textContent = t(playing ? 'musicOn' : 'musicOff');
+    };
+    const tone = () => {
+      if (!playing || !context || context.state !== 'running') return;
+      const now = context.currentTime;
+      const oscillator = context.createOscillator();
+      const envelope = context.createGain();
+      oscillator.type = index % 2 ? 'sine' : 'triangle';
+      oscillator.frequency.value = notes[index++ % notes.length];
+      envelope.gain.setValueAtTime(.0001, now);
+      envelope.gain.exponentialRampToValueAtTime(.035, now + .08);
+      envelope.gain.exponentialRampToValueAtTime(.0001, now + 1.15);
+      oscillator.connect(envelope);
+      envelope.connect(gain);
+      oscillator.start(now);
+      oscillator.stop(now + 1.2);
+      timer = setTimeout(tone, 1320);
+    };
+    const start = async () => {
+      const AudioEngine = window.AudioContext || window.webkitAudioContext;
+      if (!AudioEngine) return;
+      if (!context) {
+        context = new AudioEngine();
+        gain = context.createGain();
+        gain.gain.value = .36;
+        gain.connect(context.destination);
+      }
+      await context.resume();
+      playing = true;
+      localStorage.setItem('gyx_music_enabled', 'on');
+      update();
+      tone();
+    };
+    const stop = () => {
+      playing = false;
+      clearTimeout(timer);
+      localStorage.setItem('gyx_music_enabled', 'off');
+      if (context?.state === 'running') context.suspend();
+      update();
+    };
+    button.addEventListener('click', async () => { playing ? stop() : await start(); });
+    update();
+  }
+
+  function bindEvents() {
+    document.querySelectorAll('[data-category]').forEach((button) => {
+      button.addEventListener('click', () => selectCategory(button.dataset.category));
+    });
+    $('closeOrderButton')?.addEventListener('click', closeOrder);
+    $('cancelOrderButton')?.addEventListener('click', closeOrder);
+    $('successCloseButton')?.addEventListener('click', closeOrder);
+    $('orderDetailsForm')?.addEventListener('submit', createOrder);
+    $('paymentForm')?.addEventListener('submit', submitPayment);
+    $('copyWalletButton')?.addEventListener('click', copyWallet);
+    $('paymentBackButton')?.addEventListener('click', () => switchModalStep('details'));
+    $('orderModal')?.addEventListener('click', (event) => { if (event.target === $('orderModal')) closeOrder(); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeOrder(); });
+    setupSearch();
+    setupMusic();
+  }
+
+  window.addEventListener('gyx:languagechange', async (event) => {
+    updateCategoryCounts();
+    renderPlans();
+    await syncAccount();
+    if (currentProduct) {
+      $('orderProductName').textContent = localizedProductName(currentProduct);
+      $('orderProductDescription').textContent = localizedDescription(currentProduct);
+    }
+    const musicButton = $('musicToggle');
+    if (musicButton) musicButton.textContent = t(musicButton.classList.contains('playing') ? 'musicOn' : 'musicOff');
+    if (currentUser) {
+      db.from('profiles').update({ locale: event.detail.locale }).eq('user_id', currentUser.id).then(() => {});
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    bindEvents();
+    await Promise.all([syncAccount(), loadProducts()]);
+  });
+})();
