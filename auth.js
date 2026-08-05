@@ -43,15 +43,20 @@
 
   function authErrorText(error) {
     const code = String(error?.code || error?.message || '').toUpperCase();
-    const message = String(error?.message || '').toLowerCase();
+    const raw = String(error?.message || error || '');
+    const message = raw.toLowerCase();
     if (code.includes('ACCOUNT_ALREADY_EXISTS')) return t('errorAccountExists');
-    if (code.includes('REGISTRATION_RATE_LIMITED')) return t('errorRate');
+    if (code.includes('REGISTRATION_RATE_LIMITED') || message.includes('rate') || message.includes('too many') || message.includes('security purposes')) {
+      return '发送太频繁，请等 1～2 分钟再试';
+    }
     if (code.includes('VALID_EMAIL')) return t('errorEmail');
     if (code.includes('VALID_PASSWORD')) return t('errorPasswordLength');
     if (code.includes('VALID_NAME')) return t('errorName');
     if (message.includes('invalid login') || message.includes('invalid credentials')) return t('errorEmailPassword');
     if (message.includes('already registered') || message.includes('already been registered')) return t('errorAccountExists');
     if (message.includes('fetch') || message.includes('network')) return t('errorNetwork');
+    if (message.includes('redirect')) return '回调地址未配置，请检查 Supabase Redirect URLs';
+    if (raw) return raw;
     return t('errorGeneric');
   }
 
