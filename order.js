@@ -508,12 +508,21 @@
       list.appendChild(article);
     });
     $('fixedPlansPanel').classList.remove('hidden');
-    if (shouldScroll) $('fixedPlansPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (shouldScroll) {
+      // 在卡片附近展开，尽量滚到可视区，避免跑到页面最底部
+      const panel = $('fixedPlansPanel');
+      const section = document.querySelector('.fixed-module-section');
+      (section || panel).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      setTimeout(() => {
+        panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 80);
+    }
   }
+
+  let matchRunId = 0;
 
   function startMatching(event) {
     if (event) event.preventDefault();
-    clearMessage('problemMessage');
     const question = $('problemInput').value.trim();
     if (question.length < 2) {
       showMessage('problemMessage', c().needQuestion);
@@ -525,47 +534,68 @@
     }
 
     originalQuestion = question;
+    const runId = ++matchRunId;
 
-    // 需求理解匹配：只取有实际相关度的答案，禁止用0分答案强行补满
-    const MIN_RELEVANT_SCORE = 4;
-    let ranked = rankAnswers(question).filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
-
-    // 不足5个时，从最接近的分类（module）补充
-    if (ranked.length < 5 && ranked.length > 0) {
-      const topModule = ranked[0].module_code;
-      const sameModule = rankAnswers(question)
-        .filter((a) => a.module_code === topModule && !ranked.some((r) => r.id === a.id))
-        .slice(0, 5 - ranked.length);
-      ranked = ranked.concat(sameModule);
-    }
-
-    // 如果仍然没有足够相关答案，不再返回固定默认候选
-    if (ranked.length === 0) {
-      // 记录未匹配问题（为 FEATURE-001 预留）
-      try {
-        const unmatched = JSON.parse(localStorage.getItem('gyx_unmatched_questions') || '[]');
-        unmatched.unshift({
-          question: originalQuestion,
-          goals: extractGoals(originalQuestion),
-          time: new Date().toISOString()
-        });
-        localStorage.setItem('gyx_unmatched_questions', JSON.stringify(unmatched.slice(0, 50)));
-      } catch (e) {}
-
-      showMessage('problemMessage', '暂时没有完全匹配的答案，已记录你的问题，我们会尽快补充。你可以换个说法再试，或直接联系客服。', 'error');
-      return;
-    }
-
-    rankedCandidates = ranked.slice(0, 5);
-    initialStrongMatch = Number(rankedCandidates[0] && rankedCandidates[0]._score || 0) >= MIN_STRONG_SCORE;
-    quizIndex = 0;
-    selections = [];
-    currentMatch = null;
+    // 分步反馈动画（约 1.2～1.6 秒）
+    showMessage('problemMessage', '正在理解问题…', 'success');
     $('resultPanel').classList.add('hidden');
-    $('quizPanel').classList.remove('hidden');
-    $('originalQuestion').textContent = '“' + originalQuestion + '”';
-    renderQuiz();
-    $('quizPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    $('quizPanel').classList.add('hidden');
+
+    const step2 = 450;
+    const step3 = 900;
+    const finish = 1400;
+
+    setTimeout(() => {
+      if (runId !== matchRunId) return;
+      showMessage('problemMessage', '正在匹配知识库…', 'success');
+    }, step2);
+
+    setTimeout(() => {
+      if (runId !== matchRunId) return;
+      // 需求理解匹配：只取有实际相关度的答案，禁止用0分答案强行补满
+      const MIN_RELEVANT_SCORE = 4;
+      let ranked = rankAnswers(question).filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
+
+      if (ranked.length < 5 && ranked.length > 0) {
+        const topModule = ranked[0].module_code;
+        const sameModule = rankAnswers(question)
+          .filter((a) => a.module_code === topModule && !ranked.some((r) => r.id === a.id))
+          .slice(0, 5 - ranked.length);
+        ranked = ranked.concat(sameModule);
+      }
+
+      if (ranked.length === 0) {
+        try {
+          const unmatched = JSON.parse(localStorage.getItem('gyx_unmatched_questions') || '[]');
+          unmatched.unshift({
+            question: originalQuestion,
+            goals: extractGoals(originalQuestion),
+            time: new Date().toISOString()
+          });
+          localStorage.setItem('gyx_unmatched_questions', JSON.stringify(unmatched.slice(0, 50)));
+        } catch (e) {}
+        showMessage('problemMessage', '暂时没有完全匹配的答案，已记录你的问题，我们会尽快补充。你可以换个说法再试，或直接联系客服。', 'error');
+        return;
+      }
+
+      rankedCandidates = ranked.slice(0, 5);
+      showMessage('problemMessage', '已找到 ' + rankedCandidates.length + ' 个相关问题', 'success');
+    }, step3);
+
+    setTimeout(() => {
+      if (runId !== matchRunId) return;
+      if (!rankedCandidates || !rankedCandidates.length) return;
+      initialStrongMatch = Number(rankedCandidates[0] && rankedCandidates[0]._score || 0) >= MIN_STRONG_SCORE;
+      quizIndex = 0;
+      selections = [];
+      currentMatch = null;
+      $('resultPanel').classList.add('hidden');
+      $('quizPanel').classList.remove('hidden');
+      $('originalQuestion').textContent = '“' + originalQuestion + '”';
+      clearMessage('problemMessage');
+      renderQuiz();
+      $('quizPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, finish);
   }
 
   function renderQuiz() {
@@ -580,7 +610,8 @@
       $('quizHelp').textContent = localeCopy.candidateHelp;
       rankedCandidates.forEach((answer, index) => {
         const button = document.createElement('button');
-        button.className = 'quiz-option';
+        button.className = 'quiz-option quiz-option-enter';
+        button.style.animationDelay = (index * 0.12) + 's';
         button.type = 'button';
         const number = document.createElement('span');
         number.className = 'option-number';
@@ -1151,15 +1182,10 @@
     if (inputEl) {
       inputEl.addEventListener('input', () => {
         clearTimeout(autoMatchTimer);
-        // 继续输入时取消上一次匹配
-        if (!$('quizPanel').classList.contains('hidden') || !$('resultPanel').classList.contains('hidden')) {
-          // 用户还在输入，不打断已有流程，只清定时器
-        }
+        matchRunId += 1; // 继续输入时取消上一次匹配流程
         autoMatchTimer = setTimeout(() => {
           const q = inputEl.value.trim();
           if (q.length >= 2) {
-            // 显示简短反馈
-            showMessage('problemMessage', '正在理解问题并匹配知识库…', 'success');
             startMatching();
           }
         }, 1000);
@@ -1172,6 +1198,34 @@
         }
       });
     }
+
+    // 离开页面或返回首页时清空搜索框（BUG-005）
+    const clearSearchBox = () => {
+      if (inputEl) inputEl.value = '';
+      clearMessage('problemMessage');
+    };
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'hidden') {
+        // 仅记录，真正清空在 pageshow/返回时
+      }
+    });
+    window.addEventListener('pagehide', () => {
+      try { sessionStorage.setItem('gyx_clear_search_on_leave', '1'); } catch (e) {}
+    });
+    window.addEventListener('pageshow', () => {
+      try {
+        if (sessionStorage.getItem('gyx_clear_search_on_leave') === '1') {
+          sessionStorage.removeItem('gyx_clear_search_on_leave');
+          clearSearchBox();
+        }
+      } catch (e) {}
+    });
+    // 首页导航点击时清空
+    document.querySelectorAll('a.nav-home, .mobile-bottom-nav a[href="shop.html"]').forEach((a) => {
+      a.addEventListener('click', () => {
+        try { sessionStorage.setItem('gyx_clear_search_on_leave', '1'); } catch (e) {}
+      });
+    });
 
     document.querySelectorAll('[data-fixed-module]').forEach((button) => {
       button.addEventListener('click', () => renderFixedPlans(button.dataset.fixedModule));
