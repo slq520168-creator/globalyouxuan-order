@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#06101d">
+  <meta name="theme-color" content="#f4f8ff">
   <meta name="robots" content="noindex">
   <title>会员注册与登录｜全球优选</title>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{document.documentElement.dataset.theme='light'}</script>
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -16,9 +17,9 @@
         <span data-i18n="brand">全球优选</span>
       </a>
       <nav class="nav" aria-label="Main navigation">
-        <a href="shop.html" data-i18n="navShop">方案中心</a>
-        <a href="knowledge.html" data-i18n="navKnowledge">问答资料库</a>
+        <a href="shop.html" data-i18n="navShop">智能匹配</a>
         <a href="member.html" data-i18n="navMember">会员中心</a>
+        <button class="nav-link-button" type="button" data-support-open data-i18n="navContact">联系客服</button>
       </nav>
       <div class="header-actions">
         <select class="language-select" data-language-select aria-label="Language">
@@ -26,6 +27,7 @@
           <option value="en">English</option>
           <option value="km">ខ្មែរ</option>
         </select>
+        <button id="themeToggle" class="icon-control" type="button" aria-label="切换主题">◐</button>
       </div>
     </div>
   </header>
@@ -35,11 +37,11 @@
       <section class="auth-copy">
         <p class="eyebrow" data-i18n="brand">全球优选</p>
         <h1 class="gradient-text" data-i18n="authTitle">会员注册与登录</h1>
-        <p data-i18n="authLead">登录后才能下单，并且只能查看自己的资料和订单。</p>
+        <p data-i18n="authLead">一个账号，保存你的方案、收藏与订单。</p>
         <div class="auth-points" aria-hidden="true">
-          <div class="auth-point"><span>✓</span><div data-i18n="memberLead">只显示当前账号自己的资料、订单和私人资料库。</div></div>
-          <div class="auth-point"><span>✓</span><div data-i18n="browseKnowledge">进入 120 条问答资料库</div></div>
-          <div class="auth-point"><span>✓</span><div>Supabase Auth + RLS</div></div>
+          <div class="auth-point"><span>✓</span><div data-i18n="memberLead">收藏、订单和个人资料集中管理。</div></div>
+          <div class="auth-point"><span>✓</span><div data-i18n="browseKnowledge">五轮匹配后只显示一个方案</div></div>
+          <div class="auth-point"><span>✓</span><div data-i18n="favoritesLead">收藏答案会保存在会员中心</div></div>
         </div>
       </section>
 
@@ -59,6 +61,10 @@
         </div>
 
         <form id="authForm" class="form-stack" novalidate>
+          <div class="trap-field" aria-hidden="true">
+            <label for="registerWebsite">Website</label>
+            <input id="registerWebsite" type="text" tabindex="-1" autocomplete="off">
+          </div>
           <div id="displayNameGroup" class="form-group hidden">
             <label for="displayName" data-i18n="displayName">会员名称</label>
             <input id="displayName" class="field" type="text" maxlength="80" autocomplete="name"
@@ -82,14 +88,30 @@
           <div id="authMessage" class="form-message" aria-live="polite"></div>
           <button id="authSubmit" class="btn btn-block" type="submit" data-i18n="signIn">登录会员账号</button>
         </form>
-        <p class="privacy-note" data-i18n="authPrivacy">账户使用 Supabase Auth；密码不会保存到网页代码或订单表。</p>
       </section>
     </div>
   </main>
 
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="shop.html"><span>⌕</span><b data-i18n="navShop">智能匹配</b></a>
+    <a href="member.html#favorites"><span>☆</span><b data-i18n="favoritesTitle">我的收藏</b></a>
+    <a href="member.html#orders"><span>▤</span><b data-i18n="ordersTitle">我的订单</b></a>
+    <a href="member.html"><span>◉</span><b data-i18n="navMember">会员中心</b></a>
+  </nav>
+
+  <button class="support-fab" type="button" data-support-open aria-expanded="false"><span>✦</span><b data-i18n="openSupport">在线客服</b></button>
+  <aside id="supportPanel" class="support-panel" aria-hidden="true" aria-labelledby="supportTitle">
+    <button class="support-close" type="button" data-support-close aria-label="关闭">×</button>
+    <p class="eyebrow" data-i18n="supportTitle">联系客服</p>
+    <h2 id="supportTitle" data-i18n="supportLead">需要帮助？直接联系我们</h2>
+    <a class="support-link telegram" href="https://t.me/qqyousubot" target="_blank" rel="noopener"><span>➤</span><div><b data-i18n="supportTelegram">Telegram客服</b><small>@qqyousubot</small></div></a>
+    <a class="support-link email" href="mailto:slq520168@gmail.com"><span>✉</span><div><b data-i18n="supportEmail">邮箱客服</b><small>slq520168@gmail.com</small></div></a>
+  </aside>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
   <script src="supabase-client.js"></script>
   <script src="i18n.js"></script>
+  <script src="site-ui.js"></script>
   <script src="auth.js"></script>
 </body>
 </html>
