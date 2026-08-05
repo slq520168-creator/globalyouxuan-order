@@ -536,34 +536,34 @@
     originalQuestion = question;
     const runId = ++matchRunId;
 
-    // 分步反馈动画（约 1.2～1.6 秒）
-    showMessage('problemMessage', '正在理解问题…', 'success');
+    // 分步反馈：每步约 0.5 秒
+    showMessage('problemMessage', '🔍 正在理解你的问题…', 'success');
     $('resultPanel').classList.add('hidden');
     $('quizPanel').classList.add('hidden');
 
-    const step2 = 450;
-    const step3 = 900;
-    const finish = 1400;
+    // 提前计算匹配，动画结束后再展示
+    const MIN_RELEVANT_SCORE = 4;
+    let ranked = rankAnswers(question).filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
+    if (ranked.length < 5 && ranked.length > 0) {
+      const topModule = ranked[0].module_code;
+      const sameModule = rankAnswers(question)
+        .filter((a) => a.module_code === topModule && !ranked.some((r) => r.id === a.id))
+        .slice(0, 5 - ranked.length);
+      ranked = ranked.concat(sameModule);
+    }
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
-      showMessage('problemMessage', '正在匹配知识库…', 'success');
-    }, step2);
+      showMessage('problemMessage', '🧠 正在分析你的目标…', 'success');
+    }, 500);
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
-      // 需求理解匹配：只取有实际相关度的答案，禁止用0分答案强行补满
-      const MIN_RELEVANT_SCORE = 4;
-      let ranked = rankAnswers(question).filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
+      showMessage('problemMessage', '📚 正在匹配解决方案…', 'success');
+    }, 1000);
 
-      if (ranked.length < 5 && ranked.length > 0) {
-        const topModule = ranked[0].module_code;
-        const sameModule = rankAnswers(question)
-          .filter((a) => a.module_code === topModule && !ranked.some((r) => r.id === a.id))
-          .slice(0, 5 - ranked.length);
-        ranked = ranked.concat(sameModule);
-      }
-
+    setTimeout(() => {
+      if (runId !== matchRunId) return;
       if (ranked.length === 0) {
         try {
           const unmatched = JSON.parse(localStorage.getItem('gyx_unmatched_questions') || '[]');
@@ -577,10 +577,9 @@
         showMessage('problemMessage', '暂时没有完全匹配的答案，已记录你的问题，我们会尽快补充。你可以换个说法再试，或直接联系客服。', 'error');
         return;
       }
-
       rankedCandidates = ranked.slice(0, 5);
-      showMessage('problemMessage', '已找到 ' + rankedCandidates.length + ' 个相关问题', 'success');
-    }, step3);
+      showMessage('problemMessage', '✅ 已找到最相关的' + rankedCandidates.length + '个方向', 'success');
+    }, 1500);
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
@@ -594,8 +593,13 @@
       $('originalQuestion').textContent = '“' + originalQuestion + '”';
       clearMessage('problemMessage');
       renderQuiz();
-      $('quizPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }, finish);
+      // 收起手机键盘，避免挡住结果
+      try { $('problemInput')?.blur(); } catch (e) {}
+      try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (e) {}
+      setTimeout(() => {
+        $('quizPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 120);
+    }, 2000);
   }
 
   function renderQuiz() {
@@ -611,7 +615,7 @@
       rankedCandidates.forEach((answer, index) => {
         const button = document.createElement('button');
         button.className = 'quiz-option quiz-option-enter';
-        button.style.animationDelay = (index * 0.12) + 's';
+        button.style.animationDelay = (index * 0.15) + 's';
         button.type = 'button';
         const number = document.createElement('span');
         number.className = 'option-number';
