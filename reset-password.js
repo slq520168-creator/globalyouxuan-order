@@ -98,8 +98,15 @@
       await db.auth.signOut({ scope: 'local' });
       setTimeout(() => { location.replace('login.html'); }, 900);
     } catch (error) {
-      const message = String(error?.message || '').toLowerCase();
-      showMessage(message.includes('password') ? t('errorPasswordLength') : t('errorGeneric'));
+      const raw = String(error?.message || error || '');
+      const lower = raw.toLowerCase();
+      let tip = t('errorGeneric');
+      if (lower.includes('same') || lower.includes('different')) tip = '新密码不能与旧密码相同';
+      else if (lower.includes('session') || lower.includes('expired') || lower.includes('token')) tip = t('resetLinkInvalid');
+      else if (lower.includes('weak') || lower.includes('strength')) tip = '密码强度不够，请换更复杂的密码';
+      else if (lower.includes('at least') || lower.includes('characters') || lower.includes('length')) tip = t('errorPasswordLength');
+      else if (raw) tip = raw; // 显示真实错误，方便排查
+      showMessage(tip);
       button.disabled = false;
       button.textContent = t('saveNewPassword');
     }
