@@ -41,8 +41,35 @@
     if (open) panel.querySelector('[data-support-close]')?.focus();
   }
 
+  function applyRuntimeFixes() {
+    const style = document.createElement('style');
+    style.id = 'gyx-runtime-fixes';
+    style.textContent = `
+      .mobile-bottom-nav{position:fixed!important;left:0!important;right:0!important;bottom:0!important;top:auto!important;z-index:9999!important;margin:0!important;transform:none!important;padding-bottom:env(safe-area-inset-bottom)!important;background:color-mix(in srgb,var(--surface,#fff) 94%,transparent)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+      html[data-theme="dark"] .mobile-bottom-nav{background:rgba(7,19,33,.94)!important}
+      html[data-theme="light"] .mobile-bottom-nav{background:rgba(244,248,255,.96)!important}
+      @media(max-width:760px){body{padding-bottom:calc(78px + env(safe-area-inset-bottom))!important}.search-popover{max-height:min(62vh,520px)!important;overflow:auto!important;overscroll-behavior:contain}.quiz-options{max-height:38vh!important;overflow:auto!important}}
+    `;
+    document.head.appendChild(style);
+
+    const phone = document.getElementById('orderPhone');
+    if (phone) {
+      phone.required = false;
+      phone.placeholder = i18n?.locale === 'zh-CN' ? '联系电话（选填）' : phone.placeholder;
+      const label = document.querySelector('label[for="orderPhone"]');
+      if (label && i18n?.locale === 'zh-CN') label.textContent = '电话（选填）';
+    }
+
+    const payNote = document.querySelector('.payment-note');
+    if (payNote && i18n?.locale === 'zh-CN') {
+      payNote.textContent = '请按显示的精确金额转账，完成后粘贴 TXID。系统将自动核验链上交易，预计 3～15 分钟完成确认；确认成功后自动处理订单，请勿重复提交。';
+      payNote.removeAttribute('data-i18n');
+    }
+  }
+
   function init() {
     applyTheme(storedTheme(), false);
+    applyRuntimeFixes();
     document.getElementById('themeToggle')?.addEventListener('click', () => {
       applyTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
     });
@@ -61,7 +88,11 @@
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') setSupport(false);
     });
-    window.addEventListener('gyx:languagechange', () => applyTheme(root.dataset.theme, false));
+    window.addEventListener('gyx:languagechange', () => {
+      applyTheme(root.dataset.theme, false);
+      const phone = document.getElementById('orderPhone');
+      if (phone && i18n?.locale === 'zh-CN') phone.placeholder = '联系电话（选填）';
+    });
     window.gyxSupabase?.auth.onAuthStateChange((event) => {
       if (event !== 'PASSWORD_RECOVERY' || location.pathname.endsWith('/reset-password.html')) return;
       location.replace('reset-password.html');
