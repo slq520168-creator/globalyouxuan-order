@@ -40,16 +40,37 @@
       }
     } catch (e) {}
 
-    // 2. 处理 URL 中的 hash token（Supabase 常见格式）
     const hash = window.location.hash || '';
+    const search = window.location.search || '';
+    const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    const code = params.get('code');
+
+    // 2. PKCE：URL 带 ?code= 时交换会话
+    if (code) {
+      try {
+        const { data, error } = await db.auth.exchangeCodeForSession(code);
+        if (!error && (data?.session?.user || data?.user)) {
+          setReady(true);
+          history.replaceState(null, '', window.location.pathname);
+          return;
+        }
+        if (error) {
+          showMessage(error.message || t('resetLinkInvalid'));
+          return;
+        }
+      } catch (e) {
+        showMessage(String(e?.message || e) || t('resetLinkInvalid'));
+        return;
+      }
+    }
+
+    // 3. hash token（旧格式）
     if (hash.includes('access_token') || hash.includes('type=recovery') || hash.includes('refresh_token')) {
-      // supabase-js 会自动从 hash 解析，稍等再查
       setTimeout(async () => {
         try {
           const retry = await db.auth.getSession();
           if (retry.data?.session?.user) {
             setReady(true);
-            // 清理地址栏 hash，避免刷新重复
             history.replaceState(null, '', window.location.pathname + window.location.search);
             return;
           }
@@ -59,7 +80,7 @@
       return;
     }
 
-    // 3. 再等一次
+    // 4. 再等 onAuthStateChange / 自动解析
     setTimeout(async () => {
       try {
         const retry = await db.auth.getSession();
@@ -69,7 +90,7 @@
         }
       } catch (e) {}
       showMessage(t('resetLinkInvalid'));
-    }, 1500);
+    }, 2000);
   }
 
   async function submitNewPassword(event) {
@@ -78,8 +99,8 @@
       showMessage(t('resetLinkInvalid'));
       return;
     }
-    const password = $('newPassword').value;
-    const confirm = $('confirmNewPassword').value;
+    const password = String($('newPassword').value || '').trim();
+    const confirm = String($('confirmNewPassword').value || '').trim();
     if (password.length < 8) {
       showMessage(t('errorPasswordLength'));
       return;
@@ -92,20 +113,22 @@
     button.disabled = true;
     button.textContent = t('savingNewPassword');
     try {
-      const { error } = await db.auth.updateUser({ password });
+      const { data, error } = await db.auth.updateUser({ password });
       if (error) throw error;
-      showMessage(t('passwordResetSuccess'), 'success');
-      await db.auth.signOut({ scope: 'local' });
-      setTimeout(() => { location.replace('login.html'); }, 900);
+      showMessage('密码修改成功，正在进入会员中心…', 'success');
+      // 重置成功后会话已是登录态，直接进会员中心，避免再输一次密码
+      setTimeout(() => {
+        location.replace('member.html');
+      }, 800);
     } catch (error) {
       const raw = String(error?.message || error || '');
       const lower = raw.toLowerCase();
       let tip = t('errorGeneric');
-      if (lower.includes('same') || lower.includes('different')) tip = '新密码不能与旧密码相同';
+      if (lower.includes('same') || lower.includes('different')) tip = '新密码不能与旧密码相同，请换一个';
       else if (lower.includes('session') || lower.includes('expired') || lower.includes('token')) tip = t('resetLinkInvalid');
       else if (lower.includes('weak') || lower.includes('strength')) tip = '密码强度不够，请换更复杂的密码';
       else if (lower.includes('at least') || lower.includes('characters') || lower.includes('length')) tip = t('errorPasswordLength');
-      else if (raw) tip = raw; // 显示真实错误，方便排查
+      else if (raw) tip = raw;
       showMessage(tip);
       button.disabled = false;
       button.textContent = t('saveNewPassword');
