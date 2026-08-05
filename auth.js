@@ -22,9 +22,75 @@
     $('authMessage').textContent = '';
   }
 
+  function resetPasswordVisibility() {
+    ['authPassword', 'confirmPassword'].forEach((id) => {
+      const input = $(id);
+      if (input) input.type = 'password';
+    });
+    document.querySelectorAll('[data-password-toggle]').forEach((button) => {
+      button.textContent = '显示';
+      button.setAttribute('aria-pressed', 'false');
+    });
+  }
+
+  function preparePasswordInput(input) {
+    if (!input || input.dataset.passwordReady === 'true') return;
+    input.dataset.passwordReady = 'true';
+    input.setAttribute('autocapitalize', 'none');
+    input.setAttribute('autocorrect', 'off');
+    input.setAttribute('spellcheck', 'false');
+    input.setAttribute('enterkeyhint', 'done');
+
+    const parent = input.parentElement;
+    if (!parent) return;
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '100%';
+    parent.insertBefore(wrapper, input);
+    wrapper.appendChild(input);
+    input.style.paddingRight = '68px';
+
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.textContent = '显示';
+    toggle.dataset.passwordToggle = input.id;
+    toggle.setAttribute('aria-label', '显示密码');
+    toggle.setAttribute('aria-pressed', 'false');
+    Object.assign(toggle.style, {
+      position: 'absolute',
+      right: '10px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      border: '0',
+      background: 'transparent',
+      color: 'inherit',
+      fontSize: '14px',
+      fontWeight: '700',
+      padding: '8px',
+      cursor: 'pointer',
+      zIndex: '2'
+    });
+    toggle.addEventListener('click', () => {
+      const showing = input.type === 'text';
+      input.type = showing ? 'password' : 'text';
+      toggle.textContent = showing ? '显示' : '隐藏';
+      toggle.setAttribute('aria-label', showing ? '显示密码' : '隐藏密码');
+      toggle.setAttribute('aria-pressed', String(!showing));
+      input.focus({ preventScroll: true });
+      try { input.setSelectionRange(input.value.length, input.value.length); } catch { /* unsupported */ }
+    });
+    wrapper.appendChild(toggle);
+  }
+
+  function initPasswordControls() {
+    preparePasswordInput($('authPassword'));
+    preparePasswordInput($('confirmPassword'));
+  }
+
   function setMode(nextMode) {
     mode = nextMode;
     clearMessage();
+    resetPasswordVisibility();
     const registering = mode === 'register';
     const recovering = mode === 'recover';
     $('displayNameGroup').classList.toggle('hidden', !registering);
@@ -32,6 +98,7 @@
     $('passwordGroup').classList.toggle('hidden', recovering);
     $('authPassword').disabled = recovering;
     $('authPassword').autocomplete = registering ? 'new-password' : 'current-password';
+    $('confirmPassword').autocomplete = 'new-password';
     $('forgotPasswordButton').classList.toggle('hidden', mode !== 'login');
     $('backToLoginButton').classList.toggle('hidden', !recovering);
     $('loginTab').classList.toggle('active', !registering && !recovering);
@@ -42,20 +109,28 @@
   }
 
   function authErrorText(error) {
-    const code = String(error?.code || error?.message || '').toUpperCase();
+    const code = String(error?.code || '').toLowerCase();
     const raw = String(error?.message || error || '');
     const message = raw.toLowerCase();
-    if (code.includes('ACCOUNT_ALREADY_EXISTS')) return t('errorAccountExists');
-    if (code.includes('REGISTRATION_RATE_LIMITED') || message.includes('rate') || message.includes('too many') || message.includes('security purposes')) {
-      return '发送太频繁，请等 1～2 分钟再试';
+    const status = Number(error?.status || 0);
+
+    if (code.includes('account_already_exists') || message.includes('already registered') || message.includes('already been registered')) {
+      return t('errorAccountExists');
     }
-    if (code.includes('VALID_EMAIL')) return t('errorEmail');
-    if (code.includes('VALID_PASSWORD')) return t('errorPasswordLength');
-    if (code.includes('VALID_NAME')) return t('errorName');
-    if (message.includes('invalid login') || message.includes('invalid credentials')) return t('errorEmailPassword');
-    if (message.includes('already registered') || message.includes('already been registered')) return t('errorAccountExists');
+    if (status === 429 || code.includes('rate_limit') || code.includes('over_email_send_rate_limit') || message.includes('too many') || message.includes('security purposes')) {
+      return '操作太频繁，请等待1～2分钟后再试';
+    }
+    if (code.includes('email_not_confirmed') || message.includes('email not confirmed') || message.includes('email_not_confirmed')) {
+      return '邮箱尚未完成验证，请先打开验证邮件确认账号';
+    }
+    if (code.includes('invalid_credentials') || message.includes('invalid login') || message.includes('invalid credentials')) {
+      return '邮箱不存在或密码错误，请点“显示”核对密码后重试';
+    }
+    if (code.includes('valid_email')) return t('errorEmail');
+    if (code.includes('valid_password') || code.includes('weak_password')) return t('errorPasswordLength');
+    if (code.includes('valid_name')) return t('errorName');
     if (message.includes('fetch') || message.includes('network')) return t('errorNetwork');
-    if (message.includes('redirect')) return '回调地址未配置，请检查 Supabase Redirect URLs';
+    if (message.includes('redirect')) return '回调地址未配置，请检查Supabase Redirect URLs';
     if (raw) return raw;
     return t('errorGeneric');
   }
@@ -91,6 +166,10 @@
       showMessage(t('errorPasswordLength'));
       return;
     }
+    if (mode !== 'recover' && password !== password.trim()) {
+      showMessage('密码开头或结尾包含空格，请点“显示”检查后重新输入');
+      return;
+    }
     if (mode === 'register' && password !== confirm) {
       showMessage(t('errorPasswordMatch'));
       return;
@@ -105,7 +184,6 @@
     button.textContent = t(mode === 'recover' ? 'sendingResetLink' : mode === 'register' ? 'signingUp' : 'signingIn');
     try {
       if (mode === 'recover') {
-        // 固定指向正式重置页，避免落到首页
         const redirectTo = 'https://globalyouxuan-order.pages.dev/reset-password.html';
         const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
@@ -156,11 +234,15 @@
     activeUser = null;
     $('activeSession').classList.remove('show');
     $('authForm').classList.remove('hidden');
+    $('authPassword').value = '';
+    $('confirmPassword').value = '';
+    resetPasswordVisibility();
     $('authEmail').focus();
   }
 
   window.addEventListener('gyx:languagechange', () => setMode(mode));
   document.addEventListener('DOMContentLoaded', async () => {
+    initPasswordControls();
     document.querySelectorAll('[data-mode]').forEach((button) => {
       button.addEventListener('click', () => setMode(button.dataset.mode));
     });
