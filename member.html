@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#06101d">
+  <meta name="theme-color" content="#f4f8ff">
   <meta name="robots" content="noindex">
   <title>我的会员中心｜全球优选</title>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{document.documentElement.dataset.theme='light'}</script>
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -16,9 +17,10 @@
         <span data-i18n="brand">全球优选</span>
       </a>
       <nav class="nav" aria-label="Main navigation">
-        <a href="shop.html" data-i18n="navShop">方案中心</a>
-        <a href="knowledge.html" data-i18n="navKnowledge">问答资料库</a>
+        <a href="shop.html" data-i18n="navShop">智能匹配</a>
+        <a href="#favorites" data-i18n="favoritesTitle">我的收藏</a>
         <a href="member.html" aria-current="page" data-i18n="navMember">会员中心</a>
+        <button class="nav-link-button" type="button" data-support-open data-i18n="navContact">联系客服</button>
       </nav>
       <div class="header-actions">
         <select class="language-select" data-language-select aria-label="Language">
@@ -26,6 +28,7 @@
           <option value="en">English</option>
           <option value="km">ខ្មែរ</option>
         </select>
+        <button id="themeToggle" class="icon-control" type="button" aria-label="切换主题">◐</button>
         <button id="logoutButton" class="btn btn-secondary" type="button" data-i18n="logout">退出登录</button>
       </div>
     </div>
@@ -36,7 +39,12 @@
       <div class="shell">
         <p class="eyebrow" data-i18n="brand">全球优选</p>
         <h1 class="gradient-text" data-i18n="memberTitle">我的会员中心</h1>
-        <p data-i18n="memberLead">只显示当前账号自己的资料、订单和私人资料库。</p>
+        <p data-i18n="memberLead">收藏、订单和个人资料都在这里。</p>
+        <nav class="member-shortcuts" aria-label="Member sections">
+          <a href="#favorites" data-i18n="favoritesTitle">我的收藏</a>
+          <a href="#orders" data-i18n="ordersTitle">我的订单</a>
+          <a href="#materials" data-i18n="materialsTitle">我的私人资料</a>
+        </nav>
       </div>
     </section>
 
@@ -76,6 +84,20 @@
       </aside>
 
       <div class="dashboard-main">
+        <section id="favorites" class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="favoritesTitle">我的收藏</h2>
+              <p class="muted" data-i18n="favoritesLead">你在智能匹配结果页收藏的答案都保存在这里。</p>
+            </div>
+            <a class="btn btn-secondary btn-small" href="shop.html" data-i18n="navShop">智能匹配</a>
+          </div>
+          <div id="favoritesMessage" class="form-message" aria-live="polite"></div>
+          <div id="favoriteList" class="favorite-list">
+            <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
+          </div>
+        </section>
+
         <section id="orders" class="panel">
           <div class="panel-head">
             <h2 data-i18n="ordersTitle">我的订单</h2>
@@ -142,7 +164,7 @@
           <div class="toolbar">
             <input id="materialSearch" class="field" type="search" maxlength="160"
               data-i18n-placeholder="search" placeholder="搜索资料">
-            <a class="btn btn-secondary" href="knowledge.html?filter=mine" data-i18n="navKnowledge">问答资料库</a>
+            <a class="btn btn-secondary" href="shop.html" data-i18n="navShop">智能匹配</a>
           </div>
           <div id="materialList" class="material-list" style="margin-top:14px">
             <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
@@ -152,12 +174,29 @@
     </div>
   </main>
 
-  <footer class="site-footer"><div class="shell" data-i18n="footer">全球优选 · 安全会员与数字交付</div></footer>
+  <footer class="site-footer"><div class="shell footer-inner"><span data-i18n="footer">全球优选 · 数字解决方案</span><button type="button" class="footer-support" data-support-open><span data-i18n="supportTelegram">Telegram客服</span>：@qqyousubot</button><a href="mailto:slq520168@gmail.com">slq520168@gmail.com</a></div></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="shop.html"><span>⌕</span><b data-i18n="navShop">智能匹配</b></a>
+    <a href="#favorites"><span>☆</span><b data-i18n="favoritesTitle">我的收藏</b></a>
+    <a href="#orders"><span>▤</span><b data-i18n="ordersTitle">我的订单</b></a>
+    <a href="member.html" aria-current="page"><span>◉</span><b data-i18n="navMember">会员中心</b></a>
+  </nav>
+
+  <button class="support-fab" type="button" data-support-open aria-expanded="false"><span>✦</span><b data-i18n="openSupport">在线客服</b></button>
+  <aside id="supportPanel" class="support-panel" aria-hidden="true" aria-labelledby="supportTitle">
+    <button class="support-close" type="button" data-support-close aria-label="关闭">×</button>
+    <p class="eyebrow" data-i18n="supportTitle">联系客服</p>
+    <h2 id="supportTitle" data-i18n="supportLead">需要帮助？直接联系我们</h2>
+    <a class="support-link telegram" href="https://t.me/qqyousubot" target="_blank" rel="noopener"><span>➤</span><div><b data-i18n="supportTelegram">Telegram客服</b><small>@qqyousubot</small></div></a>
+    <a class="support-link email" href="mailto:slq520168@gmail.com"><span>✉</span><div><b data-i18n="supportEmail">邮箱客服</b><small>slq520168@gmail.com</small></div></a>
+  </aside>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
   <script src="supabase-client.js"></script>
   <script src="i18n.js"></script>
+  <script src="site-ui.js"></script>
   <script src="member.js"></script>
 </body>
 </html>
