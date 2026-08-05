@@ -460,17 +460,28 @@ html[data-theme="dark"] .gradient-text { background-image: linear-gradient(100de
   bottom: calc(16px + env(safe-area-inset-bottom));
   z-index: 60;
   min-height: 42px;
+  min-width: 110px;
   padding: 0 14px;
-  color: var(--text);
-  border: 1px solid rgba(73,239,194,.28);
+  color: #eef5ff;
+  border: 1px solid rgba(73,239,194,.35);
   border-radius: 999px;
-  background: rgba(6,16,29,.9);
+  background: rgba(6,16,29,.94);
   box-shadow: 0 12px 34px rgba(0,0,0,.35);
   backdrop-filter: blur(12px);
   font-size: 12px;
   font-weight: 800;
+  white-space: nowrap;
 }
-.music-toggle.playing { color: #06131d; background: var(--accent); }
+.music-toggle.playing {
+  color: #06131d;
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.music-toggle:disabled {
+  opacity: .7;
+  color: #cfe0f5;
+  background: rgba(6,16,29,.9);
+}
 .site-footer { padding: 25px 0 34px; color: var(--muted); border-top: 1px solid var(--line); text-align: center; font-size: 12px; }
 .toast {
   position: fixed;
