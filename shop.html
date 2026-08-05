@@ -1,11 +1,12 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <meta name="theme-color" content="#06101d">
-  <meta name="description" content="全球优选 AI 实战资源、会员订单与问答资料库">
-  <title>全球优选｜AI 实战资源中心</title>
+  <meta name="theme-color" content="#f4f8ff">
+  <meta name="description" content="全球优选 AI 问题智能匹配与实操方案">
+  <title>全球优选｜AI 问题智能匹配</title>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{document.documentElement.dataset.theme='light'}</script>
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -16,9 +17,10 @@
         <span data-i18n="brand">全球优选</span>
       </a>
       <nav class="nav" aria-label="Main navigation">
-        <a href="shop.html" aria-current="page" data-i18n="navShop">方案中心</a>
-        <a href="knowledge.html" data-i18n="navKnowledge">问答资料库</a>
+        <a href="shop.html" aria-current="page" data-i18n="navShop">智能匹配</a>
+        <a href="member.html#favorites" data-i18n="favoritesTitle">我的收藏</a>
         <a href="member.html" data-i18n="navMember">会员中心</a>
+        <button class="nav-link-button" type="button" data-support-open data-i18n="navContact">联系客服</button>
       </nav>
       <div class="header-actions">
         <select class="language-select" data-language-select aria-label="Language">
@@ -26,88 +28,116 @@
           <option value="en">English</option>
           <option value="km">ខ្មែរ</option>
         </select>
+        <button id="themeToggle" class="icon-control" type="button" aria-label="切换主题">◐</button>
         <a id="accountLink" class="btn btn-secondary" href="login.html" data-i18n="login">登录</a>
       </div>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <div class="shell hero-grid">
-        <div>
-          <p class="eyebrow" data-i18n="shopEyebrow">真实会员 · 真实订单 · 数据库资料</p>
-          <h1 class="gradient-text" data-i18n="shopTitle">AI 实战资源与服务中心</h1>
-          <p class="hero-lead" data-i18n="shopLead">按需求查资料、选择方案、登录下单，并在会员中心查看自己的订单和资料。</p>
-          <div class="hero-actions">
-            <a class="btn" href="knowledge.html" data-i18n="browseKnowledge">进入 120 条问答资料库</a>
-            <a class="btn btn-secondary" href="member.html" data-i18n="viewMember">查看会员中心</a>
+  <main id="matchAssistant">
+    <section class="hero match-hero reference-hero">
+      <div class="planet-glow" aria-hidden="true"></div>
+      <div class="shell match-layout">
+        <div class="match-intro">
+          <p class="eyebrow" data-i18n="shopEyebrow">输入问题 · 五轮选择 · 一个最匹配方案</p>
+          <h1 class="gradient-text" data-i18n="shopTitle">连接全球智慧，找到真正能执行的答案</h1>
+          <p class="hero-lead" data-i18n="shopLead">输入问题并完成5轮选择，系统会给出一个最匹配的执行方案并自动定价。</p>
+
+          <div class="flow-strip" aria-label="Matching flow">
+            <div><strong>1</strong><span data-i18n="flowAsk">输入问题</span></div>
+            <div><strong>2</strong><span data-i18n="flowChoose">连续5轮选择</span></div>
+            <div><strong>3</strong><span data-i18n="flowResult">得到1个方案</span></div>
           </div>
         </div>
 
-        <aside class="hero-card">
-          <h2 class="search-card-label" data-i18n="quickSearchTitle">先说你想解决什么问题</h2>
-          <p class="search-card-copy" data-i18n="quickSearchLead">搜索全部数据库问答和你自己保存的资料。</p>
-          <form id="quickSearchForm" class="search-row">
-            <input id="quickSearchInput" class="field" type="search" maxlength="160" autocomplete="off"
-              data-i18n-placeholder="quickSearchPlaceholder" placeholder="例如：AI 视频、网站建设、自动回复、营销获客">
-            <button class="btn" type="submit" data-i18n="search">搜索资料</button>
-          </form>
-          <div class="hero-stats">
-            <div class="stat"><strong>120</strong><span data-i18n="statAnswers">数据库问答</span></div>
-            <div class="stat"><strong>4</strong><span data-i18n="statModules">实战模块</span></div>
-            <div class="stat"><strong>3</strong><span data-i18n="statLanguages">网站语言</span></div>
+        <section class="assistant-card" aria-labelledby="assistantTitle">
+          <div id="searchPanel">
+            <span class="assistant-status"><i></i><span data-i18n="assistantReady">智能匹配已就绪</span></span>
+            <h2 id="assistantTitle" data-i18n="quickSearchTitle">你现在最想解决什么问题？</h2>
+            <p class="search-card-copy" data-i18n="quickSearchLead">描述得越具体，匹配结果越准确。</p>
+            <form id="problemForm" class="problem-form">
+              <textarea id="problemInput" class="problem-input" minlength="2" maxlength="500" rows="4"
+                data-i18n-placeholder="quickSearchPlaceholder" placeholder="例如：我想用AI自动回复客户，但不知道从哪里开始" required></textarea>
+              <div id="problemMessage" class="form-message" aria-live="polite"></div>
+              <button id="startMatchButton" class="btn btn-block btn-large" type="submit" data-i18n="search">开始智能匹配</button>
+            </form>
+            <div class="example-chips" id="exampleChips">
+              <button type="button" data-example="如何用AI自动回复客户？">AI自动回复客户</button>
+              <button type="button" data-example="如何制作适合发布的AI短视频？">AI短视频制作</button>
+              <button type="button" data-example="如何快速搭建一个可以下单的网站？">网站建设</button>
+            </div>
+            <p class="privacy-note" data-i18n="priceNote">完成选择后显示1个匹配方案和对应价格。</p>
           </div>
-        </aside>
-      </div>
-    </section>
 
-    <section class="section" id="solutions">
-      <div class="shell">
-        <div class="section-head">
-          <div>
-            <h2 data-i18n="solutionsTitle">选择实战模块</h2>
-            <p data-i18n="solutionsLead">价格和方案从数据库实时读取，订单归属于当前登录会员。</p>
+          <div id="quizPanel" class="hidden" aria-live="polite">
+            <div class="quiz-progress-head">
+              <span id="quizStepLabel">第 1 / 5 轮</span>
+              <button id="restartMatchButton" class="text-button" type="button" data-i18n="restart">重新开始</button>
+            </div>
+            <div class="progress-track"><span id="quizProgressBar"></span></div>
+            <p id="originalQuestion" class="question-quote"></p>
+            <h2 id="quizQuestion">请选择最接近的一项</h2>
+            <p id="quizHelp" class="search-card-copy"></p>
+            <div id="quizOptions" class="quiz-options"></div>
+            <button id="quizBackButton" class="btn btn-secondary btn-block" type="button" data-i18n="back">返回</button>
           </div>
-        </div>
 
-        <div class="category-grid" id="categoryGrid">
-          <button class="category-card active" type="button" data-category="work">
-            <span class="category-icon">💼</span>
-            <h3 data-i18n="catWork">AI 办公</h3>
-            <p data-i18n="catWorkDesc">办公提效、知识管理与企业助手</p>
-            <span class="category-meta" data-count-for="work">—</span>
-          </button>
-          <button class="category-card" type="button" data-category="creation">
-            <span class="category-icon">🎨</span>
-            <h3 data-i18n="catCreation">AI 创作</h3>
-            <p data-i18n="catCreationDesc">内容、图片、视频与数字资料</p>
-            <span class="category-meta" data-count-for="creation">—</span>
-          </button>
-          <button class="category-card" type="button" data-category="business">
-            <span class="category-icon">🚀</span>
-            <h3 data-i18n="catBusiness">AI 商业</h3>
-            <p data-i18n="catBusinessDesc">网站、品牌、营销与商业系统</p>
-            <span class="category-meta" data-count-for="business">—</span>
-          </button>
-          <button class="category-card" type="button" data-category="automation">
-            <span class="category-icon">⚙️</span>
-            <h3 data-i18n="catAutomation">AI 自动化</h3>
-            <p data-i18n="catAutomationDesc">工作流、通知、同步与智能执行</p>
-            <span class="category-meta" data-count-for="automation">—</span>
-          </button>
-        </div>
-
-        <div class="plans-area" id="plansArea">
-          <div id="planGrid" class="plan-grid" aria-live="polite">
-            <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
+          <div id="resultPanel" class="hidden" aria-live="polite">
+            <div class="result-topline">
+              <span class="result-label" data-i18n="matchedResult">最匹配方案</span>
+              <span id="resultConfidence" class="match-confidence">—</span>
+            </div>
+            <h2 id="resultTitle">—</h2>
+            <p id="resultSummary" class="result-summary">—</p>
+            <div class="result-price-row">
+              <div>
+                <span data-i18n="answerDepth">方案深度</span>
+                <strong id="resultTier">—</strong>
+              </div>
+              <div class="result-price"><strong id="resultPrice">—</strong><span>USDT</span></div>
+            </div>
+            <div class="delivery-box">
+              <h3 data-i18n="youWillGet">下单后获得</h3>
+              <ul id="deliveryList"></ul>
+            </div>
+            <details class="match-details">
+              <summary data-i18n="viewMatchPath">查看本次匹配记录</summary>
+              <p id="resultQuestion"></p>
+              <ol id="resultSelections"></ol>
+            </details>
+            <div id="resultMessage" class="form-message" aria-live="polite"></div>
+            <div class="result-actions">
+              <button id="favoriteButton" class="btn btn-secondary" type="button" data-i18n="favoriteAnswer">收藏答案</button>
+              <button id="orderAnswerButton" class="btn" type="button" data-i18n="orderNow">直接下单</button>
+            </div>
+            <button id="newQuestionButton" class="text-button result-restart" type="button" data-i18n="askAnother">换一个问题</button>
           </div>
-        </div>
+        </section>
+
+        <section class="module-grid" aria-label="问题分类">
+          <button class="module-card module-blue" type="button" data-example="我想建设一个可以真实注册、下单和自动交付的网站">
+            <span class="module-icon">▣</span><strong data-i18n="moduleWebsite">网站建设</strong><small data-i18n="moduleWebsiteLead">网站、商城与会员系统</small>
+          </button>
+          <button class="module-card module-violet" type="button" data-example="我想使用AI提高创作和工作效率">
+            <span class="module-icon">✦</span><strong data-i18n="moduleAi">智能未来</strong><small data-i18n="moduleAiLead">AI创作与智能助手</small>
+          </button>
+          <button class="module-card module-green" type="button" data-example="我想分析业务数据并制定可以执行的增长方案">
+            <span class="module-icon">↗</span><strong data-i18n="moduleGrowth">量化感知</strong><small data-i18n="moduleGrowthLead">数据分析与增长决策</small>
+          </button>
+          <button class="module-card module-gold" type="button" data-example="我想学习一个能立即上手的AI实操方法">
+            <span class="module-icon">◇</span><strong data-i18n="moduleAcademy">数字学院</strong><small data-i18n="moduleAcademyLead">短小清晰的实操方案</small>
+          </button>
+        </section>
       </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <div class="shell" data-i18n="footer">全球优选 · 安全会员与数字交付</div>
+    <div class="shell footer-inner">
+      <span data-i18n="footer">全球优选 · 数字解决方案</span>
+      <button type="button" class="footer-support" data-support-open><span data-i18n="supportTelegram">Telegram客服</span>：@qqyousubot</button>
+      <a href="mailto:slq520168@gmail.com">slq520168@gmail.com</a>
+    </div>
   </footer>
 
   <div id="orderModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="orderModalTitle">
@@ -195,12 +225,28 @@
     </div>
   </div>
 
-  <button id="musicToggle" class="music-toggle" type="button" aria-pressed="false" data-i18n="musicOff">♫ 轻音乐</button>
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="shop.html#matchAssistant" aria-current="page"><span>⌕</span><b data-i18n="navShop">智能匹配</b></a>
+    <a href="member.html#favorites"><span>☆</span><b data-i18n="favoritesTitle">我的收藏</b></a>
+    <a href="member.html#orders"><span>▤</span><b data-i18n="ordersTitle">我的订单</b></a>
+    <a href="member.html"><span>◉</span><b data-i18n="navMember">会员中心</b></a>
+  </nav>
+
+  <button id="musicToggle" class="music-toggle" type="button" aria-pressed="false" data-i18n="musicOff">♫ 播放音乐</button>
+  <button class="support-fab" type="button" data-support-open aria-expanded="false"><span>✦</span><b data-i18n="openSupport">在线客服</b></button>
+  <aside id="supportPanel" class="support-panel" aria-hidden="true" aria-labelledby="supportTitle">
+    <button class="support-close" type="button" data-support-close aria-label="关闭">×</button>
+    <p class="eyebrow" data-i18n="supportTitle">联系客服</p>
+    <h2 id="supportTitle" data-i18n="supportLead">需要帮助？直接联系我们</h2>
+    <a class="support-link telegram" href="https://t.me/qqyousubot" target="_blank" rel="noopener"><span>➤</span><div><b data-i18n="supportTelegram">Telegram客服</b><small>@qqyousubot</small></div></a>
+    <a class="support-link email" href="mailto:slq520168@gmail.com"><span>✉</span><div><b data-i18n="supportEmail">邮箱客服</b><small>slq520168@gmail.com</small></div></a>
+  </aside>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
   <script src="supabase-client.js"></script>
   <script src="i18n.js"></script>
+  <script src="site-ui.js"></script>
   <script src="order.js"></script>
 </body>
 </html>
