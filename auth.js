@@ -36,9 +36,15 @@
   }
 
   function authErrorText(error) {
+    const code = String(error?.code || error?.message || '').toUpperCase();
     const message = String(error?.message || '').toLowerCase();
+    if (code.includes('ACCOUNT_ALREADY_EXISTS')) return t('errorAccountExists');
+    if (code.includes('REGISTRATION_RATE_LIMITED')) return t('errorRate');
+    if (code.includes('VALID_EMAIL')) return t('errorEmail');
+    if (code.includes('VALID_PASSWORD')) return t('errorPasswordLength');
+    if (code.includes('VALID_NAME')) return t('errorName');
     if (message.includes('invalid login') || message.includes('invalid credentials')) return t('errorEmailPassword');
-    if (message.includes('already registered') || message.includes('already been registered')) return t('emailCheck');
+    if (message.includes('already registered') || message.includes('already been registered')) return t('errorAccountExists');
     if (message.includes('fetch') || message.includes('network')) return t('errorNetwork');
     return t('errorGeneric');
   }
@@ -91,22 +97,18 @@
         localStorage.setItem('gyx_pending_profile', JSON.stringify({
           email, display_name: displayName, locale: i18n.locale
         }));
-        const { data, error } = await db.auth.signUp({
+        await window.gyxInvokeFunction('register-member', {
           email,
           password,
-          options: {
-            data: { display_name: displayName, locale: i18n.locale },
-            emailRedirectTo: new URL(getNext(), location.href).href
-          }
+          display_name: displayName,
+          locale: i18n.locale,
+          website: $('registerWebsite')?.value || ''
         });
+        const { data, error } = await db.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        if (data.session && data.user) {
-          await applyPendingProfile(data.user);
-          showMessage(t('authSuccess'), 'success');
-          setTimeout(() => { location.href = getNext(); }, 450);
-        } else {
-          showMessage(t('emailCheck'), 'success');
-        }
+        await applyPendingProfile(data.user);
+        showMessage(t('registerSuccess'), 'success');
+        setTimeout(() => { location.href = getNext(); }, 450);
       } else {
         const { data, error } = await db.auth.signInWithPassword({ email, password });
         if (error) throw error;
