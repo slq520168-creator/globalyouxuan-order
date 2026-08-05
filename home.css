@@ -36,7 +36,7 @@
   isolation: isolate;
   min-height: calc(100vh - 70px);
   overflow: hidden;
-  padding: clamp(54px, 7vw, 92px) 0 92px;
+  padding: clamp(72px, 8vw, 100px) 0 92px;
   background-color: #020817;
   background-image:
     linear-gradient(180deg, rgba(2, 8, 23, .08) 0%, rgba(2, 8, 23, .02) 43%, rgba(2, 8, 23, .34) 72%, #020817 100%),
@@ -383,9 +383,12 @@
   .home-page .icon-control { width: 34px; height: 34px; }
   .cosmic-home {
     min-height: 0;
-    padding: 28px 0 72px;
+    padding: calc(72px + env(safe-area-inset-top, 0px)) 0 72px;
     background-size: 960px auto;
     background-position: 50% 0;
+  }
+  .home-copy {
+    padding-top: 8px;
   }
   .home-stage { width: calc(100% - 20px); gap: 14px; }
   .home-copy h1 { font-size: clamp(32px, 9.5vw, 44px); line-height: 1.1; }
