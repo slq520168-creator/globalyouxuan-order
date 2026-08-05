@@ -317,7 +317,7 @@
     },
     {
       goals: ['涨粉', '提升流量', '获取客户', '引流获客'],
-      triggers: ['tiktok', '抖音', '快手', '小红书', '涨粉', '粉丝', '流量', '引流', '获客', '曝光', '播放', '关注', 'follower', 'traffic', 'fans']
+      triggers: ['tiktok', '抖音', '快手', '小红书', '涨粉', '粉丝', '流量', '引流', '获客', '曝光', '播放', '关注', 'follower', 'traffic', 'fans', '微信', 'wechat', '社群', '私域']
     },
     {
       goals: ['提高经营效率', '优化管理', '降低成本', '提升效率'],
@@ -338,6 +338,10 @@
     {
       goals: ['学习技能', '掌握方法', '实操教程', '提升能力'],
       triggers: ['学习', '教程', '怎么学', '入门', '掌握', '技能', '方法', '课程', 'learn', 'tutorial']
+    },
+    {
+      goals: ['微信运营', '私域获客', '社群管理', '客户沟通'],
+      triggers: ['微信', 'wechat', '公众号', '小程序', '企微', '企业微信', '社群', '私域', '朋友圈']
     }
   ];
 
@@ -523,7 +527,7 @@
     originalQuestion = question;
 
     // 需求理解匹配：只取有实际相关度的答案，禁止用0分答案强行补满
-    const MIN_RELEVANT_SCORE = 8;
+    const MIN_RELEVANT_SCORE = 4;
     let ranked = rankAnswers(question).filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
 
     // 不足5个时，从最接近的分类（module）补充

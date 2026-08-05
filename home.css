@@ -87,7 +87,17 @@
   text-shadow: 0 4px 18px rgba(0, 0, 0, .5);
 }
 
-.search-stage { width: min(100%, 620px); margin: 0 auto; }
+.search-stage {
+  width: min(100%, 620px);
+  margin: 0 auto;
+}
+.search-stage #problemMessage {
+  margin-top: 9px;
+  max-height: 72px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.4;
+}
 .compact-search {
   width: 100%;
   display: grid;
