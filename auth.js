@@ -100,10 +100,9 @@
     button.textContent = t(mode === 'recover' ? 'sendingResetLink' : mode === 'register' ? 'signingUp' : 'signingIn');
     try {
       if (mode === 'recover') {
-        const redirectUrl = new URL('reset-password.html', location.href);
-        redirectUrl.search = '';
-        redirectUrl.hash = '';
-        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl.href });
+        // 固定指向正式重置页，避免落到首页
+        const redirectTo = 'https://globalyouxuan-order.pages.dev/reset-password.html';
+        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
         showMessage(t('resetEmailSent'), 'success');
       } else if (mode === 'register') {

@@ -93,10 +93,26 @@
       const phone = document.getElementById('orderPhone');
       if (phone && i18n?.locale === 'zh-CN') phone.placeholder = '联系电话（选填）';
     });
+    // 密码重置：令牌可能落在首页，强制转到重置页
+    const goResetIfNeeded = (event) => {
+      const path = location.pathname || '';
+      if (path.endsWith('/reset-password.html') || path.endsWith('reset-password.html')) return;
+      const hash = location.hash || '';
+      const search = location.search || '';
+      const hasRecovery =
+        event === 'PASSWORD_RECOVERY' ||
+        hash.includes('type=recovery') ||
+        hash.includes('access_token') ||
+        search.includes('type=recovery');
+      if (hasRecovery) {
+        location.replace('reset-password.html' + hash + search);
+      }
+    };
     window.gyxSupabase?.auth.onAuthStateChange((event) => {
-      if (event !== 'PASSWORD_RECOVERY' || location.pathname.endsWith('/reset-password.html')) return;
-      location.replace('reset-password.html');
+      goResetIfNeeded(event);
     });
+    // 页面加载时也检查一次（避免事件已错过）
+    goResetIfNeeded(null);
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
