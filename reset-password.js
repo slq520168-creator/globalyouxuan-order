@@ -35,45 +35,35 @@
   });
 
   async function inspectRecovery() {
-    const finishOk = () => {
-      setReady(true);
-      // 不清理 URL、不跳转，避免页面刷新循环
+    const finishOk = () => setReady(true);
+
+    const trySession = async () => {
+      try {
+        const { data } = await db.auth.getSession();
+        return data?.session?.user || null;
+      } catch (e) {
+        return null;
+      }
     };
 
-    // 已有会话
-    try {
-      const { data } = await db.auth.getSession();
-      if (data?.session?.user) { finishOk(); return; }
-    } catch (e) {}
+    if (await trySession()) { finishOk(); return; }
 
     const search = window.location.search || '';
     const hash = window.location.hash || '';
     const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
-    // 有些客户端会把 hash 转进 search，一并解析
     const hashParams = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
 
-    const code = params.get('code') || hashParams.get('code');
     const tokenHash = params.get('token_hash') || hashParams.get('token_hash');
-    const type = params.get('type') || hashParams.get('type') || 'recovery';
+    const type = (params.get('type') || hashParams.get('type') || 'recovery').toLowerCase();
+    const code = params.get('code') || hashParams.get('code');
     const accessToken = hashParams.get('access_token') || params.get('access_token');
     const refreshToken = hashParams.get('refresh_token') || params.get('refresh_token');
 
-    // PKCE code
-    if (code) {
-      try {
-        const { data, error } = await db.auth.exchangeCodeForSession(code);
-        if (error) throw error;
-        if (data?.session?.user || data?.user) { finishOk(); return; }
-      } catch (e) {
-        showMessage(String(e?.message || e || t('resetLinkInvalid')));
-        return;
-      }
-    }
-
-    // token_hash + type=recovery
+    // token_hash（若以后开了自定义模板）
     if (tokenHash) {
       try {
-        const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: type === 'recovery' ? 'recovery' : type });
+        const otpType = (type === 'recovery' || type === 'email') ? type : 'recovery';
+        const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
         if (error) throw error;
         if (data?.session?.user || data?.user) { finishOk(); return; }
       } catch (e) {
@@ -82,10 +72,13 @@
       }
     }
 
-    // 旧版 hash access_token
+    // implicit：hash 中的 token
     if (accessToken && refreshToken) {
       try {
-        const { data, error } = await db.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        const { data, error } = await db.auth.setSession({
+          access_token: accessToken,
+          refresh_token: refreshToken
+        });
         if (error) throw error;
         if (data?.session?.user) { finishOk(); return; }
       } catch (e) {
@@ -94,24 +87,26 @@
       }
     }
 
-    // 等待 supabase 自动解析
+    // 给 detectSessionInUrl 时间解析 hash
     let tries = 0;
     const timer = setInterval(async () => {
       tries += 1;
-      try {
-        const { data } = await db.auth.getSession();
-        if (data?.session?.user) {
-          clearInterval(timer);
-          finishOk();
-        }
-      } catch (e) {}
-      if (tries >= 8) {
+      if (await trySession()) {
+        clearInterval(timer);
+        finishOk();
+        return;
+      }
+      if (tries >= 10) {
         clearInterval(timer);
         if (!recoveryReady) {
-          showMessage('重置链接无效、已过期，或被邮箱客户端截断。请返回登录页重新发送，并用系统浏览器打开链接。');
+          if (code) {
+            showMessage('当前邮件链接需要在申请重置的同一浏览器中打开。请用 Safari 打开邮件链接，或稍后再试。');
+          } else {
+            showMessage(t('resetLinkInvalid'));
+          }
         }
       }
-    }, 500);
+    }, 400);
   }
 
   async function submitNewPassword(event) {
@@ -161,6 +156,17 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('[data-toggle-password]').forEach((btn) => {
+      btn.addEventListener('click', (event) => {
+        event.preventDefault();
+        const id = btn.getAttribute('data-toggle-password');
+        const input = document.getElementById(id);
+        if (!input) return;
+        const willShow = input.type === 'password';
+        input.type = willShow ? 'text' : 'password';
+        btn.textContent = willShow ? '隐藏' : '显示';
+      });
+    });
     $('resetPasswordForm').addEventListener('submit', submitNewPassword);
     inspectRecovery();
     // 超时仍未验证成功时给出明确提示

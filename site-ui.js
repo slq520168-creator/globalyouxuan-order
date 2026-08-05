@@ -93,10 +93,12 @@
       const phone = document.getElementById('orderPhone');
       if (phone && i18n?.locale === 'zh-CN') phone.placeholder = '联系电话（选填）';
     });
-    // 密码重置：首页不消费 code，整段参数原样转到重置页
-    const path = location.pathname || '';
-    const onResetPage = path.endsWith('/reset-password.html') || path.endsWith('reset-password.html');
-    if (!onResetPage) {
+    // 密码重置：只从非重置页跳转一次，绝不在重置页刷新
+    const path = (location.pathname || '').toLowerCase();
+    const onResetPage = path.includes('reset-password');
+    if (onResetPage) {
+      // 重置页：禁止任何自动跳转
+    } else {
       const hash = location.hash || '';
       const search = location.search || '';
       const hasRecoveryParams =
@@ -105,12 +107,14 @@
         search.includes('type=recovery') ||
         search.includes('code=') ||
         search.includes('token_hash=');
-      if (hasRecoveryParams) {
+      if (hasRecoveryParams && sessionStorage.getItem('gyx_reset_jump') !== '1') {
+        sessionStorage.setItem('gyx_reset_jump', '1');
         location.replace('reset-password.html' + search + hash);
         return;
       }
       window.gyxSupabase?.auth.onAuthStateChange((event) => {
-        if (event === 'PASSWORD_RECOVERY') {
+        if (event === 'PASSWORD_RECOVERY' && sessionStorage.getItem('gyx_reset_jump') !== '1') {
+          sessionStorage.setItem('gyx_reset_jump', '1');
           location.replace('reset-password.html');
         }
       });

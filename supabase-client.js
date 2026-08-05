@@ -18,15 +18,27 @@
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: false,
-      flowType: 'pkce'
+      detectSessionInUrl: true,
+      flowType: 'implicit'
     }
   });
 
   async function getVerifiedUser() {
-    const { data, error } = await client.auth.getUser();
-    if (error) return null;
-    return data.user || null;
+    // 先读本地会话，避免网络抖动把已登录用户踢出
+    try {
+      const { data: sessionData } = await client.auth.getSession();
+      const sessionUser = sessionData?.session?.user || null;
+      if (!sessionUser) return null;
+
+      // 再尝试服务端校验；失败时仍保留本地会话用户
+      try {
+        const { data, error } = await client.auth.getUser();
+        if (!error && data?.user) return data.user;
+      } catch (e) {}
+      return sessionUser;
+    } catch (e) {
+      return null;
+    }
   }
 
   function safeNext(value, fallback = 'member.html') {
