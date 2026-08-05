@@ -67,7 +67,9 @@
   async function requireUser() {
     user = await window.gyxGetVerifiedUser();
     if (!user) {
-      location.replace(`login.html?next=${encodeURIComponent('member.html')}`);
+      // 保留目标 hash（收藏/订单），登录后自动回到对应位置
+      const target = 'member.html' + (location.hash || '');
+      location.replace(`login.html?next=${encodeURIComponent(target)}`);
       return false;
     }
     return true;
