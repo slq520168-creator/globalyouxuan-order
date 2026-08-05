@@ -465,7 +465,11 @@
 
   function closeFixedPlans() {
     activeFixedModule = '';
-    $('fixedPlansPanel')?.classList.add('hidden');
+    const panel = $('fixedPlansPanel');
+    if (panel) {
+      panel.classList.remove('is-open');
+      panel.classList.add('hidden');
+    }
     document.querySelectorAll('[data-fixed-module]').forEach((button) => {
       button.classList.remove('active');
       button.setAttribute('aria-expanded', 'false');
@@ -507,15 +511,23 @@
       article.append(heading, price, button);
       list.appendChild(article);
     });
-    $('fixedPlansPanel').classList.remove('hidden');
+    const panel = $('fixedPlansPanel');
+    panel.classList.remove('hidden');
+    panel.classList.remove('is-open');
+    // 强制重绘后再加 is-open，触发展开动画
+    requestAnimationFrame(() => panel.classList.add('is-open'));
     if (shouldScroll) {
-      // 在卡片附近展开，尽量滚到可视区，避免跑到页面最底部
-      const panel = $('fixedPlansPanel');
+      const activeBtn = document.querySelector('[data-fixed-module].active');
       const section = document.querySelector('.fixed-module-section');
-      (section || panel).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // 先把当前卡片滚到可视区中上部，面板就在卡片下方原地展开
+      if (activeBtn) {
+        activeBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else if (section) {
+        section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
       setTimeout(() => {
         panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      }, 80);
+      }, 180);
     }
   }
 

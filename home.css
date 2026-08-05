@@ -288,16 +288,29 @@
 }
 
 .fixed-plans-panel {
-  padding: clamp(18px, 3vw, 27px);
+  margin-top: 10px;
+  padding: 0 14px;
   border: 1px solid rgba(112, 166, 255, .25);
-  border-radius: 22px;
+  border-radius: 18px;
   background: rgba(3, 11, 29, .94);
-  box-shadow: 0 28px 80px rgba(0, 0, 0, .45);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .35);
   backdrop-filter: blur(20px);
-  animation: homeReveal .22s ease;
-  max-height: min(55vh, 380px);
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transform: translateY(-6px);
+  transition: max-height .32s ease, opacity .28s ease, transform .28s ease, padding .28s ease;
+}
+.fixed-plans-panel.is-open {
+  max-height: min(58vh, 420px);
+  opacity: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  padding: 14px;
+  transform: none;
+}
+.fixed-plans-panel.hidden {
+  display: none !important;
 }
 .fixed-plans-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
 .fixed-plans-head span { color: #77b8ff; font-size: 11px; font-weight: 850; letter-spacing: .16em; }
@@ -533,34 +546,50 @@ html[data-theme="light"] .home-page .music-toggle {
 html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
 
 /* ========== 横屏 / 宽屏优化 ========== */
-@media (orientation: landscape) and (max-height: 500px) {
+@media (orientation: landscape) and (max-height: 520px) {
+  .home-page .site-header { min-height: 48px; }
   .cosmic-home {
     min-height: 0;
-    padding: 16px 0 64px;
+    padding: calc(52px + env(safe-area-inset-top, 0px)) 0 56px;
     background-size: cover;
-    background-position: center 20%;
+    background-position: center 30%;
   }
-  .home-stage { gap: 10px; }
-  .home-copy h1 { font-size: clamp(22px, 6vw, 34px); }
-  .home-copy p { margin-top: 6px; font-size: 12px; }
-  .search-stage { margin-top: 12px; }
+  .home-stage {
+    width: min(calc(100% - 24px), 920px);
+    gap: 10px;
+    margin: 0 auto;
+  }
+  .home-copy h1 { font-size: clamp(20px, 5vw, 30px); line-height: 1.15; }
+  .home-copy p { margin-top: 4px; font-size: 12px; }
+  .search-stage { margin-top: 8px; width: min(100%, 480px); }
   .compact-search,
   .compact-search:focus-within {
-    height: 46px;
-    min-height: 46px;
-    max-height: 46px;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
   }
   .home-page .compact-search .problem-input {
-    height: 36px;
-    min-height: 36px;
-    max-height: 36px;
+    height: 34px;
+    min-height: 34px;
+    max-height: 34px;
+    font-size: 16px;
   }
-  .search-submit { width: 40px; height: 40px; font-size: 22px; }
-  .fixed-module-section { margin-top: 12px; }
-  .home-page .module-card { min-height: 88px; padding: 8px 4px; }
-  .home-page .module-icon { width: 36px; height: 36px; font-size: 18px; }
-  .home-page .module-card strong { font-size: 12px; }
-  .search-popover { max-height: min(55vh, 240px); padding: 10px; }
+  .search-submit { width: 40px; height: 40px; font-size: 20px; }
+  .fixed-module-section { margin-top: 8px; }
+  .home-page .module-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    max-width: 100%;
+  }
+  .home-page .module-card { min-height: 72px; padding: 6px 4px; }
+  .home-page .module-icon { width: 32px; height: 32px; font-size: 16px; }
+  .home-page .module-card strong { font-size: 11px; }
+  .search-popover { max-height: min(50vh, 200px); padding: 8px; }
+  .fixed-plans-panel.is-open { max-height: min(48vh, 260px); }
+  .fixed-plan-list { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .home-page .music-toggle,
+  .home-page .support-fab { transform: scale(0.9); }
+  .mobile-bottom-nav { height: 52px; }
 }
 
 @media (min-width: 960px) {
