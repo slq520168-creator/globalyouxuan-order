@@ -43,6 +43,7 @@
         <nav class="member-shortcuts" aria-label="Member sections">
           <a href="#favorites" data-i18n="favoritesTitle">我的收藏</a>
           <a href="#orders" data-i18n="ordersTitle">我的订单</a>
+          <a href="#downloads">我的下载</a>
           <a href="#materials" data-i18n="materialsTitle">我的私人资料</a>
         </nav>
       </div>
@@ -103,9 +104,30 @@
             <h2 data-i18n="ordersTitle">我的订单</h2>
             <button id="refreshOrdersButton" class="btn btn-secondary btn-small" type="button" data-i18n="refresh">刷新</button>
           </div>
+          <div id="orderFilters" class="order-filters" role="tablist">
+            <button type="button" class="order-filter active" data-order-filter="all">全部</button>
+            <button type="button" class="order-filter" data-order-filter="pending">待付款</button>
+            <button type="button" class="order-filter" data-order-filter="checking">核验中</button>
+            <button type="button" class="order-filter" data-order-filter="paid">已付款</button>
+            <button type="button" class="order-filter" data-order-filter="delivered">已完成</button>
+            <button type="button" class="order-filter" data-order-filter="expired">已失效</button>
+          </div>
           <div id="ordersMessage" class="form-message" aria-live="polite"></div>
           <div id="orderList" class="order-list">
             <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
+          </div>
+        </section>
+
+        <section id="downloads" class="panel">
+          <div class="panel-head">
+            <div>
+              <h2>我的下载</h2>
+              <p class="muted">已付款 / 已完成订单的交付内容，可在这里直接查看或复制。</p>
+            </div>
+          </div>
+          <div id="downloadsMessage" class="form-message" aria-live="polite"></div>
+          <div id="downloadList" class="order-list">
+            <div class="empty-state">暂无可下载内容</div>
           </div>
         </section>
 

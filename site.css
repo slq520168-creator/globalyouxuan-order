@@ -1129,3 +1129,31 @@ html[data-theme="light"] .toast { color: var(--text); background: var(--panel-st
   .support-panel { right: 12px; width: calc(100% - 24px); padding: 20px; }
   .music-toggle { left: 12px; }
 }
+
+
+.order-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+.order-filter {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.04);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.order-filter.active,
+.order-filter:hover {
+  color: var(--text);
+  border-color: rgba(20,120,255,.35);
+  background: rgba(20,120,255,.1);
+}
+html[data-theme="light"] .order-filter {
+  background: rgba(20,120,255,.04);
+}

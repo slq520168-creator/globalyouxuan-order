@@ -12,6 +12,7 @@
   let favorites = [];
   let favoriteAnswers = new Map();
   let orders = [];
+  let orderFilter = 'all';
   let materials = [];
   let editingMaterialId = null;
 
@@ -279,6 +280,7 @@
     }
     orders = data || [];
     renderOrders();
+    renderDownloads();
   }
 
   function statusLabel(status) {
@@ -286,18 +288,95 @@
     return t(valid.has(status) ? status : 'status');
   }
 
-  function renderOrders() {
-    const list = $('orderList');
+  function effectiveStatus(order) {
+    // 前端展示：待付款超过 24 小时视为已失效
+    if (order.status === 'pending' && order.created_at) {
+      const created = new Date(order.created_at).getTime();
+      if (Number.isFinite(created) && Date.now() - created > 24 * 60 * 60 * 1000) {
+        return 'expired';
+      }
+    }
+    if (order.status === 'delivered') return 'delivered';
+    return order.status;
+  }
+
+  function filteredOrders() {
+    return orders.filter((order) => {
+      const st = effectiveStatus(order);
+      if (orderFilter === 'all') return true;
+      if (orderFilter === 'paid') return st === 'paid' || st === 'delivered';
+      if (orderFilter === 'delivered') return st === 'delivered' || st === 'paid';
+      return st === orderFilter;
+    });
+  }
+
+
+  function renderDownloads() {
+    const list = $('downloadList');
+    if (!list) return;
     list.replaceChildren();
-    if (!orders.length) {
+    const items = orders.filter((o) => ['paid', 'delivered'].includes(effectiveStatus(o)));
+    if (!items.length) {
       const empty = document.createElement('div');
       empty.className = 'empty-state';
-      empty.textContent = t('noOrders');
+      empty.textContent = '暂无可下载内容';
       list.appendChild(empty);
       return;
     }
+    items.forEach((order) => {
+      const card = document.createElement('article');
+      card.className = 'order-card';
+      const title = document.createElement('h3');
+      title.className = 'order-title';
+      title.textContent = order.matched_answer_title || order.product_name || order.product_id;
+      const meta = document.createElement('p');
+      meta.className = 'order-number';
+      meta.textContent = (order.order_no || '') + ' · ' + formatDate(order.updated_at || order.created_at);
+      const badge = document.createElement('span');
+      badge.className = 'status-badge ' + effectiveStatus(order);
+      badge.textContent = statusLabel(effectiveStatus(order));
+      const top = document.createElement('div');
+      top.className = 'order-top';
+      const wrap = document.createElement('div');
+      wrap.append(title, meta);
+      top.append(wrap, badge);
+      card.appendChild(top);
+      if (order.answer_id) {
+        const btn = document.createElement('button');
+        btn.className = 'btn';
+        btn.type = 'button';
+        btn.textContent = t('viewPurchasedAnswer') || '查看交付内容';
+        const box = document.createElement('div');
+        box.className = 'purchased-answer hidden';
+        const pre = document.createElement('pre');
+        box.appendChild(pre);
+        btn.addEventListener('click', () => loadPurchasedAnswer(order, btn, box, pre));
+        card.append(btn, box);
+      } else {
+        const tip = document.createElement('p');
+        tip.className = 'muted';
+        tip.textContent = '该订单暂无在线文案，请联系客服领取。';
+        card.appendChild(tip);
+      }
+      list.appendChild(card);
+    });
+  }
 
-    orders.forEach((order) => {
+  function renderOrders() {
+    const list = $('orderList');
+    list.replaceChildren();
+    const view = filteredOrders();
+    if (!view.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = orders.length ? '该分类下暂无订单' : t('noOrders');
+      list.appendChild(empty);
+      renderDownloads();
+      return;
+    }
+
+    view.forEach((order) => {
+      const displayStatus = effectiveStatus(order);
       const card = document.createElement('article');
       card.className = 'order-card';
       const top = document.createElement('div');
@@ -311,8 +390,8 @@
       number.textContent = order.order_no;
       titleWrap.append(title, number);
       const badge = document.createElement('span');
-      badge.className = `status-badge ${order.status}`;
-      badge.textContent = statusLabel(order.status);
+      badge.className = `status-badge ${displayStatus}`;
+      badge.textContent = statusLabel(displayStatus);
       top.append(titleWrap, badge);
 
       const info = document.createElement('div');
@@ -339,7 +418,7 @@
         card.appendChild(question);
       }
 
-      if (['pending', 'checking'].includes(order.status)) {
+      if (['pending', 'checking'].includes(displayStatus)) {
         const wallet = document.createElement('p');
         wallet.className = 'order-number';
         wallet.textContent = `${t('wallet')}: ${order.wallet_address || window.GYX_CONFIG.wallet}`;
@@ -364,7 +443,7 @@
         card.appendChild(row);
       }
 
-      if (order.answer_id && ['paid', 'delivered'].includes(order.status)) {
+      if (order.answer_id && ['paid', 'delivered'].includes(displayStatus)) {
         const answerActions = document.createElement('div');
         answerActions.className = 'order-actions';
         const viewAnswer = document.createElement('button');
@@ -392,7 +471,7 @@
         card.append(answerActions, answerBox);
       }
 
-      if (order.status === 'delivered' && !order.answer_id) {
+      if (displayStatus === 'delivered' && !order.answer_id) {
         const actions = document.createElement('div');
         actions.className = 'order-actions';
         const download = document.createElement('button');
@@ -613,6 +692,13 @@
 
   function bindEvents() {
     $('profileForm').addEventListener('submit', saveProfile);
+    document.querySelectorAll('[data-order-filter]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        orderFilter = btn.dataset.orderFilter || 'all';
+        document.querySelectorAll('[data-order-filter]').forEach((b) => b.classList.toggle('active', b === btn));
+        renderOrders();
+      });
+    });
     $('refreshOrdersButton').addEventListener('click', loadOrders);
     $('materialForm').addEventListener('submit', saveMaterial);
     $('newMaterialButton').addEventListener('click', () => {
