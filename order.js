@@ -521,14 +521,38 @@
     }
 
     originalQuestion = question;
-    rankedCandidates = rankAnswers(question).slice(0, 5);
-    if (rankedCandidates.length < 5) {
-      answers.forEach((answer) => {
-        if (rankedCandidates.length < 5 && !rankedCandidates.some((item) => item.id === answer.id)) {
-          rankedCandidates.push(Object.assign({}, answer, { _score: 0 }));
-        }
-      });
+
+    // 需求理解匹配：只取有实际相关度的答案，禁止用0分答案强行补满
+    const MIN_RELEVANT_SCORE = 8;
+    let ranked = rankAnswers(question).filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
+
+    // 不足5个时，从最接近的分类（module）补充
+    if (ranked.length < 5 && ranked.length > 0) {
+      const topModule = ranked[0].module_code;
+      const sameModule = rankAnswers(question)
+        .filter((a) => a.module_code === topModule && !ranked.some((r) => r.id === a.id))
+        .slice(0, 5 - ranked.length);
+      ranked = ranked.concat(sameModule);
     }
+
+    // 如果仍然没有足够相关答案，不再返回固定默认候选
+    if (ranked.length === 0) {
+      // 记录未匹配问题（为 FEATURE-001 预留）
+      try {
+        const unmatched = JSON.parse(localStorage.getItem('gyx_unmatched_questions') || '[]');
+        unmatched.unshift({
+          question: originalQuestion,
+          goals: extractGoals(originalQuestion),
+          time: new Date().toISOString()
+        });
+        localStorage.setItem('gyx_unmatched_questions', JSON.stringify(unmatched.slice(0, 50)));
+      } catch (e) {}
+
+      showMessage('problemMessage', '暂时没有完全匹配的答案，已记录你的问题，我们会尽快补充。你可以换个说法再试，或直接联系客服。', 'error');
+      return;
+    }
+
+    rankedCandidates = ranked.slice(0, 5);
     initialStrongMatch = Number(rankedCandidates[0] && rankedCandidates[0]._score || 0) >= MIN_STRONG_SCORE;
     quizIndex = 0;
     selections = [];
