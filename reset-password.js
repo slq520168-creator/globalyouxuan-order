@@ -23,21 +23,53 @@
     if (ready) showMessage(t('resetLinkReady'), 'success');
   }
 
+  // 监听恢复事件
   db.auth.onAuthStateChange((event, session) => {
-    if (event === 'PASSWORD_RECOVERY' || session?.user) setReady(true);
+    if (event === 'PASSWORD_RECOVERY' || (session && session.user)) {
+      setReady(true);
+    }
   });
 
   async function inspectRecovery() {
-    const { data } = await db.auth.getSession();
-    if (data?.session?.user) {
-      setReady(true);
+    // 1. 先看当前 session
+    try {
+      const { data } = await db.auth.getSession();
+      if (data?.session?.user) {
+        setReady(true);
+        return;
+      }
+    } catch (e) {}
+
+    // 2. 处理 URL 中的 hash token（Supabase 常见格式）
+    const hash = window.location.hash || '';
+    if (hash.includes('access_token') || hash.includes('type=recovery') || hash.includes('refresh_token')) {
+      // supabase-js 会自动从 hash 解析，稍等再查
+      setTimeout(async () => {
+        try {
+          const retry = await db.auth.getSession();
+          if (retry.data?.session?.user) {
+            setReady(true);
+            // 清理地址栏 hash，避免刷新重复
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+            return;
+          }
+        } catch (e) {}
+        showMessage(t('resetLinkInvalid'));
+      }, 1200);
       return;
     }
+
+    // 3. 再等一次
     setTimeout(async () => {
-      const retry = await db.auth.getSession();
-      if (retry.data?.session?.user) setReady(true);
-      else showMessage(t('resetLinkInvalid'));
-    }, 900);
+      try {
+        const retry = await db.auth.getSession();
+        if (retry.data?.session?.user) {
+          setReady(true);
+          return;
+        }
+      } catch (e) {}
+      showMessage(t('resetLinkInvalid'));
+    }, 1500);
   }
 
   async function submitNewPassword(event) {
@@ -76,6 +108,7 @@
   window.addEventListener('gyx:languagechange', () => {
     if (recoveryReady) showMessage(t('resetLinkReady'), 'success');
   });
+
   document.addEventListener('DOMContentLoaded', () => {
     $('resetPasswordForm').addEventListener('submit', submitNewPassword);
     inspectRecovery();
