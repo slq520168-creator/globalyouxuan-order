@@ -62,6 +62,10 @@
       if (event.key === 'Escape') setSupport(false);
     });
     window.addEventListener('gyx:languagechange', () => applyTheme(root.dataset.theme, false));
+    window.gyxSupabase?.auth.onAuthStateChange((event) => {
+      if (event !== 'PASSWORD_RECOVERY' || location.pathname.endsWith('/reset-password.html')) return;
+      location.replace('reset-password.html');
+    });
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

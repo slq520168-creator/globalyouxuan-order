@@ -17,22 +17,18 @@
   const FIXED_MODULES = {
     web: {
       titleKey: 'moduleWebsite',
-      priceElement: 'modulePriceWeb',
       ids: ['web-photo', 'web-merchant', 'web-brand', 'web-enterprise']
     },
     automation: {
       titleKey: 'moduleAi',
-      priceElement: 'modulePriceAutomation',
       ids: ['automation-trial', 'automation-small', 'automation-team', 'automation-enterprise']
     },
     ai: {
       titleKey: 'moduleGrowth',
-      priceElement: 'modulePriceAi',
       ids: ['ai-trial', 'ai-content', 'ai-office', 'ai-enterprise']
     },
     digital: {
       titleKey: 'moduleAcademy',
-      priceElement: 'modulePriceDigital',
       ids: ['digital-trial', 'digital-study', 'digital-expert', 'digital-private']
     }
   };
@@ -386,13 +382,6 @@
   }
 
   function renderFixedModules() {
-    Object.entries(FIXED_MODULES).forEach(([moduleCode, module]) => {
-      const rows = fixedModuleProducts(moduleCode);
-      const minimum = rows.reduce((value, product) => Math.min(value, Number(product.product_price)), Infinity);
-      const price = Number.isFinite(minimum) ? compactPrice(minimum) : '—';
-      const element = $(module.priceElement);
-      if (element) element.textContent = t('fixedStartsAt', { price });
-    });
     if (activeFixedModule) renderFixedPlans(activeFixedModule, false, true);
   }
 
@@ -983,74 +972,40 @@
 
   function setupMusic() {
     const button = $('musicToggle');
-    if (!button) return;
-    let context = null;
-    let master = null;
-    let timer = null;
-    let index = 0;
+    const audio = $('backgroundMusic');
+    if (!button || !audio) return;
     let playing = false;
-    const notes = [261.63, 329.63, 392, 523.25, 440, 392, 329.63, 293.66];
     const update = () => {
       button.classList.toggle('playing', playing);
       button.setAttribute('aria-pressed', String(playing));
       button.textContent = t(playing ? 'musicOn' : 'musicOff');
     };
-    const tone = () => {
-      if (!playing || !context || context.state !== 'running') return;
-      const now = context.currentTime;
-      const envelope = context.createGain();
-      const frequency = notes[index++ % notes.length];
-      envelope.connect(master);
-      envelope.gain.setValueAtTime(.0001, now);
-      envelope.gain.exponentialRampToValueAtTime(.14, now + .035);
-      envelope.gain.exponentialRampToValueAtTime(.0001, now + .72);
-      [1, .5, 1.5].forEach((ratio, voice) => {
-        const oscillator = context.createOscillator();
-        oscillator.type = voice === 0 ? 'sine' : voice === 1 ? 'triangle' : 'sine';
-        oscillator.frequency.value = frequency * ratio;
-        oscillator.detune.value = [-4, 4, 1][voice];
-        oscillator.connect(envelope);
-        oscillator.start(now);
-        oscillator.stop(now + .78);
-      });
-      timer = setTimeout(tone, 760);
-    };
     const start = async () => {
-      const AudioEngine = window.AudioContext || window.webkitAudioContext;
-      if (!AudioEngine) {
-        showToast(t('errorGeneric'), true);
-        return;
-      }
-      if (!context) {
-        context = new AudioEngine();
-        master = context.createGain();
-        master.gain.value = .82;
-        const compressor = context.createDynamicsCompressor();
-        compressor.threshold.value = -18;
-        compressor.knee.value = 16;
-        compressor.ratio.value = 5;
-        compressor.attack.value = .003;
-        compressor.release.value = .25;
-        master.connect(compressor);
-        compressor.connect(context.destination);
-      }
-      await context.resume();
-      if (context.state !== 'running') throw new Error('AUDIO_NOT_RUNNING');
+      audio.muted = false;
+      audio.volume = .78;
+      await audio.play();
       playing = true;
       localStorage.setItem('gyx_music_enabled', 'on');
       update();
-      tone();
     };
     const stop = () => {
+      audio.pause();
       playing = false;
-      clearTimeout(timer);
       localStorage.setItem('gyx_music_enabled', 'off');
-      if (context && context.state === 'running') context.suspend();
       update();
     };
+    audio.addEventListener('playing', () => { playing = true; update(); });
+    audio.addEventListener('pause', () => { playing = false; update(); });
+    audio.addEventListener('error', () => {
+      playing = false;
+      update();
+      showToast(t('musicError'), true);
+    });
     button.addEventListener('click', async () => {
+      button.disabled = true;
       try { playing ? stop() : await start(); }
-      catch { playing = false; update(); showToast(t('errorGeneric'), true); }
+      catch { playing = false; update(); showToast(t('musicError'), true); }
+      finally { button.disabled = false; }
     });
     window.addEventListener('gyx:languagechange', update);
     update();

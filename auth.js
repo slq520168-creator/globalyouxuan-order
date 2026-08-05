@@ -7,7 +7,8 @@
 
   const $ = (id) => document.getElementById(id);
   const t = (key) => i18n.t(key);
-  let mode = new URLSearchParams(location.search).get('mode') === 'register' ? 'register' : 'login';
+  const requestedMode = new URLSearchParams(location.search).get('mode');
+  let mode = requestedMode === 'register' || requestedMode === 'recover' ? requestedMode : 'login';
   let activeUser = null;
 
   function showMessage(message, kind = 'error') {
@@ -25,14 +26,19 @@
     mode = nextMode;
     clearMessage();
     const registering = mode === 'register';
+    const recovering = mode === 'recover';
     $('displayNameGroup').classList.toggle('hidden', !registering);
     $('confirmPasswordGroup').classList.toggle('hidden', !registering);
+    $('passwordGroup').classList.toggle('hidden', recovering);
+    $('authPassword').disabled = recovering;
     $('authPassword').autocomplete = registering ? 'new-password' : 'current-password';
-    $('loginTab').classList.toggle('active', !registering);
+    $('forgotPasswordButton').classList.toggle('hidden', mode !== 'login');
+    $('backToLoginButton').classList.toggle('hidden', !recovering);
+    $('loginTab').classList.toggle('active', !registering && !recovering);
     $('registerTab').classList.toggle('active', registering);
-    $('loginTab').setAttribute('aria-selected', String(!registering));
+    $('loginTab').setAttribute('aria-selected', String(!registering && !recovering));
     $('registerTab').setAttribute('aria-selected', String(registering));
-    $('authSubmit').textContent = t(registering ? 'signUp' : 'signIn');
+    $('authSubmit').textContent = t(recovering ? 'sendResetLink' : registering ? 'signUp' : 'signIn');
   }
 
   function authErrorText(error) {
@@ -76,7 +82,7 @@
       showMessage(t('errorEmail'));
       return;
     }
-    if (password.length < 8) {
+    if (mode !== 'recover' && password.length < 8) {
       showMessage(t('errorPasswordLength'));
       return;
     }
@@ -91,9 +97,16 @@
 
     const button = $('authSubmit');
     button.disabled = true;
-    button.textContent = t(mode === 'register' ? 'signingUp' : 'signingIn');
+    button.textContent = t(mode === 'recover' ? 'sendingResetLink' : mode === 'register' ? 'signingUp' : 'signingIn');
     try {
-      if (mode === 'register') {
+      if (mode === 'recover') {
+        const redirectUrl = new URL('reset-password.html', location.href);
+        redirectUrl.search = '';
+        redirectUrl.hash = '';
+        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl.href });
+        if (error) throw error;
+        showMessage(t('resetEmailSent'), 'success');
+      } else if (mode === 'register') {
         localStorage.setItem('gyx_pending_profile', JSON.stringify({
           email, display_name: displayName, locale: i18n.locale
         }));
@@ -120,11 +133,12 @@
       showMessage(authErrorText(error));
     } finally {
       button.disabled = false;
-      button.textContent = t(mode === 'register' ? 'signUp' : 'signIn');
+      button.textContent = t(mode === 'recover' ? 'sendResetLink' : mode === 'register' ? 'signUp' : 'signIn');
     }
   }
 
   async function inspectSession() {
+    if (mode === 'recover') return;
     activeUser = await window.gyxGetVerifiedUser();
     if (!activeUser) return;
     $('activeSession').classList.add('show');
@@ -147,6 +161,8 @@
       button.addEventListener('click', () => setMode(button.dataset.mode));
     });
     $('authForm').addEventListener('submit', submitAuth);
+    $('forgotPasswordButton').addEventListener('click', () => setMode('recover'));
+    $('backToLoginButton').addEventListener('click', () => setMode('login'));
     $('switchAccountButton').addEventListener('click', switchAccount);
     setMode(mode);
     await inspectSession();

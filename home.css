@@ -181,7 +181,7 @@
 .home-page .delivery-box,
 .home-page .match-details { background: rgba(255, 255, 255, .045); }
 
-.fixed-module-section { display: grid; gap: 16px; margin-top: clamp(250px, 28vw, 390px); }
+.fixed-module-section { display: grid; gap: 16px; margin-top: 18px; }
 .home-page .module-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -293,7 +293,7 @@
 @media (max-width: 960px) {
   .cosmic-home { padding-top: 48px; background-size: 1120px auto; }
   .home-page .module-grid { grid-template-columns: repeat(2, 1fr); }
-  .fixed-module-section { margin-top: 310px; }
+  .fixed-module-section { margin-top: 12px; }
   .fixed-plan-list { grid-template-columns: repeat(2, 1fr); }
 }
 
@@ -324,7 +324,7 @@
   .search-submit { width: 53px; height: 53px; border-radius: 18px; font-size: 31px; }
   .search-popover { padding: 16px; border-radius: 19px; }
   .home-page .quiz-option { min-height: 58px; }
-  .fixed-module-section { margin-top: 315px; }
+  .fixed-module-section { margin-top: 8px; }
   .home-page .module-grid { gap: 10px; }
   .home-page .module-card { min-height: 165px; padding: 15px 7px; border-radius: 18px; }
   .home-page .module-icon { width: 49px; height: 49px; font-size: 25px; }
@@ -340,3 +340,97 @@
   .home-page .brand span:last-child { display: none; }
   .fixed-plan-list { grid-template-columns: 1fr; }
 }
+
+/* The homepage opens in a bright theme; dark mode remains available from the header. */
+html[data-theme="light"] .home-page {
+  color: #102941;
+  background: #edf6ff;
+}
+html[data-theme="light"] .home-page .site-header {
+  border-bottom-color: rgba(31, 103, 180, .14);
+  background: rgba(255, 255, 255, .9);
+  box-shadow: 0 12px 40px rgba(45, 89, 130, .1);
+}
+html[data-theme="light"] .home-page .brand,
+html[data-theme="light"] .home-page .nav a,
+html[data-theme="light"] .home-page .nav-link-button { color: #14304b; }
+html[data-theme="light"] .home-page .nav a:hover,
+html[data-theme="light"] .home-page .nav a[aria-current="page"],
+html[data-theme="light"] .home-page .nav-link-button:hover { background: rgba(20, 120, 255, .08); }
+html[data-theme="light"] .home-page .language-select,
+html[data-theme="light"] .home-page .icon-control,
+html[data-theme="light"] .home-page .header-actions .btn-secondary {
+  color: #173650;
+  border-color: rgba(30, 101, 174, .17);
+  background: rgba(255, 255, 255, .84);
+}
+html[data-theme="light"] .cosmic-home {
+  color: #102941;
+  background-color: #eaf5ff;
+  background-image:
+    linear-gradient(180deg, rgba(248, 252, 255, .48) 0%, rgba(237, 247, 255, .6) 50%, rgba(238, 248, 255, .9) 100%),
+    url("assets/hero-space-earth.webp");
+  background-blend-mode: screen, screen;
+}
+html[data-theme="light"] .cosmic-home::before {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(69, 151, 255, .13), transparent 34%),
+    linear-gradient(90deg, rgba(236, 247, 255, .38), transparent 24% 76%, rgba(236, 247, 255, .38));
+}
+html[data-theme="light"] .home-copy h1 {
+  color: #102c4d;
+  text-shadow: 0 8px 32px rgba(58, 104, 151, .12);
+}
+html[data-theme="light"] .home-copy p {
+  color: #466581;
+  text-shadow: none;
+}
+html[data-theme="light"] .compact-search {
+  border-color: rgba(20, 120, 255, .52);
+  background: rgba(255, 255, 255, .86);
+  box-shadow: 0 18px 48px rgba(45, 89, 130, .14), 0 0 30px rgba(20, 120, 255, .09);
+}
+html[data-theme="light"] .home-page .compact-search .problem-input { color: #15334e; }
+html[data-theme="light"] .home-page .compact-search .problem-input::placeholder { color: #7890a8; }
+html[data-theme="light"] .search-popover,
+html[data-theme="light"] .fixed-plans-panel {
+  color: #15334e;
+  border-color: rgba(20, 120, 255, .2);
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 24px 65px rgba(45, 89, 130, .16);
+}
+html[data-theme="light"] .search-popover h2,
+html[data-theme="light"] .fixed-plans-head h2,
+html[data-theme="light"] .fixed-plan h3 { color: #15334e; }
+html[data-theme="light"] .home-page .quiz-option,
+html[data-theme="light"] .home-page .result-price-row,
+html[data-theme="light"] .home-page .delivery-box,
+html[data-theme="light"] .home-page .match-details,
+html[data-theme="light"] .fixed-plan {
+  color: #15334e;
+  border-color: rgba(31, 103, 180, .14);
+  background: rgba(20, 120, 255, .045);
+}
+html[data-theme="light"] .home-page .quiz-option small,
+html[data-theme="light"] .home-page .result-summary,
+html[data-theme="light"] .home-page .delivery-box ul,
+html[data-theme="light"] .home-page .match-details { color: #58718a; }
+html[data-theme="light"] .home-page .module-card {
+  color: #15334e;
+  border-color: color-mix(in srgb, var(--module-color) 38%, rgba(31,103,180,.12));
+  background: linear-gradient(145deg, rgba(255, 255, 255, .94), rgba(239, 247, 255, .9));
+  box-shadow: inset 0 0 28px color-mix(in srgb, var(--module-color) 5%, transparent), 0 18px 42px rgba(45, 89, 130, .12);
+}
+html[data-theme="light"] .home-page .module-card strong { color: #15334e; }
+html[data-theme="light"] .home-page .site-footer {
+  color: #637b93;
+  border-top-color: rgba(31, 103, 180, .13);
+  background: #edf6ff;
+}
+html[data-theme="light"] .home-page .music-toggle {
+  color: #15334e;
+  border-color: rgba(20, 120, 255, .22);
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 12px 34px rgba(45, 89, 130, .16);
+}
+html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
