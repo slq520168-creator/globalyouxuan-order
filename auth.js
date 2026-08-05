@@ -22,75 +22,9 @@
     $('authMessage').textContent = '';
   }
 
-  function resetPasswordVisibility() {
-    ['authPassword', 'confirmPassword'].forEach((id) => {
-      const input = $(id);
-      if (input) input.type = 'password';
-    });
-    document.querySelectorAll('[data-password-toggle]').forEach((button) => {
-      button.textContent = '显示';
-      button.setAttribute('aria-pressed', 'false');
-    });
-  }
-
-  function preparePasswordInput(input) {
-    if (!input || input.dataset.passwordReady === 'true') return;
-    input.dataset.passwordReady = 'true';
-    input.setAttribute('autocapitalize', 'none');
-    input.setAttribute('autocorrect', 'off');
-    input.setAttribute('spellcheck', 'false');
-    input.setAttribute('enterkeyhint', 'done');
-
-    const parent = input.parentElement;
-    if (!parent) return;
-    const wrapper = document.createElement('div');
-    wrapper.style.position = 'relative';
-    wrapper.style.width = '100%';
-    parent.insertBefore(wrapper, input);
-    wrapper.appendChild(input);
-    input.style.paddingRight = '68px';
-
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.textContent = '显示';
-    toggle.dataset.passwordToggle = input.id;
-    toggle.setAttribute('aria-label', '显示密码');
-    toggle.setAttribute('aria-pressed', 'false');
-    Object.assign(toggle.style, {
-      position: 'absolute',
-      right: '10px',
-      top: '50%',
-      transform: 'translateY(-50%)',
-      border: '0',
-      background: 'transparent',
-      color: 'inherit',
-      fontSize: '14px',
-      fontWeight: '700',
-      padding: '8px',
-      cursor: 'pointer',
-      zIndex: '2'
-    });
-    toggle.addEventListener('click', () => {
-      const showing = input.type === 'text';
-      input.type = showing ? 'password' : 'text';
-      toggle.textContent = showing ? '显示' : '隐藏';
-      toggle.setAttribute('aria-label', showing ? '显示密码' : '隐藏密码');
-      toggle.setAttribute('aria-pressed', String(!showing));
-      input.focus({ preventScroll: true });
-      try { input.setSelectionRange(input.value.length, input.value.length); } catch { /* unsupported */ }
-    });
-    wrapper.appendChild(toggle);
-  }
-
-  function initPasswordControls() {
-    preparePasswordInput($('authPassword'));
-    preparePasswordInput($('confirmPassword'));
-  }
-
   function setMode(nextMode) {
     mode = nextMode;
     clearMessage();
-    resetPasswordVisibility();
     const registering = mode === 'register';
     const recovering = mode === 'recover';
     $('displayNameGroup').classList.toggle('hidden', !registering);
@@ -98,7 +32,6 @@
     $('passwordGroup').classList.toggle('hidden', recovering);
     $('authPassword').disabled = recovering;
     $('authPassword').autocomplete = registering ? 'new-password' : 'current-password';
-    $('confirmPassword').autocomplete = 'new-password';
     $('forgotPasswordButton').classList.toggle('hidden', mode !== 'login');
     $('backToLoginButton').classList.toggle('hidden', !recovering);
     $('loginTab').classList.toggle('active', !registering && !recovering);
@@ -108,29 +41,52 @@
     $('authSubmit').textContent = t(recovering ? 'sendResetLink' : registering ? 'signUp' : 'signIn');
   }
 
-  function authErrorText(error) {
-    const code = String(error?.code || '').toLowerCase();
-    const raw = String(error?.message || error || '');
-    const message = raw.toLowerCase();
-    const status = Number(error?.status || 0);
+  function isValidPassword(password) {
+    // 8～10 位，必须同时包含字母和数字
+    return /^[A-Za-z0-9]{8,10}$/.test(password) && /[A-Za-z]/.test(password) && /[0-9]/.test(password);
+  }
 
-    if (code.includes('account_already_exists') || message.includes('already registered') || message.includes('already been registered')) {
-      return t('errorAccountExists');
+  function authErrorText(error) {
+    const status = Number(error?.status || error?.statusCode || error?.context?.status || 0);
+    const code = String(error?.code || error?.error_code || error?.name || '').toUpperCase();
+    const raw = String(error?.message || error?.msg || error || '');
+    const message = raw.toLowerCase();
+
+    // 429 / 频率限制（必须单独显示，不能当成密码错误）
+    if (
+      status === 429 ||
+      code.includes('OVER_REQUEST_RATE') ||
+      code.includes('RATE_LIMIT') ||
+      message.includes('rate limit') ||
+      message.includes('too many requests') ||
+      message.includes('too many') ||
+      message.includes('security purposes') ||
+      message.includes('over_request_rate')
+    ) {
+      return '尝试次数过多，请等待 1～2 分钟后再试（不是密码永久失效）。';
     }
-    if (status === 429 || code.includes('rate_limit') || code.includes('over_email_send_rate_limit') || message.includes('too many') || message.includes('security purposes')) {
-      return '操作太频繁，请等待1～2分钟后再试';
+
+    if (message.includes('email not confirmed') || message.includes('not confirmed') || code.includes('EMAIL_NOT_CONFIRMED')) {
+      return '邮箱尚未确认。请先打开注册邮件完成确认，或联系管理员。';
     }
-    if (code.includes('email_not_confirmed') || message.includes('email not confirmed') || message.includes('email_not_confirmed')) {
-      return '邮箱尚未完成验证，请先打开验证邮件确认账号';
+
+    if (code.includes('ACCOUNT_ALREADY_EXISTS') || message.includes('already registered') || message.includes('already been registered')) {
+      return '该邮箱已注册，请直接登录或使用忘记密码。';
     }
-    if (code.includes('invalid_credentials') || message.includes('invalid login') || message.includes('invalid credentials')) {
-      return '邮箱不存在或密码错误，请点“显示”核对密码后重试';
+
+    if (message.includes('user not found') || message.includes('no user') || code.includes('USER_NOT_FOUND')) {
+      return '账号不存在，请先注册。';
     }
-    if (code.includes('valid_email')) return t('errorEmail');
-    if (code.includes('valid_password') || code.includes('weak_password')) return t('errorPasswordLength');
-    if (code.includes('valid_name')) return t('errorName');
-    if (message.includes('fetch') || message.includes('network')) return t('errorNetwork');
-    if (message.includes('redirect')) return '回调地址未配置，请检查Supabase Redirect URLs';
+
+    if (message.includes('invalid login') || message.includes('invalid credentials') || code.includes('INVALID_CREDENTIALS')) {
+      return '密码错误。请点“显示”确认没有空格，或使用忘记密码重置。';
+    }
+
+    if (code.includes('VALID_EMAIL') || message.includes('invalid email')) return '邮箱格式不正确。';
+    if (code.includes('VALID_PASSWORD')) return t('errorPasswordLength');
+    if (code.includes('VALID_NAME')) return t('errorName');
+    if (message.includes('fetch') || message.includes('network') || message.includes('failed to fetch')) return t('errorNetwork');
+    if (message.includes('redirect')) return '回调地址未配置，请检查 Supabase Redirect URLs';
     if (raw) return raw;
     return t('errorGeneric');
   }
@@ -153,8 +109,8 @@
   async function submitAuth(event) {
     event.preventDefault();
     clearMessage();
-    const email = $('authEmail').value.trim().toLowerCase();
-    const password = $('authPassword').value;
+    const email = String($('authEmail').value || '').trim().toLowerCase();
+    const password = String($('authPassword').value || '').trim();
     const displayName = $('displayName').value.trim();
     const confirm = $('confirmPassword').value;
 
@@ -162,12 +118,8 @@
       showMessage(t('errorEmail'));
       return;
     }
-    if (mode !== 'recover' && password.length < 8) {
-      showMessage(t('errorPasswordLength'));
-      return;
-    }
-    if (mode !== 'recover' && password !== password.trim()) {
-      showMessage('密码开头或结尾包含空格，请点“显示”检查后重新输入');
+    if (mode !== 'recover' && !isValidPassword(password)) {
+      showMessage('密码需为 8～10 位，且同时包含数字和字母');
       return;
     }
     if (mode === 'register' && password !== confirm) {
@@ -184,6 +136,7 @@
     button.textContent = t(mode === 'recover' ? 'sendingResetLink' : mode === 'register' ? 'signingUp' : 'signingIn');
     try {
       if (mode === 'recover') {
+        // 固定指向正式重置页，避免落到首页
         const redirectTo = 'https://globalyouxuan-order.pages.dev/reset-password.html';
         const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo });
         if (error) throw error;
@@ -212,6 +165,12 @@
         setTimeout(() => { location.href = getNext(); }, 450);
       }
     } catch (error) {
+      // 补充 status，便于识别 429
+      try {
+        if (error && error.status == null && error.context && error.context.status) {
+          error.status = error.context.status;
+        }
+      } catch (e) {}
       showMessage(authErrorText(error));
     } finally {
       button.disabled = false;
@@ -234,15 +193,11 @@
     activeUser = null;
     $('activeSession').classList.remove('show');
     $('authForm').classList.remove('hidden');
-    $('authPassword').value = '';
-    $('confirmPassword').value = '';
-    resetPasswordVisibility();
     $('authEmail').focus();
   }
 
   window.addEventListener('gyx:languagechange', () => setMode(mode));
   document.addEventListener('DOMContentLoaded', async () => {
-    initPasswordControls();
     document.querySelectorAll('[data-mode]').forEach((button) => {
       button.addEventListener('click', () => setMode(button.dataset.mode));
     });

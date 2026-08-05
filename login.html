@@ -72,18 +72,27 @@
           </div>
           <div class="form-group">
             <label for="authEmail" data-i18n="email">邮箱</label>
-            <input id="authEmail" class="field" type="email" maxlength="254" autocomplete="email"
-              data-i18n-placeholder="emailPlaceholder" placeholder="请输入常用邮箱" required>
+            <input id="authEmail" class="field" type="email" maxlength="254"
+              autocomplete="username" inputmode="email" autocapitalize="off" autocorrect="off"
+              spellcheck="false" data-i18n-placeholder="emailPlaceholder" placeholder="请输入常用邮箱" required>
           </div>
           <div id="passwordGroup" class="form-group">
             <label for="authPassword" data-i18n="password">密码</label>
-            <input id="authPassword" class="field" type="password" minlength="8" maxlength="72"
-              autocomplete="current-password" data-i18n-placeholder="passwordPlaceholder" placeholder="至少 8 位密码" required>
+            <div class="password-field">
+              <input id="authPassword" class="field" type="password" minlength="8" maxlength="10"
+                autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false"
+                data-form-type="other" data-i18n-placeholder="passwordPlaceholder" placeholder="8～10位数字加字母" required>
+              <button type="button" class="password-toggle" data-toggle-password="authPassword" aria-label="显示密码">显示</button>
+            </div>
           </div>
           <div id="confirmPasswordGroup" class="form-group hidden">
             <label for="confirmPassword" data-i18n="confirmPassword">确认密码</label>
-            <input id="confirmPassword" class="field" type="password" minlength="8" maxlength="72"
-              autocomplete="new-password" data-i18n-placeholder="confirmPasswordPlaceholder" placeholder="再次输入密码">
+            <div class="password-field">
+              <input id="confirmPassword" class="field" type="password" minlength="8" maxlength="10"
+                autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false"
+                data-form-type="other" data-i18n-placeholder="confirmPasswordPlaceholder" placeholder="再次输入8～10位数字加字母">
+              <button type="button" class="password-toggle" data-toggle-password="confirmPassword" aria-label="显示密码">显示</button>
+            </div>
           </div>
           <div id="authMessage" class="form-message" aria-live="polite"></div>
           <button id="authSubmit" class="btn btn-block" type="submit" data-i18n="signIn">登录会员账号</button>

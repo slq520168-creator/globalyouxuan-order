@@ -1157,3 +1157,31 @@ html[data-theme="light"] .toast { color: var(--text); background: var(--panel-st
 html[data-theme="light"] .order-filter {
   background: rgba(20,120,255,.04);
 }
+
+
+.password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.password-field .field {
+  padding-right: 64px;
+}
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  min-height: 32px;
+  padding: 0 10px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(20, 120, 255, .1);
+  color: var(--accent, #2b6cff);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.password-toggle:active {
+  opacity: .8;
+}

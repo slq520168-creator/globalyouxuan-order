@@ -17,10 +17,14 @@
   }
 
   function setReady(ready) {
+    if (ready && recoveryReady) return; // 避免重复触发
     recoveryReady = ready;
     const button = $('resetPasswordSubmit');
     if (button) button.disabled = !ready;
-    if (ready) showMessage(t('resetLinkReady'), 'success');
+    if (ready) {
+      showMessage(t('resetLinkReady'), 'success');
+      try { sessionStorage.removeItem('gyx_reset_jump'); } catch (e) {}
+    }
   }
 
   // 监听恢复事件
@@ -33,7 +37,7 @@
   async function inspectRecovery() {
     const finishOk = () => {
       setReady(true);
-      try { history.replaceState(null, '', window.location.pathname); } catch (e) {}
+      // 不清理 URL、不跳转，避免页面刷新循环
     };
 
     // 已有会话
@@ -118,8 +122,8 @@
     }
     const password = String($('newPassword').value || '').trim();
     const confirm = String($('confirmNewPassword').value || '').trim();
-    if (password.length < 8) {
-      showMessage(t('errorPasswordLength'));
+    if (!/^[A-Za-z0-9]{8,10}$/.test(password) || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      showMessage('密码需为 8～10 位，且同时包含数字和字母');
       return;
     }
     if (password !== confirm) {
