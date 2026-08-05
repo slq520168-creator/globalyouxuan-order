@@ -142,5 +142,13 @@
   document.addEventListener('DOMContentLoaded', () => {
     $('resetPasswordForm').addEventListener('submit', submitNewPassword);
     inspectRecovery();
+    // 超时仍未验证成功时给出明确提示
+    setTimeout(() => {
+      if (!recoveryReady) {
+        showMessage('重置链接无效或已过期，请返回登录页重新发送重置邮件。');
+        const btn = $('resetPasswordSubmit');
+        if (btn) btn.disabled = true;
+      }
+    }, 5000);
   });
 })();
