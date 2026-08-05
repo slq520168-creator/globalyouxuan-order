@@ -1,67 +1,203 @@
-GY 全球优选
-智能匹配 我的收藏 会员中心 联系客服
-          中文
-          English
-          ខ្មែរ
-         ◐ 退出登录
-全球优选
-我的会员中心
-收藏、订单和个人资料都在这里。
-我的收藏 我的订单 我的私人资料
-GY
-—
-—
-会员编号—
-注册时间—
-会员资料
-会员名称
-电话
-默认语言
-              中文
-              English
-              ខ្មែរ
-            
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f4f8ff">
+  <meta name="robots" content="noindex">
+  <title>我的会员中心｜全球优选</title>
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{document.documentElement.dataset.theme='light'}</script>
+  <link rel="stylesheet" href="site.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="shop.html">
+        <span class="brand-mark">GY</span>
+        <span data-i18n="brand">全球优选</span>
+      </a>
+      <nav class="nav" aria-label="Main navigation">
+        <a href="shop.html" data-i18n="navShop">智能匹配</a>
+        <a href="#favorites" data-i18n="favoritesTitle">我的收藏</a>
+        <a href="member.html" aria-current="page" data-i18n="navMember">会员中心</a>
+        <button class="nav-link-button" type="button" data-support-open data-i18n="navContact">联系客服</button>
+      </nav>
+      <div class="header-actions">
+        <select class="language-select" data-language-select aria-label="Language">
+          <option value="zh-CN">中文</option>
+          <option value="en">English</option>
+          <option value="km">ខ្មែរ</option>
+        </select>
+        <button id="themeToggle" class="icon-control" type="button" aria-label="切换主题">◐</button>
+        <button id="logoutButton" class="btn btn-secondary" type="button" data-i18n="logout">退出登录</button>
+      </div>
+    </div>
+  </header>
 
-保存会员资料
-我的收藏
-你在智能匹配结果页收藏的答案都保存在这里。
-智能匹配
+  <main>
+    <section class="page-hero">
+      <div class="shell">
+        <p class="eyebrow" data-i18n="brand">全球优选</p>
+        <h1 class="gradient-text" data-i18n="memberTitle">我的会员中心</h1>
+        <p data-i18n="memberLead">收藏、订单和个人资料都在这里。</p>
+        <nav class="member-shortcuts" aria-label="Member sections">
+          <a href="#favorites" data-i18n="favoritesTitle">我的收藏</a>
+          <a href="#orders" data-i18n="ordersTitle">我的订单</a>
+          <a href="#materials" data-i18n="materialsTitle">我的私人资料</a>
+        </nav>
+      </div>
+    </section>
 
-正在读取数据库…
-我的订单
-刷新
+    <div class="shell dashboard-grid">
+      <aside class="panel profile-card">
+        <div class="avatar" id="profileAvatar">GY</div>
+        <h2 class="profile-name" id="profileHeading">—</h2>
+        <p class="profile-email" id="profileEmail">—</p>
+        <div class="profile-meta">
+          <div class="meta-row"><span data-i18n="memberId">会员编号</span><strong id="profileUserId">—</strong></div>
+          <div class="meta-row"><span data-i18n="joinedAt">注册时间</span><strong id="profileJoinedAt">—</strong></div>
+        </div>
 
-正在读取数据库…
-我的资料库
-把还没入库的长资料粘贴到这里；它只对你的账号可见，也会加入你的问答搜索。
-新增资料
-资料标题
-来源/文件名（选填）
-分类
-                  AI 办公
-                  AI 创作
-                  AI 商业
-                  AI 自动化
-                  全部
-                
-资料语言
-                  中文
-                  English
-                  ខ្មែរ
-                
-资料正文 0 / 50,000
+        <form id="profileForm" class="form-stack">
+          <h2 data-i18n="profileTitle">会员资料</h2>
+          <div class="form-group">
+            <label for="profileName" data-i18n="displayName">会员名称</label>
+            <input id="profileName" class="field" type="text" maxlength="80" autocomplete="name"
+              data-i18n-placeholder="displayNamePlaceholder" placeholder="请输入会员名称">
+          </div>
+          <div class="form-group">
+            <label for="profilePhone" data-i18n="phone">电话</label>
+            <input id="profilePhone" class="field" type="tel" maxlength="40" autocomplete="tel"
+              data-i18n-placeholder="phonePlaceholder" placeholder="请输入联系电话">
+          </div>
+          <div class="form-group">
+            <label for="profileLocale" data-i18n="profileLanguage">默认语言</label>
+            <select id="profileLocale" class="select">
+              <option value="zh-CN">中文</option>
+              <option value="en">English</option>
+              <option value="km">ខ្មែរ</option>
+            </select>
+          </div>
+          <div id="profileMessage" class="form-message" aria-live="polite"></div>
+          <button id="saveProfileButton" class="btn btn-block" type="submit" data-i18n="saveProfile">保存会员资料</button>
+        </form>
+      </aside>
 
-保存到数据库
-智能匹配
-正在读取数据库…
-全球优选 · 数字解决方案Telegram客服：@qqyousubotslq520168@gmail.com
+      <div class="dashboard-main">
+        <section id="favorites" class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="favoritesTitle">我的收藏</h2>
+              <p class="muted" data-i18n="favoritesLead">你在智能匹配结果页收藏的答案都保存在这里。</p>
+            </div>
+            <a class="btn btn-secondary btn-small" href="shop.html" data-i18n="navShop">智能匹配</a>
+          </div>
+          <div id="favoritesMessage" class="form-message" aria-live="polite"></div>
+          <div id="favoriteList" class="favorite-list">
+            <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
+          </div>
+        </section>
 
-⌕智能搜索 ☆收藏 ⌂首页 ▤订单 ◉会员
-✦在线客服
-×
-联系客服
-需要帮助？直接联系我们
-➤
-Telegram客服@qqyousubot
-✉
-邮箱客服slq520168@gmail.com
+        <section id="orders" class="panel">
+          <div class="panel-head">
+            <h2 data-i18n="ordersTitle">我的订单</h2>
+            <button id="refreshOrdersButton" class="btn btn-secondary btn-small" type="button" data-i18n="refresh">刷新</button>
+          </div>
+          <div id="ordersMessage" class="form-message" aria-live="polite"></div>
+          <div id="orderList" class="order-list">
+            <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
+          </div>
+        </section>
+
+        <section id="materials" class="panel">
+          <div class="panel-head">
+            <div>
+              <h2 data-i18n="materialsTitle">我的资料库</h2>
+              <p class="muted" data-i18n="materialsLead">把还没入库的长资料粘贴到这里；它只对你的账号可见，也会加入你的问答搜索。</p>
+            </div>
+            <button id="newMaterialButton" class="btn btn-secondary btn-small" type="button" data-i18n="newMaterial">新增资料</button>
+          </div>
+
+          <form id="materialForm" class="material-form form-stack">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="materialTitle" data-i18n="materialTitle">资料标题</label>
+                <input id="materialTitle" class="field" type="text" minlength="2" maxlength="160"
+                  data-i18n-placeholder="materialTitlePlaceholder" placeholder="例如：短视频脚本模板" required>
+              </div>
+              <div class="form-group">
+                <label for="materialSource" data-i18n="sourceName">来源/文件名（选填）</label>
+                <input id="materialSource" class="field" type="text" maxlength="200"
+                  data-i18n-placeholder="sourcePlaceholder" placeholder="例如：我的营销笔记.docx">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="materialCategory" data-i18n="category">分类</label>
+                <select id="materialCategory" class="select">
+                  <option value="work" data-i18n="catWork">AI 办公</option>
+                  <option value="creation" data-i18n="catCreation">AI 创作</option>
+                  <option value="business" data-i18n="catBusiness">AI 商业</option>
+                  <option value="automation" data-i18n="catAutomation">AI 自动化</option>
+                  <option value="other" data-i18n="all">全部</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="materialLanguage" data-i18n="materialLanguage">资料语言</label>
+                <select id="materialLanguage" class="select">
+                  <option value="zh-CN">中文</option>
+                  <option value="en">English</option>
+                  <option value="km">ខ្មែរ</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="materialContent" data-i18n="materialContent">资料正文</label>
+              <textarea id="materialContent" class="textarea" minlength="10" maxlength="50000"
+                data-i18n-placeholder="materialContentPlaceholder" placeholder="粘贴完整正文，最多 50,000 字符" required></textarea>
+              <span id="materialLength" class="form-help">0 / 50,000</span>
+            </div>
+            <div id="materialMessage" class="form-message" aria-live="polite"></div>
+            <button id="saveMaterialButton" class="btn" type="submit" data-i18n="saveMaterial">保存到数据库</button>
+          </form>
+
+          <div class="toolbar">
+            <input id="materialSearch" class="field" type="search" maxlength="160"
+              data-i18n-placeholder="search" placeholder="搜索资料">
+            <a class="btn btn-secondary" href="shop.html" data-i18n="navShop">智能匹配</a>
+          </div>
+          <div id="materialList" class="material-list" style="margin-top:14px">
+            <div class="loading-card" data-i18n="loading">正在读取数据库…</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer"><div class="shell footer-inner"><span data-i18n="footer">全球优选 · 数字解决方案</span><button type="button" class="footer-support" data-support-open><span data-i18n="supportTelegram">Telegram客服</span>：@qqyousubot</button><a href="mailto:slq520168@gmail.com">slq520168@gmail.com</a></div></footer>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <nav class="mobile-bottom-nav" aria-label="Mobile navigation">
+    <a href="shop.html#matchAssistant"><span>⌕</span><b data-i18n="navShop">智能搜索</b></a>
+    <a href="#favorites"><span>☆</span><b data-i18n="favoritesTitle">收藏</b></a>
+    <a href="shop.html" class="nav-home"><span>⌂</span><b>首页</b></a>
+    <a href="#orders"><span>▤</span><b data-i18n="ordersTitle">订单</b></a>
+    <a href="member.html" aria-current="page"><span>◉</span><b data-i18n="navMember">会员</b></a>
+  </nav>
+
+  <button class="support-fab" type="button" data-support-open aria-expanded="false"><span>✦</span><b data-i18n="openSupport">在线客服</b></button>
+  <aside id="supportPanel" class="support-panel" aria-hidden="true" aria-labelledby="supportTitle">
+    <button class="support-close" type="button" data-support-close aria-label="关闭">×</button>
+    <p class="eyebrow" data-i18n="supportTitle">联系客服</p>
+    <h2 id="supportTitle" data-i18n="supportLead">需要帮助？直接联系我们</h2>
+    <a class="support-link telegram" href="https://t.me/qqyousubot" target="_blank" rel="noopener"><span>➤</span><div><b data-i18n="supportTelegram">Telegram客服</b><small>@qqyousubot</small></div></a>
+    <a class="support-link email" href="mailto:slq520168@gmail.com"><span>✉</span><div><b data-i18n="supportEmail">邮箱客服</b><small>slq520168@gmail.com</small></div></a>
+  </aside>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
+  <script src="supabase-client.js"></script>
+  <script src="i18n.js"></script>
+  <script src="site-ui.js"></script>
+  <script src="member.js"></script>
+</body>
+</html>
