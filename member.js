@@ -9,6 +9,8 @@
   const t = (key, vars) => i18n.t(key, vars);
   let user = null;
   let profile = null;
+  let favorites = [];
+  let favoriteAnswers = new Map();
   let orders = [];
   let materials = [];
   let editingMaterialId = null;
@@ -98,6 +100,127 @@
     $('profileLocale').value = profile?.locale || i18n.locale;
   }
 
+  async function loadFavorites() {
+    clearMessage('favoritesMessage');
+    const list = $('favoriteList');
+    list.replaceChildren();
+    const loading = document.createElement('div');
+    loading.className = 'loading-card';
+    loading.textContent = t('loading');
+    list.appendChild(loading);
+
+    const { data, error } = await db
+      .from('answer_favorites')
+      .select('id,user_id,answer_id,question,selections,tier,product_id,quoted_price,matched_title,matched_summary,created_at,updated_at')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+    if (error) {
+      showMessage('favoritesMessage', errorText(error));
+      list.replaceChildren();
+      return;
+    }
+    favorites = data || [];
+    favoriteAnswers = new Map();
+    const answerIds = [...new Set(favorites.map((item) => item.answer_id).filter(Boolean))];
+    if (answerIds.length) {
+      const answerResult = await db
+        .from('product_answer_options')
+        .select('id,title,title_en,title_km,answer_summary,answer_summary_en,answer_summary_km')
+        .in('id', answerIds);
+      (answerResult.data || []).forEach((answer) => favoriteAnswers.set(Number(answer.id), answer));
+    }
+    renderFavorites();
+  }
+
+  function localizedFavoriteTitle(item) {
+    const answer = favoriteAnswers.get(Number(item.answer_id));
+    if (i18n.locale === 'en') return answer?.title_en || answer?.title || item.matched_title;
+    if (i18n.locale === 'km') return answer?.title_km || answer?.title || item.matched_title;
+    return answer?.title || item.matched_title;
+  }
+
+  function localizedFavoriteSummary(item) {
+    const answer = favoriteAnswers.get(Number(item.answer_id));
+    if (i18n.locale === 'en') return answer?.answer_summary_en || answer?.answer_summary || item.matched_summary;
+    if (i18n.locale === 'km') return answer?.answer_summary_km || answer?.answer_summary || item.matched_summary;
+    return answer?.answer_summary || item.matched_summary;
+  }
+
+  function renderFavorites() {
+    const list = $('favoriteList');
+    list.replaceChildren();
+    if (!favorites.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.textContent = t('noFavorites');
+      const link = document.createElement('a');
+      link.className = 'btn btn-small';
+      link.href = 'shop.html';
+      link.textContent = t('navShop');
+      empty.append(document.createElement('br'), document.createElement('br'), link);
+      list.appendChild(empty);
+      return;
+    }
+
+    favorites.forEach((item) => {
+      const card = document.createElement('article');
+      card.className = 'favorite-card';
+      const top = document.createElement('div');
+      top.className = 'favorite-card-top';
+      const heading = document.createElement('h3');
+      heading.textContent = localizedFavoriteTitle(item);
+      const price = document.createElement('strong');
+      price.className = 'favorite-price';
+      price.textContent = formatPrice(item.quoted_price) + ' USDT';
+      top.append(heading, price);
+
+      const summary = document.createElement('p');
+      summary.className = 'material-preview';
+      summary.textContent = localizedFavoriteSummary(item);
+      const question = document.createElement('p');
+      question.className = 'favorite-question';
+      question.textContent = '“' + item.question + '”';
+
+      const choices = document.createElement('div');
+      choices.className = 'favorite-choices';
+      (Array.isArray(item.selections) ? item.selections : []).forEach((selection) => {
+        const chip = document.createElement('span');
+        chip.textContent = selection;
+        choices.appendChild(chip);
+      });
+
+      const actions = document.createElement('div');
+      actions.className = 'material-actions';
+      const order = document.createElement('a');
+      order.className = 'btn btn-small';
+      order.href = 'shop.html?favorite=' + encodeURIComponent(item.id) + '&resume=order';
+      order.textContent = t('orderFavorite');
+      const remove = document.createElement('button');
+      remove.className = 'btn btn-danger btn-small';
+      remove.type = 'button';
+      remove.textContent = t('removeFavorite');
+      remove.addEventListener('click', () => deleteFavorite(item.id));
+      actions.append(order, remove);
+      card.append(top, summary, question, choices, actions);
+      list.appendChild(card);
+    });
+  }
+
+  async function deleteFavorite(id) {
+    if (!window.confirm(t('confirmRemoveFavorite'))) return;
+    const { error } = await db
+      .from('answer_favorites')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) {
+      showMessage('favoritesMessage', errorText(error));
+      return;
+    }
+    favorites = favorites.filter((item) => item.id !== id);
+    renderFavorites();
+  }
+
   async function saveProfile(event) {
     event.preventDefault();
     clearMessage('profileMessage');
@@ -144,7 +267,8 @@
 
     const { data, error } = await db
       .from('orders')
-      .select('id,order_no,product_id,product_name,product_price,payable_amount,currency,network,wallet_address,status,txid,created_at,updated_at')
+      .select('id,order_no,product_id,product_name,product_price,payable_amount,currency,network,wallet_address,status,txid,answer_id,customer_question,answer_tier,matched_answer_title,created_at,updated_at')
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
     if (error) {
       showMessage('ordersMessage', errorText(error));
@@ -179,7 +303,7 @@
       const titleWrap = document.createElement('div');
       const title = document.createElement('h3');
       title.className = 'order-title';
-      title.textContent = order.product_name || order.product_id;
+      title.textContent = order.matched_answer_title || order.product_name || order.product_id;
       const number = document.createElement('p');
       number.className = 'order-number';
       number.textContent = order.order_no;
@@ -206,6 +330,13 @@
       });
       card.append(top, info);
 
+      if (order.customer_question) {
+        const question = document.createElement('p');
+        question.className = 'favorite-question';
+        question.textContent = '“' + order.customer_question + '”';
+        card.appendChild(question);
+      }
+
       if (['pending', 'checking'].includes(order.status)) {
         const wallet = document.createElement('p');
         wallet.className = 'order-number';
@@ -231,7 +362,35 @@
         card.appendChild(row);
       }
 
-      if (order.status === 'delivered') {
+      if (order.answer_id && ['paid', 'delivered'].includes(order.status)) {
+        const answerActions = document.createElement('div');
+        answerActions.className = 'order-actions';
+        const viewAnswer = document.createElement('button');
+        viewAnswer.className = 'btn';
+        viewAnswer.type = 'button';
+        viewAnswer.textContent = t('viewPurchasedAnswer');
+        const answerBox = document.createElement('div');
+        answerBox.className = 'purchased-answer hidden';
+        const answerText = document.createElement('pre');
+        const copyAnswer = document.createElement('button');
+        copyAnswer.className = 'btn btn-secondary btn-small';
+        copyAnswer.type = 'button';
+        copyAnswer.textContent = t('copyAnswer');
+        copyAnswer.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(answerText.textContent || '');
+            showToast(t('copied'));
+          } catch {
+            showToast(answerText.textContent || '');
+          }
+        });
+        answerBox.append(answerText, copyAnswer);
+        viewAnswer.addEventListener('click', () => loadPurchasedAnswer(order, viewAnswer, answerBox, answerText));
+        answerActions.appendChild(viewAnswer);
+        card.append(answerActions, answerBox);
+      }
+
+      if (order.status === 'delivered' && !order.answer_id) {
         const actions = document.createElement('div');
         actions.className = 'order-actions';
         const download = document.createElement('button');
@@ -244,6 +403,27 @@
       }
       list.appendChild(card);
     });
+  }
+
+  async function loadPurchasedAnswer(order, button, box, text) {
+    button.disabled = true;
+    button.textContent = t('loadingAnswer');
+    try {
+      const result = await window.gyxInvokeFunction('get-purchased-answer', {
+        order_id: order.id,
+        locale: i18n.locale
+      });
+      if (!result?.answer?.content) throw new Error('PURCHASED_ANSWER_MISSING');
+      text.textContent = result.answer.content;
+      box.classList.remove('hidden');
+      button.textContent = t('answerReady');
+      box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    } catch (error) {
+      showMessage('ordersMessage', errorText(error));
+      button.textContent = t('viewPurchasedAnswer');
+    } finally {
+      button.disabled = false;
+    }
   }
 
   async function verifyOrderPayment(order, input, button) {
@@ -446,6 +626,7 @@
 
   window.addEventListener('gyx:languagechange', () => {
     renderProfile();
+    renderFavorites();
     renderOrders();
     renderMaterials();
     $('saveMaterialButton').textContent = t(editingMaterialId ? 'updateMaterial' : 'saveMaterial');
@@ -456,6 +637,6 @@
     if (!await requireUser()) return;
     await loadProfile();
     $('materialLanguage').value = i18n.locale;
-    await Promise.all([loadOrders(), loadMaterials()]);
+    await Promise.all([loadFavorites(), loadOrders(), loadMaterials()]);
   });
 })();
