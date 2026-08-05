@@ -6,75 +6,212 @@
   const config = window.GYX_CONFIG;
   if (!db || !i18n) return;
 
-  const categoryByPrefix = {
-    web: 'business', automation: 'automation', ai: 'work', digital: 'creation'
+  const TIER_PRODUCTS = {
+    essential: 'answer-essential',
+    standard: 'answer-standard',
+    detailed: 'answer-detailed',
+    professional: 'answer-professional',
+    custom: 'answer-custom'
   };
-  const productLabels = {
+  const TIER_ORDER = ['essential', 'standard', 'detailed', 'professional', 'custom'];
+  const MIN_STRONG_SCORE = 6;
+  const MATCH_STORAGE_KEY = 'gyx_pending_answer_match';
+
+  const copy = {
+    'zh-CN': {
+      step: '第 {n} / 5 轮',
+      candidateQuestion: '下面哪一个最接近你的问题？',
+      candidateHelp: '系统已从后台答案中找出5个方向，请选择最接近的一项。',
+      rounds: [
+        null,
+        {
+          question: '你希望这次重点解决什么？',
+          help: '选择最接近的目标。',
+          options: ['先得到关键答案', '拿到清楚操作步骤', '获得可复制模板', '设计自动化流程', '得到完整执行方案']
+        },
+        {
+          question: '你目前处在哪个阶段？',
+          help: '当前基础会影响方案的起点。',
+          options: ['完全不知道从哪开始', '已经有一些资料', '已经选好工具', '尝试过但没有成功', '需要重新完整设计']
+        },
+        {
+          question: '你需要多详细的操作方案？',
+          help: '这一项决定最终方案深度和价格。',
+          options: ['只要关键结论', '标准操作方法', '详细步骤与模板', '专业完整执行', '深度定制匹配']
+        },
+        {
+          question: '你最希望最后拿到什么？',
+          help: '完成这一步后，只显示一个最匹配方案。',
+          options: ['执行要点清单', '提示词和模板', '完整操作步骤', '落地执行方案', '专属深度方案']
+        }
+      ],
+      tiers: {
+        essential: { name: '要点答案', delivery: ['关键结论', '3个执行要点', '完成前检查清单'] },
+        standard: { name: '标准操作答案', delivery: ['清楚的操作步骤', '可直接复制的提示词', '结果检查方法'] },
+        detailed: { name: '详细实操方案', delivery: ['完整分步流程', '提示词与实用模板', '风险与交付检查清单'] },
+        professional: { name: '专业执行方案', delivery: ['完整执行路径', '可直接使用的工作模板', '风险检查与优化建议'] },
+        custom: { name: '深度匹配方案', delivery: ['从现有资料深度组合', '完整可执行方案', '专属检查与后续建议'] }
+      },
+      confidenceHigh: '高匹配',
+      confidenceMatched: '已匹配',
+      confidenceFallback: '深度匹配',
+      needQuestion: '请至少输入2个字的问题。',
+      loadingAnswers: '正在匹配后台答案…',
+      answersUnavailable: '暂时无法读取答案，请稍后重试。',
+      saveSuccess: '已收藏，可在会员中心随时查看。',
+      alreadySaved: '这条答案已经收藏。',
+      saving: '正在收藏…',
+      loginFirst: '登录后即可收藏，当前结果不会丢失。',
+      orderUnavailable: '价格方案读取失败，请刷新后重试。',
+      fallbackNote: '没有完全一致的条目，已自动使用现有答案进行深度匹配。'
+    },
     en: {
-      'web-photo': 'Personal Gallery', 'web-merchant': 'Merchant Showcase', 'web-brand': 'Brand Website',
-      'web-enterprise': 'Enterprise System', 'automation-trial': 'Automation Trial',
-      'automation-small': 'Small Business Automation', 'automation-team': 'Team Collaboration',
-      'automation-enterprise': 'Enterprise Automation', 'ai-trial': 'AI Trial',
-      'ai-content': 'Content Marketing', 'ai-office': 'Enterprise Office', 'ai-enterprise': 'Enterprise AI',
-      'digital-trial': 'Trial Pack', 'digital-study': 'Study Pack', 'digital-expert': 'Expert Pack',
-      'digital-private': 'Private Coaching'
+      step: 'Round {n} / 5',
+      candidateQuestion: 'Which option is closest to your question?',
+      candidateHelp: 'Five directions were selected from the private answer database.',
+      rounds: [
+        null,
+        {
+          question: 'What do you want to solve first?',
+          help: 'Choose the closest goal.',
+          options: ['Get the key answer', 'Get clear steps', 'Get reusable templates', 'Design an automation flow', 'Get a complete execution plan']
+        },
+        {
+          question: 'Where are you now?',
+          help: 'Your current stage determines the starting point.',
+          options: ['Starting from zero', 'I have some materials', 'I chose the tools', 'I tried but failed', 'I need a full redesign']
+        },
+        {
+          question: 'How detailed should the plan be?',
+          help: 'This determines the depth and price.',
+          options: ['Key conclusion only', 'Standard method', 'Detailed steps and templates', 'Professional execution', 'Deep custom match']
+        },
+        {
+          question: 'What result do you want to receive?',
+          help: 'The system will return only one best match.',
+          options: ['Action checklist', 'Prompts and templates', 'Complete operating steps', 'Execution plan', 'Custom deep plan']
+        }
+      ],
+      tiers: {
+        essential: { name: 'Essential answer', delivery: ['Key conclusion', 'Three action points', 'Completion checklist'] },
+        standard: { name: 'Standard answer', delivery: ['Clear operating steps', 'Reusable prompt', 'Result checks'] },
+        detailed: { name: 'Detailed action plan', delivery: ['Complete workflow', 'Prompts and templates', 'Risk and delivery checklist'] },
+        professional: { name: 'Professional execution plan', delivery: ['Full execution path', 'Ready-to-use templates', 'Risk checks and optimization'] },
+        custom: { name: 'Deep matching plan', delivery: ['Deep combination of existing knowledge', 'Complete action plan', 'Custom checks and next steps'] }
+      },
+      confidenceHigh: 'High match',
+      confidenceMatched: 'Matched',
+      confidenceFallback: 'Deep match',
+      needQuestion: 'Enter a question with at least two characters.',
+      loadingAnswers: 'Matching database answers…',
+      answersUnavailable: 'Answers cannot be loaded right now. Try again later.',
+      saveSuccess: 'Saved. You can find it in your member center.',
+      alreadySaved: 'This answer is already saved.',
+      saving: 'Saving…',
+      loginFirst: 'Sign in to save it. This result will not be lost.',
+      orderUnavailable: 'The price plan could not be loaded. Refresh and try again.',
+      fallbackNote: 'No exact entry was found. An existing answer has been selected for a deep match.'
     },
     km: {
-      'web-photo': 'វេបសាយអាល់ប៊ុមផ្ទាល់ខ្លួន', 'web-merchant': 'វេបសាយបង្ហាញអាជីវករ',
-      'web-brand': 'វេបសាយម៉ាក', 'web-enterprise': 'ប្រព័ន្ធសហគ្រាស',
-      'automation-trial': 'សាកល្បងស្វ័យប្រវត្តិកម្ម', 'automation-small': 'ស្វ័យប្រវត្តិកម្មអាជីវកម្មតូច',
-      'automation-team': 'សហការក្រុម', 'automation-enterprise': 'ស្វ័យប្រវត្តិកម្មសហគ្រាស',
-      'ai-trial': 'សាកល្បង AI', 'ai-content': 'ទីផ្សារមាតិកា', 'ai-office': 'ការិយាល័យសហគ្រាស',
-      'ai-enterprise': 'AI សហគ្រាស', 'digital-trial': 'កញ្ចប់សាកល្បង', 'digital-study': 'កញ្ចប់សិក្សា',
-      'digital-expert': 'កញ្ចប់ជំនាញ', 'digital-private': 'ការបង្រៀនផ្ទាល់ខ្លួន'
+      step: 'ជុំទី {n} / 5',
+      candidateQuestion: 'ជម្រើសណាមួយនៅជិតសំណួររបស់អ្នកបំផុត?',
+      candidateHelp: 'ប្រព័ន្ធបានជ្រើសទិសដៅ 5 ពីមូលដ្ឋានចម្លើយ។',
+      rounds: [
+        null,
+        {
+          question: 'អ្នកចង់ដោះស្រាយអ្វីជាមុន?',
+          help: 'ជ្រើសគោលដៅដែលនៅជិតបំផុត។',
+          options: ['ទទួលចម្លើយសំខាន់', 'ទទួលជំហានច្បាស់', 'ទទួលគំរូប្រើឡើងវិញ', 'រចនាលំហូរស្វ័យប្រវត្តិ', 'ទទួលផែនការអនុវត្តពេញលេញ']
+        },
+        {
+          question: 'ឥឡូវអ្នកស្ថិតនៅដំណាក់កាលណា?',
+          help: 'ដំណាក់កាលបច្ចុប្បន្នកំណត់ចំណុចចាប់ផ្តើម។',
+          options: ['ចាប់ផ្តើមពីសូន្យ', 'មានឯកសារខ្លះ', 'បានជ្រើសឧបករណ៍', 'បានសាកតែមិនជោគជ័យ', 'ត្រូវរចនាឡើងវិញ']
+        },
+        {
+          question: 'អ្នកត្រូវការផែនការលម្អិតកម្រិតណា?',
+          help: 'ជម្រើសនេះកំណត់ជម្រៅ និងតម្លៃ។',
+          options: ['តែសេចក្តីសន្និដ្ឋាន', 'វិធីស្តង់ដារ', 'ជំហាន និងគំរូលម្អិត', 'ការអនុវត្តវិជ្ជាជីវៈ', 'ផ្គូផ្គងជ្រៅផ្ទាល់ខ្លួន']
+        },
+        {
+          question: 'ចុងក្រោយអ្នកចង់ទទួលអ្វី?',
+          help: 'ប្រព័ន្ធបង្ហាញតែដំណោះស្រាយល្អបំផុតមួយ។',
+          options: ['បញ្ជីអនុវត្ត', 'Prompt និងគំរូ', 'ជំហានពេញលេញ', 'ផែនការអនុវត្ត', 'ផែនការជ្រៅផ្ទាល់ខ្លួន']
+        }
+      ],
+      tiers: {
+        essential: { name: 'ចម្លើយសង្ខេប', delivery: ['សេចក្តីសន្និដ្ឋានសំខាន់', 'ចំណុចអនុវត្ត 3', 'បញ្ជីត្រួតពិនិត្យ'] },
+        standard: { name: 'ចម្លើយស្តង់ដារ', delivery: ['ជំហានច្បាស់', 'Prompt អាចចម្លង', 'វិធីពិនិត្យលទ្ធផល'] },
+        detailed: { name: 'ផែនការលម្អិត', delivery: ['លំហូរពេញលេញ', 'Prompt និងគំរូ', 'បញ្ជីហានិភ័យ'] },
+        professional: { name: 'ផែនការវិជ្ជាជីវៈ', delivery: ['ផ្លូវអនុវត្តពេញលេញ', 'គំរូការងារ', 'ពិនិត្យហានិភ័យ និងកែលម្អ'] },
+        custom: { name: 'ផែនការផ្គូផ្គងជ្រៅ', delivery: ['រួមបញ្ចូលចំណេះដឹងដែលមាន', 'ផែនការអនុវត្តពេញលេញ', 'ការណែនាំបន្ទាប់ផ្ទាល់ខ្លួន'] }
+      },
+      confidenceHigh: 'ផ្គូផ្គងខ្ពស់',
+      confidenceMatched: 'បានផ្គូផ្គង',
+      confidenceFallback: 'ផ្គូផ្គងជ្រៅ',
+      needQuestion: 'សូមបញ្ចូលសំណួរយ៉ាងតិច 2 តួ។',
+      loadingAnswers: 'កំពុងផ្គូផ្គងចម្លើយ…',
+      answersUnavailable: 'មិនអាចអានចម្លើយបានទេ។ សូមសាកក្រោយ។',
+      saveSuccess: 'បានរក្សាទុកក្នុងមជ្ឈមណ្ឌលសមាជិក។',
+      alreadySaved: 'ចម្លើយនេះបានរក្សាទុករួចហើយ។',
+      saving: 'កំពុងរក្សាទុក…',
+      loginFirst: 'ចូលដើម្បីរក្សាទុក។ លទ្ធផលនេះមិនបាត់ទេ។',
+      orderUnavailable: 'មិនអាចអានតម្លៃបានទេ។ សូមធ្វើឱ្យថ្មី។',
+      fallbackNote: 'រកមិនឃើញចម្លើយដូចគ្នាទាំងស្រុង។ ប្រព័ន្ធបានផ្គូផ្គងជ្រៅពីចម្លើយដែលមាន។'
     }
   };
 
-  let products = [];
-  let selectedCategory = new URLSearchParams(location.search).get('category') || 'work';
+  const $ = (id) => document.getElementById(id);
+  const t = (key, vars) => i18n.t(key, vars);
+  const c = () => copy[i18n.locale] || copy['zh-CN'];
+
+  let answers = [];
+  let tierProducts = [];
+  let rankedCandidates = [];
+  let originalQuestion = '';
+  let quizIndex = 0;
+  let selections = [];
+  let initialStrongMatch = false;
+  let currentMatch = null;
   let currentProduct = null;
   let currentOrder = null;
   let currentUser = null;
   let paymentPoll = null;
 
-  const $ = (id) => document.getElementById(id);
-  const t = (key, vars) => i18n.t(key, vars);
-
-  function productCategory(productId) {
-    return categoryByPrefix[String(productId).split('-')[0]] || 'work';
-  }
-
-  function localizedProductName(product) {
-    const locale = i18n.locale;
-    if (locale === 'zh-CN') return product.product_name;
-    return productLabels[locale]?.[product.id] || product.product_name;
-  }
-
-  function localizedDescription(product) {
-    if (i18n.locale === 'zh-CN') return product.description || '';
-    const category = productCategory(product.id);
-    return t({ work: 'catWorkDesc', creation: 'catCreationDesc', business: 'catBusinessDesc', automation: 'catAutomationDesc' }[category]);
-  }
-
   function formatPrice(value) {
     const number = Number(value);
-    return Number.isFinite(number) ? number.toFixed(2) : String(value || '0.00');
+    if (!Number.isFinite(number)) return String(value || '0.00');
+    return number.toFixed(2).replace(/\.00$/, '.00');
   }
 
-  function showToast(message, isError = false) {
+  function localizedTitle(answer) {
+    if (!answer) return '';
+    if (i18n.locale === 'en') return answer.title_en || answer.title || answer.matched_title || '';
+    if (i18n.locale === 'km') return answer.title_km || answer.title || answer.matched_title || '';
+    return answer.title || answer.matched_title || '';
+  }
+
+  function localizedSummary(answer) {
+    if (!answer) return '';
+    if (i18n.locale === 'en') return answer.answer_summary_en || answer.answer_summary || answer.matched_summary || '';
+    if (i18n.locale === 'km') return answer.answer_summary_km || answer.answer_summary || answer.matched_summary || '';
+    return answer.answer_summary || answer.matched_summary || '';
+  }
+
+  function showToast(message, isError) {
     const toast = $('toast');
     if (!toast) return;
     toast.textContent = message;
-    toast.className = `toast show${isError ? ' error' : ''}`;
+    toast.className = 'toast show' + (isError ? ' error' : '');
     clearTimeout(showToast.timer);
     showToast.timer = setTimeout(() => { toast.className = 'toast'; }, 4200);
   }
 
-  function showMessage(id, message, kind = 'error') {
+  function showMessage(id, message, kind) {
     const element = $(id);
     if (!element) return;
     element.textContent = message;
-    element.className = `form-message show ${kind}`;
+    element.className = 'form-message show ' + (kind || 'error');
   }
 
   function clearMessage(id) {
@@ -85,7 +222,7 @@
   }
 
   function errorText(error) {
-    const code = String(error?.code || error?.message || '').toUpperCase();
+    const code = String(error && (error.code || error.message) || '').toUpperCase();
     if (code.includes('AUTH') || code.includes('SESSION') || code.includes('JWT')) return t('errorAuth');
     if (code.includes('OPEN_ORDER')) return t('errorOpenOrder');
     if (code.includes('RATE')) return t('errorRate');
@@ -99,142 +236,427 @@
     currentUser = await window.gyxGetVerifiedUser();
     const link = $('accountLink');
     if (!link) return;
-    if (currentUser) {
-      link.href = 'member.html';
-      link.textContent = t('navMember');
-    } else {
-      link.href = 'login.html';
-      link.textContent = t('login');
-    }
+    link.href = currentUser ? 'member.html' : 'login.html';
+    link.textContent = t(currentUser ? 'navMember' : 'login');
   }
 
-  async function loadProducts() {
-    const { data, error } = await db
-      .from('products')
-      .select('id,product_name,product_price,currency,description,sort_order')
+  async function loadMatchingData() {
+    const answerRequest = db
+      .from('product_answer_options')
+      .select('id,answer_code,module_code,title,title_en,title_km,answer_summary,answer_summary_en,answer_summary_km,keywords,priority')
       .eq('is_active', true)
-      .order('sort_order', { ascending: true });
+      .order('priority', { ascending: false })
+      .limit(300);
+    const productRequest = db
+      .from('products')
+      .select('id,product_name,product_price,currency,description')
+      .in('id', Object.values(TIER_PRODUCTS))
+      .eq('is_active', true);
+    const results = await Promise.all([answerRequest, productRequest]);
+    if (results[0].error || results[1].error) {
+      answers = [];
+      tierProducts = [];
+      return false;
+    }
+    answers = results[0].data || [];
+    tierProducts = results[1].data || [];
+    return answers.length > 0 && tierProducts.length === 5;
+  }
 
-    if (error) {
-      const grid = $('planGrid');
-      grid.replaceChildren();
-      const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.textContent = t('errorNetwork');
-      const retry = document.createElement('button');
-      retry.className = 'btn btn-small';
-      retry.type = 'button';
-      retry.textContent = t('retry');
-      retry.addEventListener('click', loadProducts);
-      empty.append(document.createElement('br'), document.createElement('br'), retry);
-      grid.appendChild(empty);
+  function simplify(value) {
+    return String(value || '')
+      .toLowerCase()
+      .normalize('NFKC')
+      .replace(/[^\p{L}\p{N}]+/gu, '');
+  }
+
+  function tokens(value) {
+    const source = String(value || '').toLowerCase().normalize('NFKC');
+    const result = new Set();
+    (source.match(/[a-z0-9]{2,}/g) || []).forEach((word) => result.add(word));
+    (source.match(/[\u3400-\u9fff]{2,}/g) || []).forEach((segment) => {
+      const max = Math.min(4, segment.length);
+      for (let size = 2; size <= max; size += 1) {
+        for (let index = 0; index <= segment.length - size; index += 1) {
+          result.add(segment.slice(index, index + size));
+          if (result.size >= 100) return;
+        }
+      }
+    });
+    return Array.from(result).slice(0, 100);
+  }
+
+  function scoreAnswer(answer, question) {
+    const title = [answer.title, answer.title_en, answer.title_km].filter(Boolean).join(' ');
+    const keywordText = Array.isArray(answer.keywords) ? answer.keywords.join(' ') : '';
+    const summary = [answer.answer_summary, answer.answer_summary_en, answer.answer_summary_km].filter(Boolean).join(' ');
+    const questionSimple = simplify(question);
+    const titleSimple = simplify(title);
+    const keywordSimple = simplify(keywordText);
+    const summarySimple = simplify(summary);
+    let score = 0;
+
+    if (questionSimple && (titleSimple.includes(questionSimple) || questionSimple.includes(titleSimple))) score += 24;
+    tokens(question).forEach((token) => {
+      const compact = simplify(token);
+      if (!compact) return;
+      if (titleSimple.includes(compact)) score += 5;
+      if (keywordSimple.includes(compact)) score += 4;
+      if (summarySimple.includes(compact)) score += 2;
+    });
+
+    const moduleHints = {
+      work: ['办公', '文档', '表格', '邮件', '会议', '总结', 'work', 'office'],
+      creation: ['图片', '视频', '文案', '创作', '脚本', 'image', 'video', 'content'],
+      business: ['网站', '营销', '客户', '销售', '品牌', '获客', 'web', 'marketing', 'sales'],
+      automation: ['自动', '机器人', '通知', '工作流', '同步', 'bot', 'automation', 'workflow']
+    };
+    (moduleHints[answer.module_code] || []).forEach((hint) => {
+      if (String(question).toLowerCase().includes(hint)) score += 3;
+    });
+    return score;
+  }
+
+  function rankAnswers(question) {
+    return answers
+      .map((answer) => Object.assign({}, answer, { _score: scoreAnswer(answer, question) }))
+      .sort((a, b) => b._score - a._score || Number(b.priority || 0) - Number(a.priority || 0) || Number(a.id) - Number(b.id));
+  }
+
+  function startMatching(event) {
+    if (event) event.preventDefault();
+    clearMessage('problemMessage');
+    const question = $('problemInput').value.trim();
+    if (question.length < 2) {
+      showMessage('problemMessage', c().needQuestion);
+      return;
+    }
+    if (!answers.length || tierProducts.length !== 5) {
+      showMessage('problemMessage', c().answersUnavailable);
       return;
     }
 
-    products = data || [];
-    updateCategoryCounts();
-    selectCategory(selectedCategory, false);
-
-    const requestedProduct = new URLSearchParams(location.search).get('product');
-    if (requestedProduct && products.some((item) => item.id === requestedProduct)) {
-      selectedCategory = productCategory(requestedProduct);
-      selectCategory(selectedCategory, false);
-      await openOrder(requestedProduct);
+    originalQuestion = question;
+    rankedCandidates = rankAnswers(question).slice(0, 5);
+    if (rankedCandidates.length < 5) {
+      answers.forEach((answer) => {
+        if (rankedCandidates.length < 5 && !rankedCandidates.some((item) => item.id === answer.id)) {
+          rankedCandidates.push(Object.assign({}, answer, { _score: 0 }));
+        }
+      });
     }
+    initialStrongMatch = Number(rankedCandidates[0] && rankedCandidates[0]._score || 0) >= MIN_STRONG_SCORE;
+    quizIndex = 0;
+    selections = [];
+    currentMatch = null;
+    $('searchPanel').classList.add('hidden');
+    $('resultPanel').classList.add('hidden');
+    $('quizPanel').classList.remove('hidden');
+    $('originalQuestion').textContent = '“' + originalQuestion + '”';
+    renderQuiz();
   }
 
-  function updateCategoryCounts() {
-    ['work', 'creation', 'business', 'automation'].forEach((category) => {
-      const count = products.filter((product) => productCategory(product.id) === category).length;
-      const element = document.querySelector(`[data-count-for="${category}"]`);
-      if (element) element.textContent = t('planCount', { count });
-    });
+  function renderQuiz() {
+    const localeCopy = c();
+    $('quizStepLabel').textContent = localeCopy.step.replace('{n}', String(quizIndex + 1));
+    $('quizProgressBar').style.width = String((quizIndex + 1) * 20) + '%';
+    const optionGrid = $('quizOptions');
+    optionGrid.replaceChildren();
+
+    if (quizIndex === 0) {
+      $('quizQuestion').textContent = localeCopy.candidateQuestion;
+      $('quizHelp').textContent = localeCopy.candidateHelp;
+      rankedCandidates.forEach((answer, index) => {
+        const button = document.createElement('button');
+        button.className = 'quiz-option';
+        button.type = 'button';
+        const number = document.createElement('span');
+        number.className = 'option-number';
+        number.textContent = String(index + 1);
+        const body = document.createElement('span');
+        const heading = document.createElement('strong');
+        heading.textContent = localizedTitle(answer);
+        const summary = document.createElement('small');
+        summary.textContent = localizedSummary(answer);
+        body.append(heading, summary);
+        button.append(number, body);
+        button.addEventListener('click', () => chooseOption(answer.id, localizedTitle(answer)));
+        optionGrid.appendChild(button);
+      });
+    } else {
+      const round = localeCopy.rounds[quizIndex];
+      $('quizQuestion').textContent = round.question;
+      $('quizHelp').textContent = round.help;
+      round.options.forEach((label, index) => {
+        const button = document.createElement('button');
+        button.className = 'quiz-option compact';
+        button.type = 'button';
+        const number = document.createElement('span');
+        number.className = 'option-number';
+        number.textContent = String(index + 1);
+        const heading = document.createElement('strong');
+        heading.textContent = label;
+        button.append(number, heading);
+        button.addEventListener('click', () => chooseOption(index, label));
+        optionGrid.appendChild(button);
+      });
+    }
+    $('quizBackButton').classList.toggle('hidden', quizIndex === 0);
   }
 
-  function selectCategory(category, scroll = true) {
-    if (!['work', 'creation', 'business', 'automation'].includes(category)) category = 'work';
-    selectedCategory = category;
-    document.querySelectorAll('[data-category]').forEach((button) => {
-      button.classList.toggle('active', button.dataset.category === category);
-    });
-    renderPlans();
-    if (scroll) $('plansArea')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  function chooseOption(value, label) {
+    selections = selections.slice(0, quizIndex);
+    selections[quizIndex] = { value: value, label: label };
+    if (quizIndex < 4) {
+      quizIndex += 1;
+      renderQuiz();
+      return;
+    }
+    finishMatching();
   }
 
-  function renderPlans() {
-    const grid = $('planGrid');
-    if (!grid) return;
-    grid.replaceChildren();
-    const rows = products.filter((product) => productCategory(product.id) === selectedCategory);
-    if (!rows.length) {
-      const empty = document.createElement('div');
-      empty.className = 'empty-state';
-      empty.textContent = t('noPlans');
-      grid.appendChild(empty);
+  function finishMatching() {
+    const selectedAnswerId = Number(selections[0].value);
+    const answer = rankedCandidates.find((item) => Number(item.id) === selectedAnswerId) || rankedCandidates[0];
+    const selectedScore = Number(answer && answer._score || 0);
+    const fallback = !initialStrongMatch || selectedScore < MIN_STRONG_SCORE;
+    const depthIndex = Math.max(0, Math.min(4, Number(selections[3].value) || 0));
+    const tier = fallback ? 'custom' : TIER_ORDER[depthIndex];
+    const productId = TIER_PRODUCTS[tier];
+    const product = tierProducts.find((item) => item.id === productId);
+    if (!answer || !product) {
+      showMessage('problemMessage', c().answersUnavailable);
+      resetAssistant();
       return;
     }
 
-    rows.forEach((product, index) => {
-      const article = document.createElement('article');
-      article.className = 'plan-card';
-
-      const tag = document.createElement('span');
-      tag.className = 'plan-tag';
-      tag.textContent = `${selectedCategory.toUpperCase()} · ${String(index + 1).padStart(2, '0')}`;
-
-      const heading = document.createElement('h3');
-      heading.textContent = localizedProductName(product);
-
-      const description = document.createElement('p');
-      description.textContent = localizedDescription(product);
-
-      const price = document.createElement('div');
-      price.className = 'price';
-      price.append(document.createTextNode(formatPrice(product.product_price)));
-      const unit = document.createElement('small');
-      unit.textContent = product.currency || 'USDT';
-      price.appendChild(unit);
-
-      const button = document.createElement('button');
-      button.className = 'btn btn-block';
-      button.type = 'button';
-      button.textContent = t('choosePlan');
-      button.addEventListener('click', () => openOrder(product.id));
-
-      article.append(tag, heading, description, price, button);
-      grid.appendChild(article);
-    });
+    currentMatch = {
+      answer_id: Number(answer.id),
+      title: answer.title || '',
+      title_en: answer.title_en || '',
+      title_km: answer.title_km || '',
+      answer_summary: answer.answer_summary || '',
+      answer_summary_en: answer.answer_summary_en || '',
+      answer_summary_km: answer.answer_summary_km || '',
+      question: originalQuestion,
+      selections: selections.map((item) => item.label),
+      tier: tier,
+      product_id: productId,
+      price: Number(product.product_price),
+      fallback: fallback,
+      score: selectedScore,
+      created_at: Date.now()
+    };
+    persistMatch();
+    $('quizPanel').classList.add('hidden');
+    $('resultPanel').classList.remove('hidden');
+    renderResult();
+    syncFavoriteState();
   }
 
-  async function openOrder(productId) {
-    const product = products.find((item) => item.id === productId);
-    if (!product) return;
+  function persistMatch() {
+    if (!currentMatch) return;
+    localStorage.setItem(MATCH_STORAGE_KEY, JSON.stringify(currentMatch));
+  }
 
+  function readStoredMatch() {
+    try {
+      const value = JSON.parse(localStorage.getItem(MATCH_STORAGE_KEY) || 'null');
+      if (!value || !value.answer_id || !value.product_id || !Array.isArray(value.selections) || value.selections.length !== 5) return null;
+      if (Date.now() - Number(value.created_at || 0) > 86400000) return null;
+      return value;
+    } catch {
+      return null;
+    }
+  }
+
+  function renderResult() {
+    if (!currentMatch) return;
+    const tierCopy = c().tiers[currentMatch.tier] || c().tiers.standard;
+    $('resultTitle').textContent = localizedTitle(currentMatch);
+    $('resultSummary').textContent = localizedSummary(currentMatch);
+    $('resultTier').textContent = tierCopy.name;
+    $('resultPrice').textContent = formatPrice(currentMatch.price);
+    $('resultConfidence').textContent = currentMatch.fallback
+      ? c().confidenceFallback
+      : Number(currentMatch.score) >= 14 ? c().confidenceHigh : c().confidenceMatched;
+    $('resultQuestion').textContent = currentMatch.question;
+    const selectionList = $('resultSelections');
+    selectionList.replaceChildren();
+    currentMatch.selections.forEach((selection) => {
+      const item = document.createElement('li');
+      item.textContent = selection;
+      selectionList.appendChild(item);
+    });
+    const deliveryList = $('deliveryList');
+    deliveryList.replaceChildren();
+    tierCopy.delivery.forEach((delivery) => {
+      const item = document.createElement('li');
+      item.textContent = delivery;
+      deliveryList.appendChild(item);
+    });
+    clearMessage('resultMessage');
+    if (currentMatch.fallback) showMessage('resultMessage', c().fallbackNote, 'success');
+    $('favoriteButton').disabled = false;
+    $('favoriteButton').textContent = t('favoriteAnswer');
+  }
+
+  async function syncFavoriteState() {
+    if (!currentMatch || !currentUser) return;
+    const result = await db
+      .from('answer_favorites')
+      .select('id')
+      .eq('user_id', currentUser.id)
+      .eq('answer_id', currentMatch.answer_id)
+      .maybeSingle();
+    if (result.data) {
+      $('favoriteButton').disabled = true;
+      $('favoriteButton').textContent = t('favorited');
+    }
+  }
+
+  function loginForAction(action) {
+    persistMatch();
+    showMessage('resultMessage', c().loginFirst, 'success');
+    const next = 'shop.html?resume=' + encodeURIComponent(action);
+    setTimeout(() => {
+      location.href = 'login.html?next=' + encodeURIComponent(next);
+    }, 350);
+  }
+
+  async function saveFavorite(redirectIfNeeded) {
+    if (!currentMatch) return;
     currentUser = await window.gyxGetVerifiedUser();
     if (!currentUser) {
-      const next = `shop.html?product=${encodeURIComponent(productId)}`;
-      location.href = `login.html?next=${encodeURIComponent(next)}`;
+      if (redirectIfNeeded !== false) loginForAction('favorite');
       return;
     }
+    const button = $('favoriteButton');
+    button.disabled = true;
+    button.textContent = c().saving;
+    const payload = {
+      user_id: currentUser.id,
+      answer_id: currentMatch.answer_id,
+      question: currentMatch.question,
+      selections: currentMatch.selections,
+      tier: currentMatch.tier,
+      product_id: currentMatch.product_id,
+      quoted_price: currentMatch.price,
+      matched_title: currentMatch.title || localizedTitle(currentMatch),
+      matched_summary: currentMatch.answer_summary || localizedSummary(currentMatch),
+      updated_at: new Date().toISOString()
+    };
+    const result = await db
+      .from('answer_favorites')
+      .upsert(payload, { onConflict: 'user_id,answer_id' })
+      .select('id')
+      .single();
+    if (result.error) {
+      button.disabled = false;
+      button.textContent = t('favoriteAnswer');
+      showMessage('resultMessage', errorText(result.error));
+      return;
+    }
+    button.textContent = t('favorited');
+    showMessage('resultMessage', c().saveSuccess, 'success');
+  }
 
-    currentProduct = product;
+  function resetAssistant() {
+    originalQuestion = '';
+    quizIndex = 0;
+    selections = [];
+    rankedCandidates = [];
+    currentMatch = null;
+    $('quizPanel').classList.add('hidden');
+    $('resultPanel').classList.add('hidden');
+    $('searchPanel').classList.remove('hidden');
+    $('problemInput').value = '';
+    clearMessage('problemMessage');
+    clearMessage('resultMessage');
+    $('problemInput').focus();
+  }
+
+  function goBackQuiz() {
+    if (quizIndex <= 0) {
+      resetAssistant();
+      return;
+    }
+    quizIndex -= 1;
+    selections = selections.slice(0, quizIndex);
+    renderQuiz();
+  }
+
+  async function loadFavoriteFromUrl(favoriteId) {
+    currentUser = await window.gyxGetVerifiedUser();
+    if (!currentUser) return false;
+    const favoriteResult = await db
+      .from('answer_favorites')
+      .select('id,answer_id,question,selections,tier,product_id,quoted_price,matched_title,matched_summary,created_at')
+      .eq('id', favoriteId)
+      .eq('user_id', currentUser.id)
+      .maybeSingle();
+    if (favoriteResult.error || !favoriteResult.data) return false;
+    const favorite = favoriteResult.data;
+    const answerResult = await db
+      .from('product_answer_options')
+      .select('id,title,title_en,title_km,answer_summary,answer_summary_en,answer_summary_km')
+      .eq('id', favorite.answer_id)
+      .maybeSingle();
+    const answer = answerResult.data || {};
+    currentMatch = {
+      answer_id: Number(favorite.answer_id),
+      title: answer.title || favorite.matched_title,
+      title_en: answer.title_en || '',
+      title_km: answer.title_km || '',
+      answer_summary: answer.answer_summary || favorite.matched_summary,
+      answer_summary_en: answer.answer_summary_en || '',
+      answer_summary_km: answer.answer_summary_km || '',
+      question: favorite.question,
+      selections: Array.isArray(favorite.selections) ? favorite.selections : [],
+      tier: favorite.tier,
+      product_id: favorite.product_id,
+      price: Number(favorite.quoted_price),
+      fallback: favorite.tier === 'custom',
+      score: 0,
+      created_at: Date.now()
+    };
+    persistMatch();
+    $('searchPanel').classList.add('hidden');
+    $('quizPanel').classList.add('hidden');
+    $('resultPanel').classList.remove('hidden');
+    renderResult();
+    return true;
+  }
+
+  async function openOrderFromMatch() {
+    if (!currentMatch) return;
+    currentUser = await window.gyxGetVerifiedUser();
+    if (!currentUser) {
+      loginForAction('order');
+      return;
+    }
+    currentProduct = tierProducts.find((item) => item.id === currentMatch.product_id);
+    if (!currentProduct) {
+      showMessage('resultMessage', c().orderUnavailable);
+      return;
+    }
     currentOrder = null;
     clearInterval(paymentPoll);
     clearMessage('orderFormMessage');
     clearMessage('paymentMessage');
     $('paymentTxid').value = '';
-    $('orderProductName').textContent = localizedProductName(product);
-    $('orderProductDescription').textContent = localizedDescription(product);
-    $('orderProductPrice').textContent = formatPrice(product.product_price);
+    $('orderProductName').textContent = localizedTitle(currentMatch);
+    $('orderProductDescription').textContent = c().tiers[currentMatch.tier].name;
+    $('orderProductPrice').textContent = formatPrice(currentProduct.product_price);
 
-    const { data: profile } = await db
+    const profileResult = await db
       .from('profiles')
       .select('display_name,phone')
       .eq('user_id', currentUser.id)
       .maybeSingle();
-
-    $('orderName').value = profile?.display_name || currentUser.user_metadata?.display_name || '';
-    $('orderPhone').value = profile?.phone || '';
+    const profile = profileResult.data;
+    $('orderName').value = profile && profile.display_name || currentUser.user_metadata && currentUser.user_metadata.display_name || '';
+    $('orderPhone').value = profile && profile.phone || '';
     $('orderEmail').value = currentUser.email || '';
     switchModalStep('details');
     $('orderModal').classList.add('show');
@@ -249,11 +671,13 @@
   }
 
   function switchModalStep(step) {
-    const map = {
-      details: 'orderStepDetails', payment: 'orderStepPayment', success: 'orderStepSuccess'
-    };
-    Object.values(map).forEach((id) => $(id)?.classList.remove('active'));
-    $(map[step])?.classList.add('active');
+    const map = { details: 'orderStepDetails', payment: 'orderStepPayment', success: 'orderStepSuccess' };
+    Object.values(map).forEach((id) => {
+      const element = $(id);
+      if (element) element.classList.remove('active');
+    });
+    const active = $(map[step]);
+    if (active) active.classList.add('active');
   }
 
   function validateOrderForm() {
@@ -263,7 +687,7 @@
     if (!name) throw new Error('FORM_NAME');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('FORM_EMAIL');
     if (phone.length < 6) throw new Error('FORM_PHONE');
-    return { name, email, phone };
+    return { name: name, email: email, phone: phone };
   }
 
   function formErrorText(error) {
@@ -283,18 +707,21 @@
       showMessage('orderFormMessage', formErrorText(error));
       return;
     }
-
     const button = $('createOrderButton');
     button.disabled = true;
     button.textContent = t('creatingOrder');
     try {
       const payload = await window.gyxInvokeFunction('create-order', {
-        product_id: currentProduct.id,
+        product_id: currentMatch.product_id,
+        answer_id: currentMatch.answer_id,
+        customer_question: currentMatch.question,
+        selection_path: currentMatch.selections,
+        answer_tier: currentMatch.tier,
         customer_name: form.name,
         customer_email: form.email,
         customer_phone: form.phone
       });
-      currentOrder = payload?.order;
+      currentOrder = payload && payload.order;
       if (!currentOrder) throw new Error('ORDER_CREATE_FAILED');
       await db.from('profiles').update({
         display_name: form.name,
@@ -305,11 +732,11 @@
     } catch (error) {
       const code = String(error.code || error.message || '');
       if (code.includes('OPEN_ORDER_ALREADY_EXISTS')) {
-        const existing = await loadOpenOrder(currentProduct.id);
+        const existing = await loadOpenOrder(currentMatch.product_id);
         if (existing) {
           currentOrder = existing;
-          showMessage('paymentMessage', t('errorOpenOrder'), 'success');
           showPaymentStep();
+          showMessage('paymentMessage', t('errorOpenOrder'), 'success');
           return;
         }
       }
@@ -321,15 +748,15 @@
   }
 
   async function loadOpenOrder(productId) {
-    const { data } = await db
+    const result = await db
       .from('orders')
-      .select('id,order_no,product_id,product_name,product_price,payable_amount,currency,network,wallet_address,status,txid,created_at')
+      .select('id,order_no,product_id,product_name,product_price,payable_amount,currency,network,wallet_address,status,txid,answer_id,customer_question,answer_tier,matched_answer_title,created_at')
       .eq('product_id', productId)
       .in('status', ['pending', 'checking'])
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
-    return data || null;
+    return result.data || null;
   }
 
   function showPaymentStep() {
@@ -360,7 +787,6 @@
       showMessage('paymentMessage', t('errorTxid'));
       return;
     }
-
     const button = $('submitPaymentButton');
     button.disabled = true;
     button.textContent = t('checkingPayment');
@@ -368,10 +794,10 @@
       const result = await window.gyxInvokeFunction('submit-payment', {
         order_id: currentOrder.id,
         order_no: currentOrder.order_no,
-        txid
+        txid: txid
       });
       currentOrder.txid = txid;
-      currentOrder.status = result?.status || 'checking';
+      currentOrder.status = result && result.status || 'checking';
       if (['paid', 'delivered'].includes(currentOrder.status)) {
         showSuccess();
       } else {
@@ -391,12 +817,8 @@
     let attempts = 0;
     const check = async () => {
       attempts += 1;
-      const { data } = await db
-        .from('orders')
-        .select('status,updated_at')
-        .eq('id', currentOrder.id)
-        .maybeSingle();
-      if (data?.status) currentOrder.status = data.status;
+      const result = await db.from('orders').select('status,updated_at').eq('id', currentOrder.id).maybeSingle();
+      if (result.data && result.data.status) currentOrder.status = result.data.status;
       if (['paid', 'delivered'].includes(currentOrder.status)) {
         clearInterval(paymentPoll);
         showSuccess();
@@ -409,28 +831,19 @@
 
   function showSuccess() {
     clearInterval(paymentPoll);
-    $('successCopy').textContent = `${t('orderNo')}: ${currentOrder.order_no}`;
+    $('successCopy').textContent = t('orderNo') + ': ' + currentOrder.order_no;
     switchModalStep('success');
-  }
-
-  function setupSearch() {
-    $('quickSearchForm')?.addEventListener('submit', (event) => {
-      event.preventDefault();
-      const query = $('quickSearchInput').value.trim();
-      location.href = `knowledge.html${query ? `?q=${encodeURIComponent(query)}` : ''}`;
-    });
   }
 
   function setupMusic() {
     const button = $('musicToggle');
     if (!button) return;
     let context = null;
-    let gain = null;
+    let master = null;
     let timer = null;
     let index = 0;
     let playing = false;
-    const notes = [261.63, 329.63, 392, 523.25, 392, 349.23, 293.66, 329.63];
-
+    const notes = [261.63, 329.63, 392, 523.25, 440, 392, 329.63, 293.66];
     const update = () => {
       button.classList.toggle('playing', playing);
       button.setAttribute('aria-pressed', String(playing));
@@ -439,29 +852,37 @@
     const tone = () => {
       if (!playing || !context || context.state !== 'running') return;
       const now = context.currentTime;
-      const oscillator = context.createOscillator();
       const envelope = context.createGain();
-      oscillator.type = index % 2 ? 'sine' : 'triangle';
-      oscillator.frequency.value = notes[index++ % notes.length];
+      const frequency = notes[index++ % notes.length];
       envelope.gain.setValueAtTime(.0001, now);
-      envelope.gain.exponentialRampToValueAtTime(.035, now + .08);
-      envelope.gain.exponentialRampToValueAtTime(.0001, now + 1.15);
-      oscillator.connect(envelope);
-      envelope.connect(gain);
-      oscillator.start(now);
-      oscillator.stop(now + 1.2);
-      timer = setTimeout(tone, 1320);
+      envelope.gain.exponentialRampToValueAtTime(.1, now + .06);
+      envelope.gain.exponentialRampToValueAtTime(.0001, now + 1.05);
+      [1, .5].forEach((ratio, voice) => {
+        const oscillator = context.createOscillator();
+        oscillator.type = voice === 0 ? 'sine' : 'triangle';
+        oscillator.frequency.value = frequency * ratio;
+        oscillator.detune.value = voice === 0 ? -3 : 4;
+        oscillator.connect(envelope);
+        oscillator.start(now);
+        oscillator.stop(now + 1.1);
+      });
+      envelope.connect(master);
+      timer = setTimeout(tone, 1080);
     };
     const start = async () => {
       const AudioEngine = window.AudioContext || window.webkitAudioContext;
-      if (!AudioEngine) return;
+      if (!AudioEngine) {
+        showToast(t('errorGeneric'), true);
+        return;
+      }
       if (!context) {
         context = new AudioEngine();
-        gain = context.createGain();
-        gain.gain.value = .36;
-        gain.connect(context.destination);
+        master = context.createGain();
+        master.gain.value = .55;
+        master.connect(context.destination);
       }
       await context.resume();
+      if (context.state !== 'running') throw new Error('AUDIO_NOT_RUNNING');
       playing = true;
       localStorage.setItem('gyx_music_enabled', 'on');
       update();
@@ -471,40 +892,76 @@
       playing = false;
       clearTimeout(timer);
       localStorage.setItem('gyx_music_enabled', 'off');
-      if (context?.state === 'running') context.suspend();
+      if (context && context.state === 'running') context.suspend();
       update();
     };
-    button.addEventListener('click', async () => { playing ? stop() : await start(); });
+    button.addEventListener('click', async () => {
+      try { playing ? stop() : await start(); }
+      catch { playing = false; update(); showToast(t('errorGeneric'), true); }
+    });
+    window.addEventListener('gyx:languagechange', update);
     update();
   }
 
+  async function restoreStateFromUrl() {
+    const params = new URLSearchParams(location.search);
+    const favoriteId = Number(params.get('favorite'));
+    const action = params.get('resume');
+    let restored = false;
+    if (Number.isSafeInteger(favoriteId) && favoriteId > 0) {
+      restored = await loadFavoriteFromUrl(favoriteId);
+    }
+    if (!restored && action) {
+      const stored = readStoredMatch();
+      if (stored) {
+        currentMatch = stored;
+        $('searchPanel').classList.add('hidden');
+        $('quizPanel').classList.add('hidden');
+        $('resultPanel').classList.remove('hidden');
+        renderResult();
+        restored = true;
+      }
+    }
+    if (!restored) return;
+    await syncFavoriteState();
+    if (action === 'favorite') await saveFavorite(false);
+    if (action === 'order') await openOrderFromMatch();
+  }
+
   function bindEvents() {
-    document.querySelectorAll('[data-category]').forEach((button) => {
-      button.addEventListener('click', () => selectCategory(button.dataset.category));
+    $('problemForm').addEventListener('submit', startMatching);
+    document.querySelectorAll('[data-example]').forEach((button) => {
+      button.addEventListener('click', () => {
+        $('problemInput').value = button.dataset.example || '';
+        $('problemInput').focus();
+      });
     });
-    $('closeOrderButton')?.addEventListener('click', closeOrder);
-    $('cancelOrderButton')?.addEventListener('click', closeOrder);
-    $('successCloseButton')?.addEventListener('click', closeOrder);
-    $('orderDetailsForm')?.addEventListener('submit', createOrder);
-    $('paymentForm')?.addEventListener('submit', submitPayment);
-    $('copyWalletButton')?.addEventListener('click', copyWallet);
-    $('paymentBackButton')?.addEventListener('click', () => switchModalStep('details'));
-    $('orderModal')?.addEventListener('click', (event) => { if (event.target === $('orderModal')) closeOrder(); });
-    document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeOrder(); });
-    setupSearch();
+    $('quizBackButton').addEventListener('click', goBackQuiz);
+    $('restartMatchButton').addEventListener('click', resetAssistant);
+    $('newQuestionButton').addEventListener('click', resetAssistant);
+    $('favoriteButton').addEventListener('click', () => saveFavorite(true));
+    $('orderAnswerButton').addEventListener('click', openOrderFromMatch);
+    $('closeOrderButton').addEventListener('click', closeOrder);
+    $('cancelOrderButton').addEventListener('click', closeOrder);
+    $('successCloseButton').addEventListener('click', closeOrder);
+    $('orderDetailsForm').addEventListener('submit', createOrder);
+    $('paymentForm').addEventListener('submit', submitPayment);
+    $('copyWalletButton').addEventListener('click', copyWallet);
+    $('paymentBackButton').addEventListener('click', () => switchModalStep('details'));
+    $('orderModal').addEventListener('click', (event) => {
+      if (event.target === $('orderModal')) closeOrder();
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') closeOrder();
+    });
     setupMusic();
   }
 
   window.addEventListener('gyx:languagechange', async (event) => {
-    updateCategoryCounts();
-    renderPlans();
+    if (!$('quizPanel').classList.contains('hidden')) renderQuiz();
+    if (currentMatch && !$('resultPanel').classList.contains('hidden')) renderResult();
     await syncAccount();
-    if (currentProduct) {
-      $('orderProductName').textContent = localizedProductName(currentProduct);
-      $('orderProductDescription').textContent = localizedDescription(currentProduct);
-    }
-    const musicButton = $('musicToggle');
-    if (musicButton) musicButton.textContent = t(musicButton.classList.contains('playing') ? 'musicOn' : 'musicOff');
+    await syncFavoriteState();
     if (currentUser) {
       db.from('profiles').update({ locale: event.detail.locale }).eq('user_id', currentUser.id).then(() => {});
     }
@@ -512,6 +969,9 @@
 
   document.addEventListener('DOMContentLoaded', async () => {
     bindEvents();
-    await Promise.all([syncAccount(), loadProducts()]);
+    const loaded = await loadMatchingData();
+    await syncAccount();
+    if (!loaded) showMessage('problemMessage', c().answersUnavailable);
+    await restoreStateFromUrl();
   });
 })();
