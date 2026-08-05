@@ -14,6 +14,42 @@
     custom: 'answer-custom'
   };
   const TIER_ORDER = ['essential', 'standard', 'detailed', 'professional', 'custom'];
+  const FIXED_MODULES = {
+    web: {
+      titleKey: 'moduleWebsite',
+      priceElement: 'modulePriceWeb',
+      ids: ['web-photo', 'web-merchant', 'web-brand', 'web-enterprise']
+    },
+    automation: {
+      titleKey: 'moduleAi',
+      priceElement: 'modulePriceAutomation',
+      ids: ['automation-trial', 'automation-small', 'automation-team', 'automation-enterprise']
+    },
+    ai: {
+      titleKey: 'moduleGrowth',
+      priceElement: 'modulePriceAi',
+      ids: ['ai-trial', 'ai-content', 'ai-office', 'ai-enterprise']
+    },
+    digital: {
+      titleKey: 'moduleAcademy',
+      priceElement: 'modulePriceDigital',
+      ids: ['digital-trial', 'digital-study', 'digital-expert', 'digital-private']
+    }
+  };
+  const FIXED_PRODUCT_NAMES = {
+    en: {
+      'web-photo': 'Personal Gallery', 'web-merchant': 'Merchant Showcase', 'web-brand': 'Brand Website', 'web-enterprise': 'Enterprise System',
+      'automation-trial': 'Trial', 'automation-small': 'Small Business Automation', 'automation-team': 'Team Collaboration', 'automation-enterprise': 'Enterprise Custom',
+      'ai-trial': 'Trial', 'ai-content': 'Content Marketing', 'ai-office': 'Enterprise Productivity', 'ai-enterprise': 'Enterprise Custom',
+      'digital-trial': 'Trial Pack', 'digital-study': 'Learning Pack', 'digital-expert': 'Expert Pack', 'digital-private': 'Private Coaching'
+    },
+    km: {
+      'web-photo': 'អាល់ប៊ុមផ្ទាល់ខ្លួន', 'web-merchant': 'បង្ហាញអាជីវកម្ម', 'web-brand': 'គេហទំព័រម៉ាក', 'web-enterprise': 'ប្រព័ន្ធសហគ្រាស',
+      'automation-trial': 'សាកល្បង', 'automation-small': 'ស្វ័យប្រវត្តិកម្មអាជីវកម្មតូច', 'automation-team': 'សហការក្រុម', 'automation-enterprise': 'កំណត់តាមសហគ្រាស',
+      'ai-trial': 'សាកល្បង', 'ai-content': 'ទីផ្សារមាតិកា', 'ai-office': 'ការិយាល័យសហគ្រាស', 'ai-enterprise': 'កំណត់តាមសហគ្រាស',
+      'digital-trial': 'កញ្ចប់សាកល្បង', 'digital-study': 'កញ្ចប់សិក្សា', 'digital-expert': 'កញ្ចប់អ្នកជំនាញ', 'digital-private': 'បង្រៀនផ្ទាល់ខ្លួន'
+    }
+  };
   const MIN_STRONG_SCORE = 6;
   const MATCH_STORAGE_KEY = 'gyx_pending_answer_match';
 
@@ -167,6 +203,8 @@
 
   let answers = [];
   let tierProducts = [];
+  let fixedProducts = [];
+  let activeFixedModule = '';
   let rankedCandidates = [];
   let originalQuestion = '';
   let quizIndex = 0;
@@ -182,6 +220,11 @@
     const number = Number(value);
     if (!Number.isFinite(number)) return String(value || '0.00');
     return number.toFixed(2).replace(/\.00$/, '.00');
+  }
+
+  function localizedFixedProductName(product) {
+    if (!product) return '';
+    return FIXED_PRODUCT_NAMES[i18n.locale]?.[product.id] || product.product_name || '';
   }
 
   function localizedTitle(answer) {
@@ -250,16 +293,21 @@
     const productRequest = db
       .from('products')
       .select('id,product_name,product_price,currency,description')
-      .in('id', Object.values(TIER_PRODUCTS))
       .eq('is_active', true);
     const results = await Promise.all([answerRequest, productRequest]);
     if (results[0].error || results[1].error) {
       answers = [];
       tierProducts = [];
+      fixedProducts = [];
       return false;
     }
     answers = results[0].data || [];
-    tierProducts = results[1].data || [];
+    const allProducts = results[1].data || [];
+    const tierIds = new Set(Object.values(TIER_PRODUCTS));
+    const fixedIds = new Set(Object.values(FIXED_MODULES).flatMap((module) => module.ids));
+    tierProducts = allProducts.filter((product) => tierIds.has(product.id));
+    fixedProducts = allProducts.filter((product) => fixedIds.has(product.id));
+    renderFixedModules();
     return answers.length > 0 && tierProducts.length === 5;
   }
 
@@ -323,6 +371,79 @@
       .sort((a, b) => b._score - a._score || Number(b.priority || 0) - Number(a.priority || 0) || Number(a.id) - Number(b.id));
   }
 
+  function compactPrice(value) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return String(value || '0');
+    return number.toFixed(2).replace(/\.00$/, '').replace(/(\.\d)0$/, '$1');
+  }
+
+  function fixedModuleProducts(moduleCode) {
+    const module = FIXED_MODULES[moduleCode];
+    if (!module) return [];
+    return module.ids
+      .map((id) => fixedProducts.find((product) => product.id === id))
+      .filter(Boolean);
+  }
+
+  function renderFixedModules() {
+    Object.entries(FIXED_MODULES).forEach(([moduleCode, module]) => {
+      const rows = fixedModuleProducts(moduleCode);
+      const minimum = rows.reduce((value, product) => Math.min(value, Number(product.product_price)), Infinity);
+      const price = Number.isFinite(minimum) ? compactPrice(minimum) : '—';
+      const element = $(module.priceElement);
+      if (element) element.textContent = t('fixedStartsAt', { price });
+    });
+    if (activeFixedModule) renderFixedPlans(activeFixedModule, false, true);
+  }
+
+  function closeFixedPlans() {
+    activeFixedModule = '';
+    $('fixedPlansPanel')?.classList.add('hidden');
+    document.querySelectorAll('[data-fixed-module]').forEach((button) => {
+      button.classList.remove('active');
+      button.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function renderFixedPlans(moduleCode, shouldScroll = true, force = false) {
+    const module = FIXED_MODULES[moduleCode];
+    if (!module) return;
+    if (!force && activeFixedModule === moduleCode && !$('fixedPlansPanel').classList.contains('hidden')) {
+      closeFixedPlans();
+      return;
+    }
+    activeFixedModule = moduleCode;
+    document.querySelectorAll('[data-fixed-module]').forEach((button) => {
+      const active = button.dataset.fixedModule === moduleCode;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-expanded', String(active));
+    });
+    $('fixedPlansTitle').textContent = t(module.titleKey);
+    const list = $('fixedPlanList');
+    list.replaceChildren();
+    fixedModuleProducts(moduleCode).forEach((product) => {
+      const article = document.createElement('article');
+      article.className = 'fixed-plan';
+      const heading = document.createElement('h3');
+      heading.textContent = localizedFixedProductName(product);
+      const price = document.createElement('div');
+      price.className = 'fixed-plan-price';
+      price.append(document.createTextNode(compactPrice(product.product_price)));
+      const unit = document.createElement('small');
+      unit.textContent = product.currency || 'USDT';
+      price.appendChild(unit);
+      const button = document.createElement('button');
+      button.className = 'btn';
+      button.type = 'button';
+      button.textContent = t('choosePlan');
+      button.addEventListener('click', () => openFixedOrder(product.id));
+      article.append(heading, price, button);
+      list.appendChild(article);
+    });
+    $('fixedPlansPanel').classList.remove('hidden');
+    if (shouldScroll) $('fixedPlansPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
   function startMatching(event) {
     if (event) event.preventDefault();
     clearMessage('problemMessage');
@@ -349,11 +470,11 @@
     quizIndex = 0;
     selections = [];
     currentMatch = null;
-    $('searchPanel').classList.add('hidden');
     $('resultPanel').classList.add('hidden');
     $('quizPanel').classList.remove('hidden');
     $('originalQuestion').textContent = '“' + originalQuestion + '”';
     renderQuiz();
+    $('quizPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function renderQuiz() {
@@ -452,6 +573,7 @@
     $('resultPanel').classList.remove('hidden');
     renderResult();
     syncFavoriteState();
+    $('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
 
   function persistMatch() {
@@ -569,7 +691,6 @@
     currentMatch = null;
     $('quizPanel').classList.add('hidden');
     $('resultPanel').classList.add('hidden');
-    $('searchPanel').classList.remove('hidden');
     $('problemInput').value = '';
     clearMessage('problemMessage');
     clearMessage('resultMessage');
@@ -621,32 +742,21 @@
       created_at: Date.now()
     };
     persistMatch();
-    $('searchPanel').classList.add('hidden');
     $('quizPanel').classList.add('hidden');
     $('resultPanel').classList.remove('hidden');
     renderResult();
     return true;
   }
 
-  async function openOrderFromMatch() {
-    if (!currentMatch) return;
-    currentUser = await window.gyxGetVerifiedUser();
-    if (!currentUser) {
-      loginForAction('order');
-      return;
-    }
-    currentProduct = tierProducts.find((item) => item.id === currentMatch.product_id);
-    if (!currentProduct) {
-      showMessage('resultMessage', c().orderUnavailable);
-      return;
-    }
+  async function showOrderModal(product, title, description) {
+    currentProduct = product;
     currentOrder = null;
     clearInterval(paymentPoll);
     clearMessage('orderFormMessage');
     clearMessage('paymentMessage');
     $('paymentTxid').value = '';
-    $('orderProductName').textContent = localizedTitle(currentMatch);
-    $('orderProductDescription').textContent = c().tiers[currentMatch.tier].name;
+    $('orderProductName').textContent = title;
+    $('orderProductDescription').textContent = description || '';
     $('orderProductPrice').textContent = formatPrice(currentProduct.product_price);
 
     const profileResult = await db
@@ -661,6 +771,37 @@
     switchModalStep('details');
     $('orderModal').classList.add('show');
     document.body.style.overflow = 'hidden';
+  }
+
+  async function openOrderFromMatch() {
+    if (!currentMatch) return;
+    currentUser = await window.gyxGetVerifiedUser();
+    if (!currentUser) {
+      loginForAction('order');
+      return;
+    }
+    const product = tierProducts.find((item) => item.id === currentMatch.product_id);
+    if (!product) {
+      showMessage('resultMessage', c().orderUnavailable);
+      return;
+    }
+    await showOrderModal(product, localizedTitle(currentMatch), c().tiers[currentMatch.tier].name);
+  }
+
+  async function openFixedOrder(productId) {
+    const product = fixedProducts.find((item) => item.id === productId);
+    if (!product) {
+      showToast(c().orderUnavailable, true);
+      return;
+    }
+    currentUser = await window.gyxGetVerifiedUser();
+    if (!currentUser) {
+      const next = `shop.html?fixed=${encodeURIComponent(productId)}&resume=fixed-order`;
+      location.href = 'login.html?next=' + encodeURIComponent(next);
+      return;
+    }
+    currentMatch = null;
+    await showOrderModal(product, localizedFixedProductName(product), product.description || '');
   }
 
   function closeOrder() {
@@ -711,16 +852,21 @@
     button.disabled = true;
     button.textContent = t('creatingOrder');
     try {
-      const payload = await window.gyxInvokeFunction('create-order', {
-        product_id: currentMatch.product_id,
-        answer_id: currentMatch.answer_id,
-        customer_question: currentMatch.question,
-        selection_path: currentMatch.selections,
-        answer_tier: currentMatch.tier,
+      const orderInput = {
+        product_id: currentProduct.id,
         customer_name: form.name,
         customer_email: form.email,
         customer_phone: form.phone
-      });
+      };
+      if (currentProduct.id.startsWith('answer-') && currentMatch) {
+        Object.assign(orderInput, {
+          answer_id: currentMatch.answer_id,
+          customer_question: currentMatch.question,
+          selection_path: currentMatch.selections,
+          answer_tier: currentMatch.tier
+        });
+      }
+      const payload = await window.gyxInvokeFunction('create-order', orderInput);
       currentOrder = payload && payload.order;
       if (!currentOrder) throw new Error('ORDER_CREATE_FAILED');
       await db.from('profiles').update({
@@ -732,7 +878,7 @@
     } catch (error) {
       const code = String(error.code || error.message || '');
       if (code.includes('OPEN_ORDER_ALREADY_EXISTS')) {
-        const existing = await loadOpenOrder(currentMatch.product_id);
+        const existing = await loadOpenOrder(currentProduct.id);
         if (existing) {
           currentOrder = existing;
           showPaymentStep();
@@ -854,20 +1000,20 @@
       const now = context.currentTime;
       const envelope = context.createGain();
       const frequency = notes[index++ % notes.length];
+      envelope.connect(master);
       envelope.gain.setValueAtTime(.0001, now);
-      envelope.gain.exponentialRampToValueAtTime(.1, now + .06);
-      envelope.gain.exponentialRampToValueAtTime(.0001, now + 1.05);
-      [1, .5].forEach((ratio, voice) => {
+      envelope.gain.exponentialRampToValueAtTime(.14, now + .035);
+      envelope.gain.exponentialRampToValueAtTime(.0001, now + .72);
+      [1, .5, 1.5].forEach((ratio, voice) => {
         const oscillator = context.createOscillator();
-        oscillator.type = voice === 0 ? 'sine' : 'triangle';
+        oscillator.type = voice === 0 ? 'sine' : voice === 1 ? 'triangle' : 'sine';
         oscillator.frequency.value = frequency * ratio;
-        oscillator.detune.value = voice === 0 ? -3 : 4;
+        oscillator.detune.value = [-4, 4, 1][voice];
         oscillator.connect(envelope);
         oscillator.start(now);
-        oscillator.stop(now + 1.1);
+        oscillator.stop(now + .78);
       });
-      envelope.connect(master);
-      timer = setTimeout(tone, 1080);
+      timer = setTimeout(tone, 760);
     };
     const start = async () => {
       const AudioEngine = window.AudioContext || window.webkitAudioContext;
@@ -878,8 +1024,15 @@
       if (!context) {
         context = new AudioEngine();
         master = context.createGain();
-        master.gain.value = .55;
-        master.connect(context.destination);
+        master.gain.value = .82;
+        const compressor = context.createDynamicsCompressor();
+        compressor.threshold.value = -18;
+        compressor.knee.value = 16;
+        compressor.ratio.value = 5;
+        compressor.attack.value = .003;
+        compressor.release.value = .25;
+        master.connect(compressor);
+        compressor.connect(context.destination);
       }
       await context.resume();
       if (context.state !== 'running') throw new Error('AUDIO_NOT_RUNNING');
@@ -906,8 +1059,13 @@
   async function restoreStateFromUrl() {
     const params = new URLSearchParams(location.search);
     const favoriteId = Number(params.get('favorite'));
+    const fixedProductId = params.get('fixed');
     const action = params.get('resume');
     let restored = false;
+    if (action === 'fixed-order' && fixedProductId) {
+      await openFixedOrder(fixedProductId);
+      return;
+    }
     if (Number.isSafeInteger(favoriteId) && favoriteId > 0) {
       restored = await loadFavoriteFromUrl(favoriteId);
     }
@@ -915,7 +1073,6 @@
       const stored = readStoredMatch();
       if (stored) {
         currentMatch = stored;
-        $('searchPanel').classList.add('hidden');
         $('quizPanel').classList.add('hidden');
         $('resultPanel').classList.remove('hidden');
         renderResult();
@@ -930,6 +1087,10 @@
 
   function bindEvents() {
     $('problemForm').addEventListener('submit', startMatching);
+    document.querySelectorAll('[data-fixed-module]').forEach((button) => {
+      button.addEventListener('click', () => renderFixedPlans(button.dataset.fixedModule));
+    });
+    $('closeFixedPlans').addEventListener('click', closeFixedPlans);
     document.querySelectorAll('[data-example]').forEach((button) => {
       button.addEventListener('click', () => {
         $('problemInput').value = button.dataset.example || '';
@@ -960,6 +1121,7 @@
   window.addEventListener('gyx:languagechange', async (event) => {
     if (!$('quizPanel').classList.contains('hidden')) renderQuiz();
     if (currentMatch && !$('resultPanel').classList.contains('hidden')) renderResult();
+    renderFixedModules();
     await syncAccount();
     await syncFavoriteState();
     if (currentUser) {

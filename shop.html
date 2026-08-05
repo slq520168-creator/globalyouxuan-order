@@ -8,13 +8,14 @@
   <title>全球优选｜AI 问题智能匹配</title>
   <script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{document.documentElement.dataset.theme='light'}</script>
   <link rel="stylesheet" href="site.css">
+  <link rel="stylesheet" href="home.css">
 </head>
-<body>
+<body class="home-page">
   <header class="site-header">
     <div class="shell header-inner">
       <a class="brand" href="shop.html" aria-label="Global Youxuan">
         <span class="brand-mark">GY</span>
-        <span data-i18n="brand">全球优选</span>
+        <span>GlobalYouXuan</span>
       </a>
       <nav class="nav" aria-label="Main navigation">
         <a href="shop.html" aria-current="page" data-i18n="navShop">智能匹配</a>
@@ -35,41 +36,28 @@
   </header>
 
   <main id="matchAssistant">
-    <section class="hero match-hero reference-hero">
-      <div class="planet-glow" aria-hidden="true"></div>
-      <div class="shell match-layout">
-        <div class="match-intro">
-          <p class="eyebrow" data-i18n="shopEyebrow">输入问题 · 五轮选择 · 一个最匹配方案</p>
-          <h1 class="gradient-text" data-i18n="shopTitle">连接全球智慧，找到真正能执行的答案</h1>
-          <p class="hero-lead" data-i18n="shopLead">输入问题并完成5轮选择，系统会给出一个最匹配的执行方案并自动定价。</p>
-
-          <div class="flow-strip" aria-label="Matching flow">
-            <div><strong>1</strong><span data-i18n="flowAsk">输入问题</span></div>
-            <div><strong>2</strong><span data-i18n="flowChoose">连续5轮选择</span></div>
-            <div><strong>3</strong><span data-i18n="flowResult">得到1个方案</span></div>
-          </div>
+    <section class="cosmic-home">
+      <div class="shell home-stage">
+        <div class="home-copy">
+          <h1>
+            <span data-i18n="heroLineOne">连接全球智慧</span>
+            <span><span data-i18n="heroLineTwo">驱动数字</span><em data-i18n="heroLineAccent">未来</em></span>
+          </h1>
+          <p data-i18n="shopLead">助力企业与个人实现数字化升级</p>
         </div>
 
-        <section class="assistant-card" aria-labelledby="assistantTitle">
+        <section class="search-stage" aria-label="智能搜索">
           <div id="searchPanel">
-            <span class="assistant-status"><i></i><span data-i18n="assistantReady">智能匹配已就绪</span></span>
-            <h2 id="assistantTitle" data-i18n="quickSearchTitle">你现在最想解决什么问题？</h2>
-            <p class="search-card-copy" data-i18n="quickSearchLead">描述得越具体，匹配结果越准确。</p>
-            <form id="problemForm" class="problem-form">
-              <textarea id="problemInput" class="problem-input" minlength="2" maxlength="500" rows="4"
-                data-i18n-placeholder="quickSearchPlaceholder" placeholder="例如：我想用AI自动回复客户，但不知道从哪里开始" required></textarea>
-              <div id="problemMessage" class="form-message" aria-live="polite"></div>
-              <button id="startMatchButton" class="btn btn-block btn-large" type="submit" data-i18n="search">开始智能匹配</button>
+            <form id="problemForm" class="problem-form compact-search">
+              <span class="search-spark" aria-hidden="true">✦</span>
+              <textarea id="problemInput" class="problem-input" minlength="2" maxlength="500" rows="2"
+                data-i18n-placeholder="quickSearchPlaceholder" placeholder="AI智能搜索，探索解决方案…" required></textarea>
+              <button id="startMatchButton" class="search-submit" type="submit" data-i18n-aria="search" aria-label="搜索">🔍</button>
             </form>
-            <div class="example-chips" id="exampleChips">
-              <button type="button" data-example="如何用AI自动回复客户？">AI自动回复客户</button>
-              <button type="button" data-example="如何制作适合发布的AI短视频？">AI短视频制作</button>
-              <button type="button" data-example="如何快速搭建一个可以下单的网站？">网站建设</button>
-            </div>
-            <p class="privacy-note" data-i18n="priceNote">完成选择后显示1个匹配方案和对应价格。</p>
+            <div id="problemMessage" class="form-message" aria-live="polite"></div>
           </div>
 
-          <div id="quizPanel" class="hidden" aria-live="polite">
+          <div id="quizPanel" class="search-popover hidden" aria-live="polite">
             <div class="quiz-progress-head">
               <span id="quizStepLabel">第 1 / 5 轮</span>
               <button id="restartMatchButton" class="text-button" type="button" data-i18n="restart">重新开始</button>
@@ -82,7 +70,7 @@
             <button id="quizBackButton" class="btn btn-secondary btn-block" type="button" data-i18n="back">返回</button>
           </div>
 
-          <div id="resultPanel" class="hidden" aria-live="polite">
+          <div id="resultPanel" class="search-popover hidden" aria-live="polite">
             <div class="result-topline">
               <span class="result-label" data-i18n="matchedResult">最匹配方案</span>
               <span id="resultConfidence" class="match-confidence">—</span>
@@ -114,19 +102,29 @@
           </div>
         </section>
 
-        <section class="module-grid" aria-label="问题分类">
-          <button class="module-card module-blue" type="button" data-example="我想建设一个可以真实注册、下单和自动交付的网站">
-            <span class="module-icon">▣</span><strong data-i18n="moduleWebsite">网站建设</strong><small data-i18n="moduleWebsiteLead">网站、商城与会员系统</small>
+        <section class="fixed-module-section" aria-label="固定方案">
+          <div class="module-grid">
+          <button class="module-card module-blue" type="button" data-fixed-module="web" aria-expanded="false">
+            <span class="module-icon">▣</span><strong data-i18n="moduleWebsite">网站建设</strong><small id="modulePriceWeb">99 USDT起</small><i>↑</i>
           </button>
-          <button class="module-card module-violet" type="button" data-example="我想使用AI提高创作和工作效率">
-            <span class="module-icon">✦</span><strong data-i18n="moduleAi">智能未来</strong><small data-i18n="moduleAiLead">AI创作与智能助手</small>
+          <button class="module-card module-violet" type="button" data-fixed-module="automation" aria-expanded="false">
+            <span class="module-icon">✦</span><strong data-i18n="moduleAi">智控未来</strong><small id="modulePriceAutomation">9.9 USDT起</small><i>↑</i>
           </button>
-          <button class="module-card module-green" type="button" data-example="我想分析业务数据并制定可以执行的增长方案">
-            <span class="module-icon">↗</span><strong data-i18n="moduleGrowth">量化感知</strong><small data-i18n="moduleGrowthLead">数据分析与增长决策</small>
+          <button class="module-card module-green" type="button" data-fixed-module="ai" aria-expanded="false">
+            <span class="module-icon">↗</span><strong data-i18n="moduleGrowth">量化感知</strong><small id="modulePriceAi">9.9 USDT起</small><i>↑</i>
           </button>
-          <button class="module-card module-gold" type="button" data-example="我想学习一个能立即上手的AI实操方法">
-            <span class="module-icon">◇</span><strong data-i18n="moduleAcademy">数字学院</strong><small data-i18n="moduleAcademyLead">短小清晰的实操方案</small>
+          <button class="module-card module-gold" type="button" data-fixed-module="digital" aria-expanded="false">
+            <span class="module-icon">◇</span><strong data-i18n="moduleAcademy">数字学院</strong><small id="modulePriceDigital">9.9 USDT起</small><i>↑</i>
           </button>
+          </div>
+
+          <div id="fixedPlansPanel" class="fixed-plans-panel hidden" aria-live="polite">
+            <div class="fixed-plans-head">
+              <div><span data-i18n="fixedPlansLabel">固定方案</span><h2 id="fixedPlansTitle">—</h2></div>
+              <button id="closeFixedPlans" type="button" aria-label="关闭">×</button>
+            </div>
+            <div id="fixedPlanList" class="fixed-plan-list"></div>
+          </div>
         </section>
       </div>
     </section>
