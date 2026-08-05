@@ -1140,6 +1140,35 @@
 
   function bindEvents() {
     $('problemForm').addEventListener('submit', startMatching);
+
+    // 停止输入约1秒后自动触发匹配（BUG-002）
+    let autoMatchTimer = null;
+    const inputEl = $('problemInput');
+    if (inputEl) {
+      inputEl.addEventListener('input', () => {
+        clearTimeout(autoMatchTimer);
+        // 继续输入时取消上一次匹配
+        if (!$('quizPanel').classList.contains('hidden') || !$('resultPanel').classList.contains('hidden')) {
+          // 用户还在输入，不打断已有流程，只清定时器
+        }
+        autoMatchTimer = setTimeout(() => {
+          const q = inputEl.value.trim();
+          if (q.length >= 2) {
+            // 显示简短反馈
+            showMessage('problemMessage', '正在理解问题并匹配知识库…', 'success');
+            startMatching();
+          }
+        }, 1000);
+      });
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          clearTimeout(autoMatchTimer);
+          startMatching();
+        }
+      });
+    }
+
     document.querySelectorAll('[data-fixed-module]').forEach((button) => {
       button.addEventListener('click', () => renderFixedPlans(button.dataset.fixedModule));
     });
