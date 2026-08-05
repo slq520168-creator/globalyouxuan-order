@@ -307,6 +307,40 @@
     return answers.length > 0 && tierProducts.length === 5;
   }
 
+  // ==================== 需求理解匹配（目标驱动，不是关键词匹配） ====================
+  // 核心原则：理解客户真正想完成什么目标，再匹配能解决该目标的答案
+
+  const INTENT_MAP = [
+    {
+      goals: ['赚钱', '增加收入', '副业变现', '兼职赚钱'],
+      triggers: ['兼职', '副业', '赚钱', '变现', '收入', '盈利', '挣', '月入', '日入', '被动收入', 'side', 'hustle', 'earn', 'money', 'profit']
+    },
+    {
+      goals: ['涨粉', '提升流量', '获取客户', '引流获客'],
+      triggers: ['tiktok', '抖音', '快手', '小红书', '涨粉', '粉丝', '流量', '引流', '获客', '曝光', '播放', '关注', 'follower', 'traffic', 'fans']
+    },
+    {
+      goals: ['提高经营效率', '优化管理', '降低成本', '提升效率'],
+      triggers: ['宠物医院', '诊所', '医院', '店铺', '门店', '效率', '管理', '运营', '流程', '系统', '工具', '节省时间', '效率提升', '经营']
+    },
+    {
+      goals: ['制作音乐', '创作内容', '生成内容', '做视频文案'],
+      triggers: ['写歌', '作曲', '做音乐', 'ai写歌', '文案', '脚本', '视频', '图片', '创作', '生成', '内容', 'prompt', '提示词', 'music', 'song']
+    },
+    {
+      goals: ['建网站', '品牌展示', '线上获客', '官网建设'],
+      triggers: ['网站', '官网', '建站', '网页', '品牌', '展示', '电商', '落地页', 'homepage', 'website']
+    },
+    {
+      goals: ['自动化', '减少人工', '机器人处理', '自动通知发货'],
+      triggers: ['自动', '机器人', 'bot', '通知', '工作流', 'workflow', '同步', '自动发货', '自动回复', 'automation']
+    },
+    {
+      goals: ['学习技能', '掌握方法', '实操教程', '提升能力'],
+      triggers: ['学习', '教程', '怎么学', '入门', '掌握', '技能', '方法', '课程', 'learn', 'tutorial']
+    }
+  ];
+
   function simplify(value) {
     return String(value || '')
       .toLowerCase()
@@ -330,25 +364,64 @@
     return Array.from(result).slice(0, 100);
   }
 
+  // 从客户问题中提取真实目标
+  function extractGoals(question) {
+    const q = String(question || '').toLowerCase().normalize('NFKC');
+    const found = [];
+    INTENT_MAP.forEach((item) => {
+      const hit = item.triggers.some((t) => q.includes(t.toLowerCase()));
+      if (hit) {
+        found.push(...item.goals);
+      }
+    });
+    return [...new Set(found)];
+  }
+
   function scoreAnswer(answer, question) {
     const title = [answer.title, answer.title_en, answer.title_km].filter(Boolean).join(' ');
     const keywordText = Array.isArray(answer.keywords) ? answer.keywords.join(' ') : '';
     const summary = [answer.answer_summary, answer.answer_summary_en, answer.answer_summary_km].filter(Boolean).join(' ');
+    const allText = (title + ' ' + keywordText + ' ' + summary).toLowerCase();
+
     const questionSimple = simplify(question);
     const titleSimple = simplify(title);
     const keywordSimple = simplify(keywordText);
     const summarySimple = simplify(summary);
+
     let score = 0;
 
-    if (questionSimple && (titleSimple.includes(questionSimple) || questionSimple.includes(titleSimple))) score += 24;
+    // 1. 需求目标匹配（最高权重）
+    const goals = extractGoals(question);
+    goals.forEach((goal) => {
+      if (allText.includes(goal.toLowerCase())) score += 40;
+      // 目标词出现在标题额外加分
+      if (title.toLowerCase().includes(goal.toLowerCase())) score += 25;
+    });
+
+    // 2. 触发词直接命中答案文本
+    INTENT_MAP.forEach((item) => {
+      item.triggers.forEach((trigger) => {
+        if (question.toLowerCase().includes(trigger) && allText.includes(trigger)) {
+          score += 12;
+        }
+      });
+    });
+
+    // 3. 标题高度相关
+    if (questionSimple && (titleSimple.includes(questionSimple) || questionSimple.includes(titleSimple))) {
+      score += 30;
+    }
+
+    // 4. 分词相关（辅助，权重较低）
     tokens(question).forEach((token) => {
       const compact = simplify(token);
       if (!compact) return;
-      if (titleSimple.includes(compact)) score += 5;
-      if (keywordSimple.includes(compact)) score += 4;
+      if (titleSimple.includes(compact)) score += 6;
+      if (keywordSimple.includes(compact)) score += 5;
       if (summarySimple.includes(compact)) score += 2;
     });
 
+    // 5. 模块分类辅助
     const moduleHints = {
       work: ['办公', '文档', '表格', '邮件', '会议', '总结', 'work', 'office'],
       creation: ['图片', '视频', '文案', '创作', '脚本', 'image', 'video', 'content'],
@@ -356,8 +429,9 @@
       automation: ['自动', '机器人', '通知', '工作流', '同步', 'bot', 'automation', 'workflow']
     };
     (moduleHints[answer.module_code] || []).forEach((hint) => {
-      if (String(question).toLowerCase().includes(hint)) score += 3;
+      if (String(question).toLowerCase().includes(hint)) score += 4;
     });
+
     return score;
   }
 
