@@ -121,18 +121,28 @@
   filter: drop-shadow(0 0 8px rgba(95, 181, 255, .8));
 }
 .home-page .compact-search .problem-input {
-  min-height: 62px;
-  max-height: 62px;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
   margin: 0;
-  padding: 8px 2px;
+  padding: 12px 2px;
   resize: none;
+  overflow: hidden;
   color: #fff;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  font-size: 16px;
-  line-height: 1.45;
+  font-size: 16px; /* 保持16px，防止iOS点击放大 */
+  line-height: 1.35;
+  -webkit-appearance: none;
+  appearance: none;
+}
+.home-page .compact-search .problem-input:focus {
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
+  outline: none;
 }
 .home-page .compact-search .problem-input::placeholder { color: #9caecb; }
 .search-submit {
@@ -350,7 +360,13 @@
     border-radius: 23px;
   }
   .search-spark { font-size: 18px; }
-  .home-page .compact-search .problem-input { min-height: 58px; max-height: 58px; font-size: 14px; }
+  .home-page .compact-search .problem-input {
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    font-size: 16px; /* 不能低于16，否则iOS会放大页面 */
+    padding: 10px 2px;
+  }
   .search-submit { width: 53px; height: 53px; border-radius: 18px; font-size: 31px; }
   .search-popover { padding: 16px; border-radius: 19px; }
   .home-page .quiz-option { min-height: 58px; }
