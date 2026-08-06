@@ -634,3 +634,46 @@ html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
   opacity: 0;
   animation: quizOptionIn 0.28s ease forwards;
 }
+
+
+/* 卡片方案完整介绍 */
+.fixed-plan-list { grid-template-columns: 1fr; gap: 12px; }
+.fixed-plan {
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 14px;
+}
+.fixed-plan h3 { font-size: 16px; }
+.fixed-plan-lead {
+  margin: 0;
+  color: #c5d4ea;
+  font-size: 13px;
+  line-height: 1.55;
+}
+.fixed-plan-bullets {
+  margin: 0;
+  padding-left: 18px;
+  color: #a9bdd8;
+  font-size: 12px;
+  line-height: 1.65;
+}
+.fixed-plan-audience {
+  margin: 0;
+  color: #8fa6c4;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.fixed-plan .btn { align-self: stretch; margin-top: 4px; }
+.fixed-plans-panel.is-open {
+  max-height: min(78vh, 920px);
+  overflow-y: auto;
+}
+html[data-theme="light"] .fixed-plan-lead { color: #3a5570; }
+html[data-theme="light"] .fixed-plan-bullets { color: #4a647f; }
+html[data-theme="light"] .fixed-plan-audience { color: #5a718c; }
+
+@media (min-width: 900px) {
+  .fixed-plan-list { grid-template-columns: 1fr 1fr; }
+}

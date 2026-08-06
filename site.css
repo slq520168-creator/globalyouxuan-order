@@ -1185,3 +1185,13 @@ html[data-theme="light"] .order-filter {
 .password-toggle:active {
   opacity: .8;
 }
+
+
+#orderProductDescription {
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted, #6b7c93);
+  max-height: 180px;
+  overflow-y: auto;
+}

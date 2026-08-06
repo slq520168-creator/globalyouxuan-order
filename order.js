@@ -46,6 +46,107 @@
       'digital-trial': 'កញ្ចប់សាកល្បង', 'digital-study': 'កញ្ចប់សិក្សា', 'digital-expert': 'កញ្ចប់អ្នកជំនាញ', 'digital-private': 'បង្រៀនផ្ទាល់ខ្លួន'
     }
   };
+
+  // 卡片方案详情（来自旧站完整介绍）
+  const FIXED_PLAN_DETAILS = {
+    'web-photo': {
+      lead: '给你一个真正属于自己的私人数字空间。',
+      bullets: ['个人相册、家庭纪念、旅行记录', '宠物成长、作品收藏、个人主页', '手机端也能操作，简单好上手', '自带后台，随时上传，内容自己掌控', '生成专属链接，想分享就分享'],
+      audience: '适合想留住生活与作品的人。不依赖平台规则，简单、私密、长期可用。'
+    },
+    'web-merchant': {
+      lead: '把小生意搬到线上，客户点开就能看懂。',
+      bullets: ['产品目录、服务项目、价格说明', '图文自由发布，门店与活动随时更新', '手机端管理方便，不复杂、不费时', '一键生成展示页，发给客户即可浏览', '后台自主管理，随时修改随时生效'],
+      audience: '适合餐饮、美甲、家政、烘焙、健身、维修等小门店与个体商户。'
+    },
+    'web-brand': {
+      lead: '做出有品牌感的官网，让客户信任你。',
+      bullets: ['品牌形象展示、案例作品、团队介绍', '服务流程、客户评价、新闻动态', 'PC+手机双端适配，专业不复杂', '独立域名绑定，提升品牌信任度', '后台自由管理，内容随时更新'],
+      audience: '适合设计师、摄影师、咨询顾问、培训讲师、工作室及初创公司。'
+    },
+    'web-enterprise': {
+      lead: '大型企业级官网+内容管理系统，支撑多部门协同运营。',
+      bullets: ['多级栏目架构与频道独立管理', '内容发布：编辑、审核、发布流程化管理', '多账号权限：管理员、编辑、运营、客服分级', '数据统计看板：访问量、来源、热门页面', 'SEO深度优化与站点地图自动生成', 'HTTPS、定期备份、防注入等企业级安全', 'API接口开放，对接CRM、ERP等系统', '多业务线、多区域、多语言统一管理'],
+      audience: '适合集团公司、上市企业、跨区域连锁、多业务线企业及大型机构。'
+    },
+    'automation-trial': {
+      lead: '没有基础也能快速掌握，从零开始体验自动化。',
+      bullets: ['日程备忘、待办提醒、周期性任务自动推送', '微信/飞书/短信多渠道通知', '手机端设置，操作简单', '支持每日/每周/每月循环提醒', '到点自动通知，不会忘、不会漏', '附赠新手操作手册+入门教程'],
+      audience: '适合吃药提醒、水电费缴纳、例会通知、项目截止预警、客户生日问候等日常场景。'
+    },
+    'automation-small': {
+      lead: '让重复的事情自己跑起来，你只管做正事。',
+      bullets: ['表单提交后自动回复、自动通知相关人员', '库存低于设定值自动发送补货提醒', '客户咨询自动分配、自动跟进记录', '多平台消息自动同步，不漏单、不拖延', '无需代码，手机端配置即可生效', '支持微信/飞书/邮件/短信多渠道输出'],
+      audience: '适合小生意、门店：客户咨询自动分配、库存提醒、订单通知、预约确认等。'
+    },
+    'automation-team': {
+      lead: '打通团队数据和工具，让协作自动流转。',
+      bullets: ['多应用数据自动同步（表单、表格、文档、日历）', '跨部门审批流自动流转，减少沟通成本', '数据自动汇总生成报表，无需人工统计', '项目进度自动追踪，逾期自动预警', '支持连接飞书/钉钉/企业微信/Notion等工具', '可视化流程编排，无需代码，配置即可用'],
+      audience: '适合团队协作、企业办公：跨部门审批、销售报表、项目预警、多门店数据合并等。'
+    },
+    'automation-enterprise': {
+      lead: '全业务链路自动化，私有化部署，数据不出企业。',
+      bullets: ['打通ERP/CRM/SAP等企业内部系统', '跨系统数据自动同步，消除信息孤岛', '复杂业务流程可视化编排，支持多条件分支', '企业级权限管理，不同角色不同操作权限', '专属服务器私有化部署，数据安全自主可控', '支持千万级数据量处理，高并发稳定运行', '对接企业现有账号体系，统一登录认证', '专属技术团队提供长期维护与迭代支持'],
+      audience: '适合大型企业、集团：全链路供应链、财务合并、客户全生命周期运营等。'
+    },
+    'ai-trial': {
+      lead: '没有基础也能快速掌握，从零开始用AI提效。',
+      bullets: ['AI写周报、日报、工作总结', 'AI整理会议纪要，自动提炼要点', 'AI做PPT大纲，自动生成汇报框架', 'AI翻译、润色、改写各类文档', '手机端可用，不复杂、不费时', '附赠新手操作手册+入门教程'],
+      audience: '适合个人日常办公：写周报、整理纪要、做PPT、翻译润色等。'
+    },
+    'ai-content': {
+      lead: 'AI帮你写文案、做图片、剪视频，一个人就是一支团队。',
+      bullets: ['AI批量生成小红书/抖音/公众号文案', 'AI生成配图、海报、封面图', 'AI辅助剪辑短视频（字幕/配音/自动切片）', '多平台内容统一管理，一键分发', '数据反馈自动汇总，判断哪类内容更受欢迎', '无需设计/剪辑基础，从脚本到发布全流程辅助'],
+      audience: '适合自媒体、内容运营：小红书笔记、抖音脚本、公众号配图、电商主图等。'
+    },
+    'ai-office': {
+      lead: '把AI嵌进日常办公与团队协作，减少重复劳动。',
+      bullets: ['会议纪要、周报、方案自动生成', '邮件起草与商务沟通润色', '表格整理、数据摘要与汇报大纲', '知识问答：基于公司文档快速找答案', '多账号协作与常用模板沉淀', '手机与电脑都能用，上手快'],
+      audience: '适合中小团队、行政与运营岗：日常文档、会议、沟通提效。'
+    },
+    'ai-enterprise': {
+      lead: '私有化AI平台，企业数据训练专属模型，全链路智能。',
+      bullets: ['基于企业专属数据进行模型微调训练', '私有化部署，数据不出企业', '对接企业内部知识库、文档库、数据库', '专属AI助手：懂业务、懂产品、懂客户', '支持财务/人事/销售/客服等多部门应用', '与CRM/ERP/OA深度集成', '持续迭代优化，与业务同步进化'],
+      audience: '适合大型企业、集团：专属AI助手、产品知识库问答、销售策略、财务分析等。'
+    },
+    'digital-trial': {
+      lead: '没有基础也能快速掌握，从零开始体验AI工具。',
+      bullets: ['AI视频、AI绘画、AI数字人、AI智能体', '自动工作流、网站搭建、本地部署', '视频大模型、实时视频、AI办公、AI营销', '每个板块1-3个免费工具+操作步骤', '手机就能用，10分钟上手', '可下载文档+新手入门教程'],
+      audience: '包含形式：可下载文档 / 在线查看 / 新手交流群。适合纯新手想试试。'
+    },
+    'digital-study': {
+      lead: '系统学习AI工具与工作流，从入门到能独立做出作品。',
+      bullets: ['分模块系统课：绘画/视频/数字人/智能体', '可复用提示词与工作流模板', '实操作业+作品点评方向', '常见坑位与工具选型清单', '配套资料包可反复查阅'],
+      audience: '适合想系统学会AI工具、做出稳定作品的学习者。'
+    },
+    'digital-expert': {
+      lead: '深度定制+接单变现，用AI做出专业结果。',
+      bullets: ['AI短剧/商单/企业级应用深度教学', '多工具组合工作流搭建', '商单接单技巧+报价策略+作品集打造', '个人品牌/副业变现完整路径', '一对一个人方案定制咨询'],
+      audience: '适合想用AI升级变现、接商单的人。'
+    },
+    'digital-private': {
+      lead: '一对一专属指导，从需求到落地全程陪跑。',
+      bullets: ['专属导师一对一诊断+定制学习计划', '不限次一对一咨询辅导', '实际项目陪跑指导（真实需求、真实产出）', '独家高阶提示词库+工作流模板', '长期迭代支持，持续更新'],
+      audience: '适合企业主、团队负责人，需要一对一专属指导与项目陪跑。'
+    }
+  };
+
+  function planDetails(productId) {
+    return FIXED_PLAN_DETAILS[productId] || null;
+  }
+
+  function planDescriptionText(productId) {
+    const d = planDetails(productId);
+    if (!d) return '';
+    const lines = [d.lead];
+    if (d.bullets && d.bullets.length) {
+      lines.push(d.bullets.map((b) => '· ' + b).join('\n'));
+    }
+    if (d.audience) lines.push(d.audience);
+    return lines.filter(Boolean).join('\n');
+  }
+
+
   const MIN_STRONG_SCORE = 6;
   const MATCH_STORAGE_KEY = 'gyx_pending_answer_match';
 
@@ -285,7 +386,7 @@
       .select('id,answer_code,module_code,title,title_en,title_km,answer_summary,answer_summary_en,answer_summary_km,keywords,priority')
       .eq('is_active', true)
       .order('priority', { ascending: false })
-      .limit(300);
+      .limit(500);
     const productRequest = db
       .from('products')
       .select('id,product_name,product_price,currency,description')
@@ -313,35 +414,51 @@
   const INTENT_MAP = [
     {
       goals: ['赚钱', '增加收入', '副业变现', '兼职赚钱'],
-      triggers: ['兼职', '副业', '赚钱', '变现', '收入', '盈利', '挣', '月入', '日入', '被动收入', 'side', 'hustle', 'earn', 'money', 'profit']
+      triggers: ['兼职', '副业', '赚钱', '变现', '收入', '盈利', '挣', '月入', '日入', '被动收入', '带货', '佣金', 'side', 'hustle', 'earn', 'money', 'profit', 'income']
     },
     {
       goals: ['涨粉', '提升流量', '获取客户', '引流获客'],
-      triggers: ['tiktok', '抖音', '快手', '小红书', '涨粉', '粉丝', '流量', '引流', '获客', '曝光', '播放', '关注', 'follower', 'traffic', 'fans', '微信', 'wechat', '社群', '私域']
+      triggers: ['tiktok', '抖音', '快手', '小红书', 'b站', '哔哩', 'youtube', '涨粉', '粉丝', '流量', '引流', '获客', '曝光', '播放', '关注', '热门', '爆款', 'follower', 'traffic', 'fans', 'viral']
     },
     {
-      goals: ['提高经营效率', '优化管理', '降低成本', '提升效率'],
-      triggers: ['宠物医院', '诊所', '医院', '店铺', '门店', '效率', '管理', '运营', '流程', '系统', '工具', '节省时间', '效率提升', '经营']
+      goals: ['提高经营效率', '优化管理', '降低成本', '门店数字化'],
+      triggers: ['宠物医院', '诊所', '医院', '店铺', '门店', '餐厅', '美业', '效率', '管理', '运营', '流程', '系统', '工具', '节省时间', '经营', '库存', '预约', '排班']
     },
     {
-      goals: ['制作音乐', '创作内容', '生成内容', '做视频文案'],
-      triggers: ['写歌', '作曲', '做音乐', 'ai写歌', '文案', '脚本', '视频', '图片', '创作', '生成', '内容', 'prompt', '提示词', 'music', 'song']
+      goals: ['制作音乐', 'AI创作', '生成内容', '做视频文案'],
+      triggers: ['写歌', '作曲', '做音乐', 'ai写歌', '编曲', '文案', '脚本', '视频', '图片', '创作', '生成', '内容', 'prompt', '提示词', 'music', 'song', 'midjourney', 'stable diffusion']
+    },
+    {
+      goals: ['AI赚钱', 'AI办公', 'AI学习', 'AI涨粉'],
+      triggers: ['ai', 'chatgpt', 'gpt', 'claude', 'gemini', '大模型', '人工智能', '智能助手', 'openai']
     },
     {
       goals: ['建网站', '品牌展示', '线上获客', '官网建设'],
-      triggers: ['网站', '官网', '建站', '网页', '品牌', '展示', '电商', '落地页', 'homepage', 'website']
+      triggers: ['网站', '官网', '建站', '网页', '品牌', '展示', '电商', '落地页', '商城', '独立站', 'homepage', 'website', 'shopify']
     },
     {
       goals: ['自动化', '减少人工', '机器人处理', '自动通知发货'],
-      triggers: ['自动', '机器人', 'bot', '通知', '工作流', 'workflow', '同步', '自动发货', '自动回复', 'automation']
+      triggers: ['自动', '机器人', 'bot', '通知', '工作流', 'workflow', '同步', '自动发货', '自动回复', 'automation', 'telegram', '脚本']
     },
     {
       goals: ['学习技能', '掌握方法', '实操教程', '提升能力'],
-      triggers: ['学习', '教程', '怎么学', '入门', '掌握', '技能', '方法', '课程', 'learn', 'tutorial']
+      triggers: ['学习', '教程', '怎么学', '入门', '掌握', '技能', '方法', '课程', '培训', 'learn', 'tutorial', 'course']
     },
     {
       goals: ['微信运营', '私域获客', '社群管理', '客户沟通'],
-      triggers: ['微信', 'wechat', '公众号', '小程序', '企微', '企业微信', '社群', '私域', '朋友圈']
+      triggers: ['微信', 'wechat', '公众号', '小程序', '企微', '企业微信', '社群', '私域', '朋友圈', '加粉']
+    },
+    {
+      goals: ['短视频变现', '内容带货', '直播转化'],
+      triggers: ['短视频', '直播', '带货', '口播', '剪辑', '封面', '选题', '直播间', 'gmv']
+    },
+    {
+      goals: ['跨境销售', '海外获客', '多语言内容'],
+      triggers: ['跨境', '出海', '海外', '外贸', '亚马逊', 'amazon', 'shopify', '独立站', '英语', '多语言']
+    },
+    {
+      goals: ['办公提效', '文档处理', '会议总结'],
+      triggers: ['办公', 'excel', '表格', '文档', 'ppt', '总结', '会议', '邮件', '简历', '翻译', 'office']
     }
   ];
 
@@ -503,12 +620,39 @@
       const unit = document.createElement('small');
       unit.textContent = product.currency || 'USDT';
       price.appendChild(unit);
+
+      const detail = planDetails(product.id);
+      if (detail) {
+        const lead = document.createElement('p');
+        lead.className = 'fixed-plan-lead';
+        lead.textContent = detail.lead;
+        article.append(heading, price, lead);
+        if (detail.bullets && detail.bullets.length) {
+          const ul = document.createElement('ul');
+          ul.className = 'fixed-plan-bullets';
+          detail.bullets.forEach((item) => {
+            const li = document.createElement('li');
+            li.textContent = item;
+            ul.appendChild(li);
+          });
+          article.appendChild(ul);
+        }
+        if (detail.audience) {
+          const aud = document.createElement('p');
+          aud.className = 'fixed-plan-audience';
+          aud.textContent = detail.audience;
+          article.appendChild(aud);
+        }
+      } else {
+        article.append(heading, price);
+      }
+
       const button = document.createElement('button');
       button.className = 'btn';
       button.type = 'button';
       button.textContent = t('choosePlan');
       button.addEventListener('click', () => openFixedOrder(product.id));
-      article.append(heading, price, button);
+      article.appendChild(button);
       list.appendChild(article);
     });
     const panel = $('fixedPlansPanel');
@@ -548,31 +692,49 @@
     originalQuestion = question;
     const runId = ++matchRunId;
 
-    // 分步反馈：每步约 0.5 秒
+    // 分步反馈：每步约 0.55 秒，展示理解到的目标
+    const detectedGoals = extractGoals(question);
     showMessage('problemMessage', '🔍 正在理解你的问题…', 'success');
     $('resultPanel').classList.add('hidden');
     $('quizPanel').classList.add('hidden');
 
     // 提前计算匹配，动画结束后再展示
-    const MIN_RELEVANT_SCORE = 4;
-    let ranked = rankAnswers(question).filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
+    const MIN_RELEVANT_SCORE = 3;
+    const allRanked = rankAnswers(question);
+    let ranked = allRanked.filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
+    // 不足 5 个：同分类补
     if (ranked.length < 5 && ranked.length > 0) {
       const topModule = ranked[0].module_code;
-      const sameModule = rankAnswers(question)
+      const sameModule = allRanked
         .filter((a) => a.module_code === topModule && !ranked.some((r) => r.id === a.id))
         .slice(0, 5 - ranked.length);
       ranked = ranked.concat(sameModule);
     }
+    // 仍不足：用全局高优先级答案补齐（永不空手）
+    if (ranked.length < 5) {
+      const fillers = allRanked
+        .filter((a) => !ranked.some((r) => r.id === a.id))
+        .slice(0, 5 - ranked.length);
+      ranked = ranked.concat(fillers);
+    }
+    // 库非空时至少给 1 个方向
+    if (ranked.length === 0 && allRanked.length > 0) {
+      ranked = allRanked.slice(0, Math.min(5, allRanked.length));
+    }
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
-      showMessage('problemMessage', '🧠 正在分析你的目标…', 'success');
-    }, 500);
+      if (detectedGoals.length) {
+        showMessage('problemMessage', '🧠 目标：' + detectedGoals.slice(0, 3).join('、') + '…', 'success');
+      } else {
+        showMessage('problemMessage', '🧠 正在分析你的目标…', 'success');
+      }
+    }, 550);
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
-      showMessage('problemMessage', '📚 正在匹配解决方案…', 'success');
-    }, 1000);
+      showMessage('problemMessage', '📚 正在从知识库匹配方向…', 'success');
+    }, 1100);
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
@@ -586,12 +748,19 @@
           });
           localStorage.setItem('gyx_unmatched_questions', JSON.stringify(unmatched.slice(0, 50)));
         } catch (e) {}
-        showMessage('problemMessage', '暂时没有完全匹配的答案，已记录你的问题，我们会尽快补充。你可以换个说法再试，或直接联系客服。', 'error');
+        showMessage('problemMessage', '知识库暂无精确条目，已记录你的问题。可换个说法，或联系客服补充方向。', 'error');
         return;
       }
       rankedCandidates = ranked.slice(0, 5);
-      showMessage('problemMessage', '✅ 已找到最相关的' + rankedCandidates.length + '个方向', 'success');
-    }, 1500);
+      const weak = Number(rankedCandidates[0]._score || 0) < MIN_RELEVANT_SCORE;
+      showMessage(
+        'problemMessage',
+        weak
+          ? '✅ 未找到精确条目，已为你推荐' + rankedCandidates.length + '个接近方向'
+          : '✅ 已找到' + rankedCandidates.length + '个相关方向',
+        'success'
+      );
+    }, 1650);
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
@@ -605,13 +774,12 @@
       $('originalQuestion').textContent = '“' + originalQuestion + '”';
       clearMessage('problemMessage');
       renderQuiz();
-      // 收起手机键盘，避免挡住结果
       try { $('problemInput')?.blur(); } catch (e) {}
       try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (e) {}
       setTimeout(() => {
         $('quizPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 120);
-    }, 2000);
+    }, 2200);
   }
 
   function renderQuiz() {
@@ -939,7 +1107,7 @@
       return;
     }
     currentMatch = null;
-    await showOrderModal(product, localizedFixedProductName(product), product.description || '');
+    await showOrderModal(product, localizedFixedProductName(product), planDescriptionText(product.id) || product.description || '');
   }
 
   function closeOrder() {
