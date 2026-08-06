@@ -362,13 +362,20 @@
   }
 
   function errorText(error) {
-    const code = String(error && (error.code || error.message) || '').toUpperCase();
+    const raw = String(error && (error.code || error.message) || '');
+    const code = raw.toUpperCase();
     if (code.includes('AUTH') || code.includes('SESSION') || code.includes('JWT')) return t('errorAuth');
     if (code.includes('OPEN_ORDER')) return t('errorOpenOrder');
     if (code.includes('RATE')) return t('errorRate');
     if (code.includes('PAYMENT_DETAILS_MISMATCH')) return t('errorPaymentMismatch');
     if (code.includes('TXID_ALREADY') || code.includes('DIFFERENT_TXID')) return t('errorTxidUsed');
-    if (code.includes('FETCH') || code.includes('NETWORK')) return t('errorNetwork');
+    if (code.includes('FETCH') || code.includes('NETWORK') || code.includes('FAILED TO FETCH')) return t('errorNetwork');
+    if (code.includes('FUNCTION') || code.includes('EDGE') || code.includes('NON-2XX')) return '下单服务暂时不可用，请稍后重试。';
+    if (code.includes('PHONE') || code.includes('CUSTOMER_PHONE')) return '电话格式有误，可留空或填写完整号码。';
+    // 露出真实原因，避免一直「操作失败」
+    if (raw && raw !== 'FUNCTION_REQUEST_FAILED' && !code.includes('ERRORGENERIC')) {
+      return raw.length > 120 ? raw.slice(0, 120) + '…' : raw;
+    }
     return t('errorGeneric');
   }
 
@@ -1355,7 +1362,7 @@
         product_id: currentProduct.id,
         customer_name: form.name,
         customer_email: form.email,
-        customer_phone: form.phone
+        customer_phone: form.phone || null
       };
       if (currentProduct.id.startsWith('answer-') && currentMatch) {
         Object.assign(orderInput, {
@@ -1370,7 +1377,7 @@
       if (!currentOrder) throw new Error('ORDER_CREATE_FAILED');
       await db.from('profiles').update({
         display_name: form.name,
-        phone: form.phone,
+        phone: form.phone || null,
         locale: i18n.locale
       }).eq('user_id', currentUser.id);
       showPaymentStep();
