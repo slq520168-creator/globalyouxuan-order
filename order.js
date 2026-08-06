@@ -684,6 +684,51 @@
 
   let matchRunId = 0;
 
+
+  // 库无相关条目时：按意图生成客户视角的方向（可进五轮，最终走深度定制）
+  function buildGoalDirections(question) {
+    const goals = extractGoals(question);
+    const q = String(question || '').trim() || '你的问题';
+    const templates = [];
+    if (goals.length) {
+      goals.slice(0, 5).forEach((g) => {
+        templates.push({
+          id: 'goal-' + g,
+          title: q + ' · ' + g,
+          answer_summary: '围绕「' + g + '」给出可执行思路、步骤与检查点（深度匹配）。',
+          keywords: [g, q],
+          module_code: 'creation',
+          priority: 0,
+          _score: 10,
+          _synthetic: true
+        });
+      });
+    }
+    // 通用客户视角兜底（与具体行业词组合）
+    const generics = [
+      ['搞清现状与目标', '先明确你现在卡在哪、想达到什么结果'],
+      ['可执行操作步骤', '按步骤落地，而不是只看概念'],
+      ['内容与账号策略', '定位、内容方向与发布节奏'],
+      ['引流与转化', '从曝光到私域/成交的路径'],
+      ['工具与工作流', '用合适工具把重复动作自动化']
+    ];
+    while (templates.length < 5) {
+      const i = templates.length;
+      const g = generics[i];
+      templates.push({
+        id: 'goal-gen-' + i,
+        title: q + ' · ' + g[0],
+        answer_summary: g[1] + '。将根据你的五轮选择生成方案。',
+        keywords: [q],
+        module_code: 'creation',
+        priority: 0,
+        _score: 8,
+        _synthetic: true
+      });
+    }
+    return templates.slice(0, 5);
+  }
+
   function startMatching(event) {
     if (event) event.preventDefault();
     const question = $('problemInput').value.trim();
@@ -706,34 +751,26 @@
     $('quizPanel').classList.add('hidden');
 
     // 提前计算匹配，动画结束后再展示
-    const MIN_RELEVANT_SCORE = 3;
+    const MIN_RELEVANT_SCORE = 8;
     const allRanked = rankAnswers(question);
+    // 只保留真正相关的（够分），禁止用无关热门凑数
     let ranked = allRanked.filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
 
-    // 不足 5 个：只从「有分数」的结果里补，再同分类补
+    // 同目标族内再补（标题/关键词含目标词）
     if (ranked.length < 5) {
-      const scored = allRanked.filter((a) => Number(a._score) > 0 && !ranked.some((r) => r.id === a.id));
-      ranked = ranked.concat(scored.slice(0, 5 - ranked.length));
-    }
-    if (ranked.length < 5 && ranked.length > 0) {
-      const topModule = ranked[0].module_code;
-      const sameModule = allRanked
-        .filter((a) => a.module_code === topModule && !ranked.some((r) => r.id === a.id))
-        .slice(0, 5 - ranked.length);
-      ranked = ranked.concat(sameModule);
-    }
-    // 仍完全无关：按目标词在答案库里再搜一遍（标题/关键词含 AI、办公等）
-    if (ranked.length === 0) {
       const goals = extractGoals(question);
       const goalHits = allRanked.filter((a) => {
+        if (ranked.some((r) => r.id === a.id)) return false;
+        if (Number(a._score) < 4) return false;
         const text = ((a.title || '') + ' ' + (Array.isArray(a.keywords) ? a.keywords.join(' ') : '') + ' ' + (a.answer_summary || '')).toLowerCase();
-        return goals.some((g) => text.includes(String(g).toLowerCase())) || /ai|gpt|办公|提效|助手|智能/.test(text);
+        return goals.some((g) => text.includes(String(g).toLowerCase()));
       });
-      ranked = (goalHits.length ? goalHits : []).slice(0, 5);
+      ranked = ranked.concat(goalHits.slice(0, 5 - ranked.length));
     }
-    // 真没有相关：最多给 3 个高优先级作「接近方向」，并标弱匹配（动画文案已有）
-    if (ranked.length === 0 && allRanked.length > 0) {
-      ranked = allRanked.slice(0, Math.min(3, allRanked.length));
+
+    // 库中仍无相关：用「理解到的目标」生成方向（不拿 Gmail/无关办公顶替）
+    if (ranked.length === 0) {
+      ranked = buildGoalDirections(question);
     }
 
     setTimeout(() => {
@@ -752,19 +789,20 @@
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
-      if (ranked.length === 0 && answers.length) {
-        ranked = rankAnswers(question).slice(0, 5);
-        if (!ranked.length) ranked = answers.slice(0, 5).map((a) => Object.assign({}, a, { _score: 1 }));
-        try {
+      if (ranked.length === 0) {
+        ranked = buildGoalDirections(originalQuestion || question);
+      }
+      if (ranked.length === 0) {
+        showMessage('problemMessage', '请换个说法再试。', 'error');
+        return;
+      }
+      try {
+        if (ranked.some((a) => a._synthetic)) {
           const unmatched = JSON.parse(localStorage.getItem('gyx_unmatched_questions') || '[]');
           unmatched.unshift({ question: originalQuestion, goals: extractGoals(originalQuestion), time: new Date().toISOString() });
           localStorage.setItem('gyx_unmatched_questions', JSON.stringify(unmatched.slice(0, 50)));
-        } catch (e) {}
-      }
-      if (ranked.length === 0) {
-        showMessage('problemMessage', '答案库暂时不可用，请稍后重试。', 'error');
-        return;
-      }
+        }
+      } catch (e) {}
       rankedCandidates = ranked.slice(0, 5);
       const weak = Number(rankedCandidates[0]._score || 0) < MIN_RELEVANT_SCORE;
       showMessage(
@@ -982,7 +1020,7 @@
         const selectedScore = Number(answer && answer._score || 0);
     const depthIndex = Math.max(0, Math.min(4, Number((selections[3] && selections[3].value) || 0)));
     // 只有真正弱匹配/无相关才兜底 39.99；匹配上了按深度档位价
-    const weakMatch = !initialStrongMatch || selectedScore < MIN_STRONG_SCORE;
+    const weakMatch = !initialStrongMatch || selectedScore < MIN_STRONG_SCORE || Boolean(answer && answer._synthetic) || String(answer && answer.id || '').startsWith('goal-');
     const tier = weakMatch ? 'custom' : TIER_ORDER[depthIndex];
     const productId = TIER_PRODUCTS[tier];
     const product = tierProducts.find((item) => item.id === productId) || tierProducts.find((item) => item.id === TIER_PRODUCTS.custom);
