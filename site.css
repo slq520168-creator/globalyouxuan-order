@@ -1195,3 +1195,55 @@ html[data-theme="light"] .order-filter {
   max-height: 180px;
   overflow-y: auto;
 }
+
+
+/* 语言：小标志，点开再选 */
+.lang-compact { position: relative; }
+.lang-flag-btn {
+  width: 36px; height: 36px; padding: 0;
+  border-radius: 10px; border: 1px solid var(--line);
+  background: var(--panel-strong); color: var(--text);
+  font-size: 13px; font-weight: 800; cursor: pointer;
+}
+.lang-dropdown {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 80;
+  min-width: 132px; padding: 6px;
+  border-radius: 12px; border: 1px solid var(--line);
+  background: var(--panel-strong);
+  box-shadow: 0 12px 28px rgba(0,0,0,.18);
+  display: grid; gap: 4px;
+}
+.lang-dropdown.hidden { display: none; }
+.lang-dropdown button {
+  border: 0; background: transparent; color: var(--text);
+  text-align: left; padding: 10px 12px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.lang-dropdown button:hover { background: rgba(20,120,255,.1); }
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0);
+  white-space: nowrap; border: 0;
+}
+
+/* 音乐按钮：深色底+亮字，播放时高对比 */
+.music-toggle {
+  color: #f5f9ff !important;
+  background: #0b1a2e !important;
+  border: 1px solid rgba(120,180,255,.55) !important;
+}
+.music-toggle.playing {
+  color: #062018 !important;
+  background: #3dffa8 !important;
+  border-color: #3dffa8 !important;
+}
+html[data-theme="light"] .music-toggle {
+  color: #0b1a2e !important;
+  background: #e8f0ff !important;
+  border: 1px solid #7aa2e3 !important;
+}
+html[data-theme="light"] .music-toggle.playing {
+  color: #062018 !important;
+  background: #2ee6a0 !important;
+  border-color: #2ee6a0 !important;
+}

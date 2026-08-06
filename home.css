@@ -677,3 +677,36 @@ html[data-theme="light"] .fixed-plan-audience { color: #5a718c; }
 @media (min-width: 900px) {
   .fixed-plan-list { grid-template-columns: 1fr 1fr; }
 }
+
+
+.home-page .lang-flag-btn {
+  width: 34px; height: 34px; font-size: 12px;
+}
+.home-page .music-toggle {
+  color: #f5f9ff !important;
+  background: #0b1a2e !important;
+  border: 1px solid rgba(120,180,255,.5) !important;
+}
+.home-page .music-toggle.playing {
+  color: #062018 !important;
+  background: #3dffa8 !important;
+}
+html[data-theme="light"] .home-page .music-toggle {
+  color: #0b1a2e !important;
+  background: #e8f0ff !important;
+  border-color: #7aa2e3 !important;
+}
+html[data-theme="light"] .home-page .music-toggle.playing {
+  color: #062018 !important;
+  background: #2ee6a0 !important;
+}
+
+/* 候选逐条出现 */
+.quiz-option-enter {
+  opacity: 0;
+  transform: translateY(6px);
+  animation: none;
+}
+.quiz-option-enter.is-visible {
+  animation: quizOptionIn 0.35s ease forwards;
+}

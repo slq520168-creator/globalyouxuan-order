@@ -10,6 +10,42 @@
     catch { return 'light'; }
   }
 
+
+  function setupLangCompact() {
+    const root = document.querySelector('[data-lang-compact]');
+    if (!root) return;
+    const btn = root.querySelector('[data-lang-toggle]');
+    const menu = root.querySelector('[data-lang-menu]');
+    const select = document.querySelector('[data-language-select]');
+    const labels = { 'zh-CN': '中', en: 'EN', km: 'ខ្មែរ' };
+    const sync = () => {
+      const loc = window.GYXI18N?.locale || 'zh-CN';
+      if (btn) btn.textContent = labels[loc] || '中';
+      if (select) select.value = loc;
+    };
+    btn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = menu.classList.contains('hidden');
+      menu.classList.toggle('hidden', !open);
+      btn.setAttribute('aria-expanded', String(open));
+    });
+    menu?.querySelectorAll('[data-set-lang]').forEach((item) => {
+      item.addEventListener('click', () => {
+        const loc = item.getAttribute('data-set-lang');
+        window.GYXI18N?.setLanguage(loc);
+        menu.classList.add('hidden');
+        btn.setAttribute('aria-expanded', 'false');
+        sync();
+      });
+    });
+    document.addEventListener('click', () => {
+      menu?.classList.add('hidden');
+      btn?.setAttribute('aria-expanded', 'false');
+    });
+    window.addEventListener('gyx:languagechange', sync);
+    sync();
+  }
+
   function applyTheme(theme, persist = true) {
     const next = theme === 'dark' ? 'dark' : 'light';
     root.dataset.theme = next;
@@ -121,8 +157,8 @@
     }
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { init(); setupLangCompact(); });
+  else { init(); setupLangCompact(); }
 
   window.GYXUI = { applyTheme, setSupport };
 })();

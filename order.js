@@ -429,8 +429,8 @@
       triggers: ['写歌', '作曲', '做音乐', 'ai写歌', '编曲', '文案', '脚本', '视频', '图片', '创作', '生成', '内容', 'prompt', '提示词', 'music', 'song', 'midjourney', 'stable diffusion']
     },
     {
-      goals: ['AI赚钱', 'AI办公', 'AI学习', 'AI涨粉'],
-      triggers: ['ai', 'chatgpt', 'gpt', 'claude', 'gemini', '大模型', '人工智能', '智能助手', 'openai']
+      goals: ['AI赚钱', 'AI办公', 'AI学习', 'AI涨粉', 'AI对话', 'AI提效'],
+      triggers: ['ai', 'chatgpt', 'gpt', 'claude', 'gemini', 'grok', 'deepseek', '文心', '通义', '豆包', 'kimi', '大模型', '人工智能', '智能助手', 'openai', 'llm', 'chatbot', '聊天机器人', '陪聊']
     },
     {
       goals: ['建网站', '品牌展示', '线上获客', '官网建设'],
@@ -515,9 +515,16 @@
     const goals = extractGoals(question);
     goals.forEach((goal) => {
       if (allText.includes(goal.toLowerCase())) score += 40;
-      // 目标词出现在标题额外加分
       if (title.toLowerCase().includes(goal.toLowerCase())) score += 25;
     });
+
+    // 1b. 常见 AI 产品名 → 办公/内容类答案加分
+    const aiBrands = ['grok', 'chatgpt', 'gpt', 'claude', 'gemini', 'deepseek', 'kimi', '豆包', '文心', '通义'];
+    const qLower = String(question || '').toLowerCase();
+    if (aiBrands.some((b) => qLower.includes(b))) {
+      if (/ai|办公|周报|纪要|文案|内容|助手|智能|提效|ppt|翻译/.test(allText)) score += 35;
+      if (/ai|办公|助手|智能/.test(title.toLowerCase())) score += 20;
+    }
 
     // 2. 触发词直接命中答案文本
     INTENT_MAP.forEach((item) => {
@@ -702,7 +709,12 @@
     const MIN_RELEVANT_SCORE = 3;
     const allRanked = rankAnswers(question);
     let ranked = allRanked.filter((a) => Number(a._score) >= MIN_RELEVANT_SCORE);
-    // 不足 5 个：同分类补
+
+    // 不足 5 个：只从「有分数」的结果里补，再同分类补
+    if (ranked.length < 5) {
+      const scored = allRanked.filter((a) => Number(a._score) > 0 && !ranked.some((r) => r.id === a.id));
+      ranked = ranked.concat(scored.slice(0, 5 - ranked.length));
+    }
     if (ranked.length < 5 && ranked.length > 0) {
       const topModule = ranked[0].module_code;
       const sameModule = allRanked
@@ -710,16 +722,18 @@
         .slice(0, 5 - ranked.length);
       ranked = ranked.concat(sameModule);
     }
-    // 仍不足：用全局高优先级答案补齐（永不空手）
-    if (ranked.length < 5) {
-      const fillers = allRanked
-        .filter((a) => !ranked.some((r) => r.id === a.id))
-        .slice(0, 5 - ranked.length);
-      ranked = ranked.concat(fillers);
+    // 仍完全无关：按目标词在答案库里再搜一遍（标题/关键词含 AI、办公等）
+    if (ranked.length === 0) {
+      const goals = extractGoals(question);
+      const goalHits = allRanked.filter((a) => {
+        const text = ((a.title || '') + ' ' + (Array.isArray(a.keywords) ? a.keywords.join(' ') : '') + ' ' + (a.answer_summary || '')).toLowerCase();
+        return goals.some((g) => text.includes(String(g).toLowerCase())) || /ai|gpt|办公|提效|助手|智能/.test(text);
+      });
+      ranked = (goalHits.length ? goalHits : []).slice(0, 5);
     }
-    // 库非空时至少给 1 个方向
+    // 真没有相关：最多给 3 个高优先级作「接近方向」，并标弱匹配（动画文案已有）
     if (ranked.length === 0 && allRanked.length > 0) {
-      ranked = allRanked.slice(0, Math.min(5, allRanked.length));
+      ranked = allRanked.slice(0, Math.min(3, allRanked.length));
     }
 
     setTimeout(() => {
@@ -738,17 +752,17 @@
 
     setTimeout(() => {
       if (runId !== matchRunId) return;
-      if (ranked.length === 0) {
+      if (ranked.length === 0 && answers.length) {
+        ranked = rankAnswers(question).slice(0, 5);
+        if (!ranked.length) ranked = answers.slice(0, 5).map((a) => Object.assign({}, a, { _score: 1 }));
         try {
           const unmatched = JSON.parse(localStorage.getItem('gyx_unmatched_questions') || '[]');
-          unmatched.unshift({
-            question: originalQuestion,
-            goals: extractGoals(originalQuestion),
-            time: new Date().toISOString()
-          });
+          unmatched.unshift({ question: originalQuestion, goals: extractGoals(originalQuestion), time: new Date().toISOString() });
           localStorage.setItem('gyx_unmatched_questions', JSON.stringify(unmatched.slice(0, 50)));
         } catch (e) {}
-        showMessage('problemMessage', '知识库暂无精确条目，已记录你的问题。可换个说法，或联系客服补充方向。', 'error');
+      }
+      if (ranked.length === 0) {
+        showMessage('problemMessage', '答案库暂时不可用，请稍后重试。', 'error');
         return;
       }
       rankedCandidates = ranked.slice(0, 5);
@@ -782,6 +796,100 @@
     }, 2200);
   }
 
+
+  function selectedAnswerFromRound1() {
+    if (!selections[0] || !rankedCandidates || !rankedCandidates.length) return rankedCandidates && rankedCandidates[0] || null;
+    const id = Number(selections[0].value);
+    return rankedCandidates.find((a) => Number(a.id) === id) || rankedCandidates[0];
+  }
+
+  function topicWords(answer, question) {
+    const text = [
+      question || '',
+      answer && answer.title || '',
+      answer && answer.answer_summary || '',
+      Array.isArray(answer && answer.keywords) ? answer.keywords.join(' ') : ''
+    ].join(' ');
+    const goals = extractGoals(text);
+    const extra = [];
+    const lower = text.toLowerCase();
+    if (/agent|智能体|工作流|workflow|自动化/.test(lower)) extra.push('智能体', '工作流');
+    if (/训练|微调|模型|提示词|prompt/.test(lower)) extra.push('模型训练', '提示词');
+    if (/办公|周报|纪要|文档|ppt/.test(lower)) extra.push('办公提效');
+    if (/内容|文案|视频|抖音|小红书/.test(lower)) extra.push('内容创作');
+    if (/grok|chatgpt|gpt|claude|gemini|ai/.test(lower)) extra.push('AI工具');
+    return [...new Set(goals.concat(extra))].slice(0, 6);
+  }
+
+  // 根据已选方向 + 原问题，动态生成第 2～5 轮（有上下文联系）
+  function buildDynamicRounds(answer, question) {
+    const title = localizedTitle(answer) || '这个方向';
+    const topics = topicWords(answer, question);
+    const t1 = topics[0] || '核心问题';
+    const t2 = topics[1] || '落地执行';
+    const t3 = topics[2] || '工具方法';
+
+    return [
+      null,
+      {
+        question: `关于「${title}」，你最想先解决哪一块？`,
+        help: '选项根据你选的方向生成，和上一步有关。',
+        options: [
+          `搞懂「${title}」是什么、能做什么`,
+          `用它解决「${t1}」`,
+          `搭一套可用的「${t2}」流程`,
+          `学会「${t3}」相关操作`,
+          '直接要一份可执行的完整方案'
+        ]
+      },
+      {
+        question: `你现在在「${title}」上卡在哪？`,
+        help: '阶段不同，方案起点不同。',
+        options: [
+          '还完全没碰过，需要从零说明',
+          '知道一点概念，不会实际操作',
+          '试过工具，但结果不稳定',
+          '有流程，但效率和质量不够',
+          '要针对我的场景重新设计'
+        ]
+      },
+      {
+        question: `围绕「${title}」，你需要多深的结果？`,
+        help: '深度会影响最终方案完整度。',
+        options: [
+          '只要关键结论和注意点',
+          '要能跟着做的标准步骤',
+          '要步骤 + 模板/提示词',
+          '要专业级完整执行路径',
+          '要深度定制（综合分析后报价）'
+        ]
+      },
+      {
+        question: '最后确认：你希望交付成什么样？',
+        help: '完成后给出综合评分；匹配上按档位价，对不上才 39.99。',
+        options: [
+          `「${title}」的要点清单`,
+          `可复制的提示词/模板`,
+          `从 0 到 1 的操作步骤`,
+          `可落地的执行方案`,
+          '深度定制方案（仅在无精确匹配时）'
+        ]
+      }
+    ];
+  }
+
+  function compositeScore(answer, sels) {
+    let score = Number(answer && answer._score || 0);
+    // 轮次选择加权：越靠后的深度选择影响最终分
+    if (sels[1]) score += 4;
+    if (sels[2]) score += 4;
+    if (sels[3]) score += Math.min(12, (Number(sels[3].value) || 0) * 3);
+    if (sels[4]) score += Math.min(10, (Number(sels[4].value) || 0) * 2);
+    // 归一到 0～100
+    const normalized = Math.max(35, Math.min(98, Math.round(40 + score * 1.2)));
+    return normalized;
+  }
+
   function renderQuiz() {
     const localeCopy = c();
     $('quizStepLabel').textContent = localeCopy.step.replace('{n}', String(quizIndex + 1));
@@ -792,26 +900,48 @@
     if (quizIndex === 0) {
       $('quizQuestion').textContent = localeCopy.candidateQuestion;
       $('quizHelp').textContent = localeCopy.candidateHelp;
+      // 候选在搜索结果区逐条出现（约 0.35s 一条），便于阅读
       rankedCandidates.forEach((answer, index) => {
         const button = document.createElement('button');
         button.className = 'quiz-option quiz-option-enter';
-        button.style.animationDelay = (index * 0.15) + 's';
         button.type = 'button';
+        button.disabled = true;
         const number = document.createElement('span');
         number.className = 'option-number';
         number.textContent = String(index + 1);
         const body = document.createElement('span');
         const heading = document.createElement('strong');
-        heading.textContent = localizedTitle(answer);
+        heading.textContent = '';
         const summary = document.createElement('small');
-        summary.textContent = localizedSummary(answer);
+        summary.textContent = '';
         body.append(heading, summary);
         button.append(number, body);
         button.addEventListener('click', () => chooseOption(answer.id, localizedTitle(answer)));
         optionGrid.appendChild(button);
+
+        const fullTitle = localizedTitle(answer);
+        const fullSummary = localizedSummary(answer);
+        setTimeout(() => {
+          button.classList.add('is-visible');
+          // 标题打字感
+          let i = 0;
+          const type = () => {
+            i += 1;
+            heading.textContent = fullTitle.slice(0, i);
+            if (i < fullTitle.length) {
+              setTimeout(type, 18);
+            } else {
+              summary.textContent = fullSummary;
+              button.disabled = false;
+            }
+          };
+          type();
+        }, 120 + index * 380);
       });
     } else {
-      const round = localeCopy.rounds[quizIndex];
+      const answer = selectedAnswerFromRound1();
+      const dynamic = buildDynamicRounds(answer, originalQuestion);
+      const round = dynamic[quizIndex] || localeCopy.rounds[quizIndex];
       $('quizQuestion').textContent = round.question;
       $('quizHelp').textContent = round.help;
       round.options.forEach((label, index) => {
@@ -844,18 +974,37 @@
 
   function finishMatching() {
     const selectedAnswerId = Number(selections[0].value);
-    const answer = rankedCandidates.find((item) => Number(item.id) === selectedAnswerId) || rankedCandidates[0];
-    const selectedScore = Number(answer && answer._score || 0);
-    const fallback = !initialStrongMatch || selectedScore < MIN_STRONG_SCORE;
-    const depthIndex = Math.max(0, Math.min(4, Number(selections[3].value) || 0));
-    const tier = fallback ? 'custom' : TIER_ORDER[depthIndex];
-    const productId = TIER_PRODUCTS[tier];
-    const product = tierProducts.find((item) => item.id === productId);
-    if (!answer || !product) {
-      showMessage('problemMessage', c().answersUnavailable);
-      resetAssistant();
+    const answer = rankedCandidates.find((item) => Number(item.id) === selectedAnswerId) || rankedCandidates[0] || answers[0];
+    if (!answer) {
+      showMessage('problemMessage', '正在为你生成深度匹配方向，请稍后重试或换个说法。');
       return;
     }
+        const selectedScore = Number(answer && answer._score || 0);
+    const depthIndex = Math.max(0, Math.min(4, Number((selections[3] && selections[3].value) || 0)));
+    // 只有真正弱匹配/无相关才兜底 39.99；匹配上了按深度档位价
+    const weakMatch = !initialStrongMatch || selectedScore < MIN_STRONG_SCORE;
+    const tier = weakMatch ? 'custom' : TIER_ORDER[depthIndex];
+    const productId = TIER_PRODUCTS[tier];
+    const product = tierProducts.find((item) => item.id === productId) || tierProducts.find((item) => item.id === TIER_PRODUCTS.custom);
+    if (!product) {
+      showMessage('problemMessage', c().answersUnavailable);
+      return;
+    }
+
+    const comp = compositeScore(answer, selections);
+    const priceMap = { essential: '6.90', standard: '9.90', detailed: '16.90', professional: '19.99', custom: '39.99' };
+    const analysis = [
+      '综合分析：',
+      '问题：' + (originalQuestion || ''),
+      '方向：' + (localizedTitle(answer) || ''),
+      selections[1] ? '重点：' + selections[1].label : '',
+      selections[2] ? '阶段：' + selections[2].label : '',
+      selections[3] ? '深度：' + selections[3].label : '',
+      '综合评分：' + comp + ' / 100',
+      weakMatch
+        ? '结论：没有足够精确的现成条目，给出深度定制方案（39.99）。'
+        : '结论：已匹配到相关方案，按你选的深度报价（' + (priceMap[tier] || product.product_price) + ' USDT）。'
+    ].filter(Boolean).join('\n');
 
     currentMatch = {
       answer_id: Number(answer.id),
@@ -868,10 +1017,12 @@
       question: originalQuestion,
       selections: selections.map((item) => item.label),
       tier: tier,
-      product_id: productId,
+      product_id: product.id,
       price: Number(product.product_price),
-      fallback: fallback,
+      fallback: Boolean(weakMatch),
       score: selectedScore,
+      composite: comp,
+      analysis: analysis,
       created_at: Date.now()
     };
     persistMatch();
@@ -902,12 +1053,17 @@
     if (!currentMatch) return;
     const tierCopy = c().tiers[currentMatch.tier] || c().tiers.standard;
     $('resultTitle').textContent = localizedTitle(currentMatch);
-    $('resultSummary').textContent = localizedSummary(currentMatch);
+    const summaryBits = [localizedSummary(currentMatch)];
+    if (currentMatch.analysis) summaryBits.push(currentMatch.analysis);
+    $('resultSummary').textContent = summaryBits.filter(Boolean).join('
+
+');
     $('resultTier').textContent = tierCopy.name;
     $('resultPrice').textContent = formatPrice(currentMatch.price);
-    $('resultConfidence').textContent = currentMatch.fallback
-      ? c().confidenceFallback
-      : Number(currentMatch.score) >= 14 ? c().confidenceHigh : c().confidenceMatched;
+    const comp = Number(currentMatch.composite || 0);
+    $('resultConfidence').textContent = comp
+      ? ('综合评分 ' + comp + '/100')
+      : (currentMatch.fallback ? c().confidenceFallback : Number(currentMatch.score) >= 14 ? c().confidenceHigh : c().confidenceMatched);
     $('resultQuestion').textContent = currentMatch.question;
     const selectionList = $('resultSelections');
     selectionList.replaceChildren();
