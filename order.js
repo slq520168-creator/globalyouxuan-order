@@ -499,9 +499,9 @@
   }
 
   function scoreAnswer(answer, question) {
-    const title = [answer.title, answer.title_en, answer.title_km].filter(Boolean).join(' ');
+    const title = [answer.title, answer.title_en, answer.title_km].filter(Boolean).join('\n');
     const keywordText = Array.isArray(answer.keywords) ? answer.keywords.join(' ') : '';
-    const summary = [answer.answer_summary, answer.answer_summary_en, answer.answer_summary_km].filter(Boolean).join(' ');
+    const summary = [answer.answer_summary, answer.answer_summary_en, answer.answer_summary_km].filter(Boolean).join('\n');
     const allText = (title + ' ' + keywordText + ' ' + summary).toLowerCase();
 
     const questionSimple = simplify(question);
@@ -1055,9 +1055,7 @@
     $('resultTitle').textContent = localizedTitle(currentMatch);
     const summaryBits = [localizedSummary(currentMatch)];
     if (currentMatch.analysis) summaryBits.push(currentMatch.analysis);
-    $('resultSummary').textContent = summaryBits.filter(Boolean).join('
-
-');
+    $('resultSummary').textContent = summaryBits.filter(Boolean).join('\n\n');
     $('resultTier').textContent = tierCopy.name;
     $('resultPrice').textContent = formatPrice(currentMatch.price);
     const comp = Number(currentMatch.composite || 0);
