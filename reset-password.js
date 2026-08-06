@@ -34,6 +34,77 @@
     }
   });
 
+
+  function extractRecoveryFromText(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return null;
+    try {
+      // 完整 URL
+      let url;
+      try { url = new URL(raw); } catch {
+        // 可能是不带协议的
+        try { url = new URL(raw.replace(/^\/\//, 'https://')); } catch { url = null; }
+      }
+      if (url) {
+        const p = url.searchParams;
+        const hashParams = new URLSearchParams((url.hash || '').replace(/^#/, ''));
+        const tokenHash = p.get('token_hash') || p.get('token') || hashParams.get('token_hash') || hashParams.get('token');
+        const type = (p.get('type') || hashParams.get('type') || 'recovery').toLowerCase();
+        const code = p.get('code') || hashParams.get('code');
+        const accessToken = hashParams.get('access_token') || p.get('access_token');
+        const refreshToken = hashParams.get('refresh_token') || p.get('refresh_token');
+        return { tokenHash, type, code, accessToken, refreshToken };
+      }
+    } catch (e) {}
+    // 正则兜底
+    const th = raw.match(/token_hash=([^&\s#]+)/) || raw.match(/[?&]token=([^&\s#]+)/);
+    const tp = raw.match(/[?&]type=([^&\s#]+)/);
+    const cd = raw.match(/[?&]code=([^&\s#]+)/);
+    return {
+      tokenHash: th ? decodeURIComponent(th[1]) : null,
+      type: tp ? decodeURIComponent(tp[1]) : 'recovery',
+      code: cd ? decodeURIComponent(cd[1]) : null,
+      accessToken: null,
+      refreshToken: null
+    };
+  }
+
+  async function verifyExtracted(parts) {
+    if (!parts) {
+      showMessage('请粘贴邮件中的完整链接');
+      return false;
+    }
+    const { tokenHash, type, code, accessToken, refreshToken } = parts;
+    try {
+      if (tokenHash) {
+        const otpType = (type === 'recovery' || type === 'email') ? type : 'recovery';
+        const { data, error } = await db.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
+        if (error) throw error;
+        if (data?.session?.user || data?.user) { setReady(true); return true; }
+      }
+      if (accessToken && refreshToken) {
+        const { data, error } = await db.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+        if (error) throw error;
+        if (data?.session?.user) { setReady(true); return true; }
+      }
+      if (code) {
+        const { data, error } = await db.auth.exchangeCodeForSession(code);
+        if (error) throw error;
+        if (data?.session?.user || data?.user) { setReady(true); return true; }
+      }
+      showMessage('链接里没有有效的重置参数，请重新复制完整链接');
+      return false;
+    } catch (e) {
+      const msg = String(e?.message || e || '');
+      if (/code verifier|pkce/i.test(msg)) {
+        showMessage('该链接需要同浏览器打开。请改用：长按邮件链接复制，粘贴到本页验证。');
+      } else {
+        showMessage(msg || t('resetLinkInvalid'));
+      }
+      return false;
+    }
+  }
+
   async function inspectRecovery() {
     const finishOk = () => setReady(true);
 
@@ -168,14 +239,24 @@
       });
     });
     $('resetPasswordForm').addEventListener('submit', submitNewPassword);
+    const pasteBtn = $('pasteLinkButton');
+    if (pasteBtn) {
+      pasteBtn.addEventListener('click', async () => {
+        pasteBtn.disabled = true;
+        pasteBtn.textContent = '正在验证…';
+        const text = ($('pasteResetLink') && $('pasteResetLink').value) || '';
+        const ok = await verifyExtracted(extractRecoveryFromText(text));
+        pasteBtn.disabled = false;
+        pasteBtn.textContent = '验证粘贴的链接';
+        if (ok) showMessage(t('resetLinkReady'), 'success');
+      });
+    }
     inspectRecovery();
-    // 超时仍未验证成功时给出明确提示
+    // 超时仍未成功：引导粘贴，不强制禁用（用户还可粘贴验证）
     setTimeout(() => {
       if (!recoveryReady) {
-        showMessage('重置链接无效或已过期，请返回登录页重新发送重置邮件。');
-        const btn = $('resetPasswordSubmit');
-        if (btn) btn.disabled = true;
+        showMessage('自动验证未成功。请长按邮件中的链接 → 复制 → 粘贴到下方框内 → 点验证。');
       }
-    }, 5000);
+    }, 4000);
   });
 })();
