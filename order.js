@@ -371,10 +371,9 @@
     if (code.includes('TXID_ALREADY') || code.includes('DIFFERENT_TXID')) return t('errorTxidUsed');
     if (code.includes('FETCH') || code.includes('NETWORK') || code.includes('FAILED TO FETCH')) return t('errorNetwork');
     if (code.includes('FUNCTION') || code.includes('EDGE') || code.includes('NON-2XX')) return '下单服务暂时不可用，请稍后重试。';
-    if (code.includes('PHONE') || code.includes('CUSTOMER_PHONE')) return '电话格式有误，可留空或填写完整号码。';
     // 露出真实原因，避免一直「操作失败」
-    if (raw && raw !== 'FUNCTION_REQUEST_FAILED' && !code.includes('ERRORGENERIC')) {
-      return raw.length > 120 ? raw.slice(0, 120) + '…' : raw;
+    if (raw && raw !== 'FUNCTION_REQUEST_FAILED' && raw !== t('errorGeneric')) {
+      return raw.length > 140 ? raw.slice(0, 140) + '…' : raw;
     }
     return t('errorGeneric');
   }
@@ -1332,8 +1331,7 @@
     const phone = $('orderPhone').value.trim();
     if (!name) throw new Error('FORM_NAME');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('FORM_EMAIL');
-    // 电话选填：填了才校验格式，不填不拦
-    if (phone && phone.length < 6) throw new Error('FORM_PHONE');
+    // 电话完全选填，不做长度拦截（海外号、短号都允许）
     return { name: name, email: email, phone: phone };
   }
 
@@ -1361,9 +1359,9 @@
       const orderInput = {
         product_id: currentProduct.id,
         customer_name: form.name,
-        customer_email: form.email,
-        customer_phone: form.phone || null
+        customer_email: form.email
       };
+      if (form.phone) orderInput.customer_phone = form.phone;
       if (currentProduct.id.startsWith('answer-') && currentMatch) {
         Object.assign(orderInput, {
           answer_id: currentMatch.answer_id,
