@@ -1325,7 +1325,8 @@
     const phone = $('orderPhone').value.trim();
     if (!name) throw new Error('FORM_NAME');
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error('FORM_EMAIL');
-    if (phone.length < 6) throw new Error('FORM_PHONE');
+    // 电话选填：填了才校验格式，不填不拦
+    if (phone && phone.length < 6) throw new Error('FORM_PHONE');
     return { name: name, email: email, phone: phone };
   }
 
