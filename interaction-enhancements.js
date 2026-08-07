@@ -48,6 +48,20 @@
         margin-top:6px;
         padding-bottom:4px;
       }
+      .mobile-bottom-nav{
+        position:fixed!important;
+        left:10px!important;
+        right:10px!important;
+        bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;
+        top:auto!important;
+        width:auto!important;
+        margin:0!important;
+        transform:none!important;
+        z-index:9999!important;
+      }
+      .home-page{
+        padding-bottom:calc(86px + env(safe-area-inset-bottom,0px));
+      }
     }
   `;
   document.head.appendChild(style);
