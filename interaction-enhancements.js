@@ -5,7 +5,7 @@
     if (window.__gyxDynamicDecisionLoader) return;
     window.__gyxDynamicDecisionLoader = true;
     const script = document.createElement('script');
-    script.src = 'ai-decision.js?v=20260807-1';
+    script.src = 'ai-decision.js?v=20260807-2';
     script.async = false;
     script.onerror = () => console.error('AI decision engine failed to load');
     document.body.appendChild(script);
