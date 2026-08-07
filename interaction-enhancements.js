@@ -18,6 +18,13 @@
     { tier: 'custom', product_id: 'answer-custom', label: '高手｜深度方案', price: '39.99' }
   ];
 
+  const FIXED_INTENTS = [
+    { module: 'web', words: ['网站','官网','网页','建站','商城','独立站','落地页','web','website','shop'] },
+    { module: 'automation', words: ['自动化','工作流','机器人','bot','自动通知','自动发货','自动回复','流程自动','workflow','automation'] },
+    { module: 'digital', words: ['学ai','ai教程','ai课程','学习ai','绘画教程','视频教程','数字人教程','提示词教程','本地模型','系统学习'] },
+    { module: 'ai', words: ['ai办公','ai文案','ai内容','内容营销','会议纪要','周报','ppt','翻译润色','企业ai','ai助手'] }
+  ];
+
   const style = document.createElement('style');
   style.textContent = `
     .gyx-type-wait{opacity:0;transform:translateY(6px)}
@@ -67,6 +74,36 @@
     customTierRound = false;
     pendingFinalButton = null;
     window.__gyxSelectedTier = null;
+  }
+
+  function originalQuestionText() {
+    return String(document.getElementById('originalQuestion')?.textContent || input.value || '')
+      .toLowerCase().replace(/[“”"']/g, '').trim();
+  }
+
+  function detectFixedModule() {
+    const q = originalQuestionText();
+    if (!q) return '';
+    for (const item of FIXED_INTENTS) {
+      if (item.words.some((word) => q.includes(word.toLowerCase()))) return item.module;
+    }
+    return '';
+  }
+
+  function openFixedModule(module) {
+    const card = document.querySelector(`[data-fixed-module="${module}"]`);
+    const quiz = document.getElementById('quizPanel');
+    const result = document.getElementById('resultPanel');
+    if (!card) return false;
+    resetTierChoice();
+    if (quiz) quiz.classList.add('hidden');
+    if (result) result.classList.add('hidden');
+    card.click();
+    setTimeout(() => {
+      const panel = document.getElementById('fixedPlansPanel');
+      panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 120);
+    return true;
   }
 
   input.addEventListener('input', (event) => {
@@ -195,6 +232,13 @@
     if (!button || currentRound() !== 5) return;
     event.preventDefault();
     event.stopImmediatePropagation();
+
+    // 搜索内容如果明确属于首页四个固定模块，最后直接回到该模块的固定方案，
+    // 不再显示 6.9～39.99 的通用资料档位，避免和固定卡片价格/答案冲突。
+    const fixedModule = detectFixedModule();
+    if (fixedModule && openFixedModule(fixedModule)) return;
+
+    // 只有不属于四个固定模块的知识库搜索，才进入第6轮通用资料档位选择。
     showTierRound(button);
   }, true);
 
