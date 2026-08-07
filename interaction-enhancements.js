@@ -30,7 +30,6 @@
   let animationToken = 0;
   let customTierRound = false;
   let pendingFinalButton = null;
-  let pendingFinalLabel = '';
 
   const originalInvoke = window.gyxInvokeFunction;
   if (typeof originalInvoke === 'function' && !window.__gyxInvokeWrappedV6) {
@@ -40,8 +39,7 @@
         const selected = window.__gyxSelectedTier;
         const next = { ...body, product_id: selected.product_id, answer_tier: selected.tier };
         if (Array.isArray(body.selection_path)) {
-          const base = body.selection_path.slice(0, 5);
-          next.selection_path = base.concat([`资料级别：${selected.label}（${selected.price} USDT）`]);
+          next.selection_path = body.selection_path.slice(0, 5).concat([`资料级别：${selected.label}（${selected.price} USDT）`]);
         }
         return originalInvoke(name, next);
       }
@@ -52,7 +50,6 @@
   function resetTierChoice() {
     customTierRound = false;
     pendingFinalButton = null;
-    pendingFinalLabel = '';
     window.__gyxSelectedTier = null;
   }
 
@@ -97,10 +94,11 @@
   }
 
   function normalizeProgressLabel() {
-    if (!customTierRound) {
-      step.textContent = String(step.textContent || '').replace(/\/\s*5\s*轮?/, '/ 6 轮');
-      if (progress) progress.style.width = String(Math.min(83.33, currentRound() * (100 / 6))) + '%';
-    }
+    if (customTierRound) return;
+    const current = String(step.textContent || '');
+    const next = current.replace(/\/\s*5\s*轮?/, '/ 6 轮');
+    if (next !== current) step.textContent = next;
+    if (progress) progress.style.width = String(Math.min(83.33, currentRound() * (100 / 6))) + '%';
   }
 
   function animateRound() {
@@ -138,7 +136,6 @@
   function showTierRound(finalButton) {
     customTierRound = true;
     pendingFinalButton = finalButton;
-    pendingFinalLabel = finalButton.querySelector('strong')?.textContent || '';
     animationToken += 1;
     step.textContent = '第 6 / 6 轮';
     if (progress) progress.style.width = '100%';
@@ -187,8 +184,7 @@
   options.addEventListener('click', (event) => {
     if (customTierRound) return;
     const button = event.target.closest?.('button.quiz-option');
-    if (!button) return;
-    if (currentRound() !== 5) return;
+    if (!button || currentRound() !== 5) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     showTierRound(button);
@@ -210,7 +206,6 @@
 
   const observer = new MutationObserver(() => animateRound());
   observer.observe(options, { childList: true });
-
   const stepObserver = new MutationObserver(normalizeProgressLabel);
   stepObserver.observe(step, { childList: true, characterData: true, subtree: true });
 })();
