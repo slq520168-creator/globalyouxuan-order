@@ -16,7 +16,10 @@ const CONFIG = {
   orderRetentionSeconds: 7 * 24 * 60 * 60,
 
   // 自动检测时最多回溯多少分钟的交易
-  autoCheckLookbackMinutes: 30
+  autoCheckLookbackMinutes: 30,
+
+  // Cloudflare Workers AI 独立服务
+  aiWorkerUrl: "https://globalyouxuan-ai.slq520168.workers.dev/api/chat"
 };
 
 export default {
@@ -37,15 +40,81 @@ export default {
         return json(
           {
             ok: true,
-            service: "GlobalYouXuan API V3 - Auto Confirm",
+            service: "GlobalYouXuan API V4 - AI Match + Auto Confirm",
             network: CONFIG.network,
             walletAddress: CONFIG.walletAddress,
             autoConfirmEnabled: true,
+            aiMatchEnabled: true,
             orderStorage: Boolean(env.ORDERS),
             telegramConfigured: Boolean(
               env.TELEGRAM_BOT_TOKEN &&
               env.TELEGRAM_CHAT_ID
             )
+          },
+          200,
+          corsHeaders
+        );
+      }
+
+      // AI意图理解：由独立 Cloudflare Workers AI 服务完成，失败时前端自动退回原匹配逻辑
+      if (url.pathname === "/api/ai-match" && request.method === "POST") {
+        const body = await readJson(request);
+        const question = cleanText(body.question || "", 500);
+        const locale = cleanText(body.locale || "zh-CN", 20);
+
+        if (question.length < 2) {
+          return json({ ok: false, message: "问题太短" }, 400, corsHeaders);
+        }
+
+        const prompt = [
+          "你是网站搜索意图分析器。只分析用户真实需求，不直接回答问题。",
+          "必须只输出一行JSON，不要Markdown，不要解释。",
+          "格式：{\"rewrite\":\"更清楚的搜索表达\",\"intent\":\"一句话意图\",\"keywords\":[\"关键词1\",\"关键词2\"],\"goals\":[\"目标1\",\"目标2\"]}",
+          "keywords最多8个，goals最多5个。保留重要品牌名、平台名、行业名和动作词。",
+          `语言：${locale}`,
+          `用户问题：${question}`
+        ].join("\n");
+
+        const aiResponse = await fetch(CONFIG.aiWorkerUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [
+              { role: "user", content: prompt }
+            ]
+          })
+        });
+
+        if (!aiResponse.ok || !aiResponse.body) {
+          return json(
+            { ok: false, message: "AI暂时不可用", fallback: true },
+            502,
+            corsHeaders
+          );
+        }
+
+        const rawText = await readAiSseText(aiResponse.body);
+        const parsed = parseAiJson(rawText);
+
+        if (!parsed) {
+          return json(
+            { ok: false, message: "AI返回格式异常", fallback: true },
+            502,
+            corsHeaders
+          );
+        }
+
+        return json(
+          {
+            ok: true,
+            rewrite: cleanText(parsed.rewrite || question, 500),
+            intent: cleanText(parsed.intent || "", 200),
+            keywords: Array.isArray(parsed.keywords)
+              ? parsed.keywords.map((x) => cleanText(x, 60)).filter(Boolean).slice(0, 8)
+              : [],
+            goals: Array.isArray(parsed.goals)
+              ? parsed.goals.map((x) => cleanText(x, 80)).filter(Boolean).slice(0, 5)
+              : []
           },
           200,
           corsHeaders
@@ -508,7 +577,7 @@ export default {
         return env.ASSETS.fetch(request);
       }
 
-      return new Response("GlobalYouXuan API V3 - Auto Confirm Enabled", {
+      return new Response("GlobalYouXuan API V4 - AI Match + Auto Confirm Enabled", {
         status: 200,
         headers: {
           "Content-Type": "text/plain; charset=utf-8"
@@ -544,6 +613,61 @@ export default {
     }
   }
 };
+
+async function readAiSseText(stream) {
+  const reader = stream.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let output = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true }).replace(/\r/g, "");
+
+    let end;
+    while ((end = buffer.indexOf("\n\n")) !== -1) {
+      const event = buffer.slice(0, end);
+      buffer = buffer.slice(end + 2);
+      const data = event
+        .split("\n")
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice(5).trimStart())
+        .join("\n");
+
+      if (!data || data === "[DONE]") continue;
+      try {
+        const chunk = JSON.parse(data);
+        if (typeof chunk.response === "string") output += chunk.response;
+        else if (chunk.choices?.[0]?.delta?.content) output += chunk.choices[0].delta.content;
+      } catch {}
+    }
+  }
+
+  return output.trim();
+}
+
+function parseAiJson(text) {
+  if (!text) return null;
+  const cleaned = String(text)
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const start = cleaned.indexOf("{");
+    const end = cleaned.lastIndexOf("}");
+    if (start === -1 || end <= start) return null;
+    try {
+      return JSON.parse(cleaned.slice(start, end + 1));
+    } catch {
+      return null;
+    }
+  }
+}
 
 /**
  * 核心：尝试自动确认到账
