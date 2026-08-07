@@ -5,6 +5,7 @@
   const question = document.getElementById('quizQuestion');
   const step = document.getElementById('quizStepLabel');
   const resultPanel = document.getElementById('resultPanel');
+  const form = document.getElementById('problemForm');
   if (!options || !question || !step) return;
 
   let animating = false;
@@ -13,6 +14,26 @@
   let runId = 0;
   let resultSignature = '';
   let resultAnimating = false;
+  let delayedSubmitPass = false;
+  let submitDelayTimer = null;
+
+  // order.js 本身约 2.2 秒后进入第一轮；这里补 1.3 秒，恢复总计约 3.5 秒的搜索等待感。
+  if (form) {
+    form.addEventListener('submit', (event) => {
+      if (delayedSubmitPass) {
+        delayedSubmitPass = false;
+        return;
+      }
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      clearTimeout(submitDelayTimer);
+      submitDelayTimer = setTimeout(() => {
+        delayedSubmitPass = true;
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+      }, 1300);
+    }, true);
+  }
 
   function roundNo() {
     const m = String(step.textContent || '').match(/(\d+)/);
@@ -21,6 +42,12 @@
 
   function buttons() {
     return Array.from(options.querySelectorAll('button.quiz-option'));
+  }
+
+  function lockRoundButtons() {
+    const r = roundNo();
+    if (r < 2 || r > 5) return;
+    buttons().forEach((btn) => { btn.disabled = true; });
   }
 
   function finishNow(qText, labels, btns) {
@@ -63,7 +90,10 @@
     if (!qText || labels.some((x) => !x || x === '分析中…')) return;
     if (qText.includes('正在根据前') || qText.includes('正在分析')) return;
     const sig = r + '|' + qText + '|' + labels.join('|');
-    if (sig === signature) return;
+    if (sig === signature) {
+      btns.forEach((btn) => { btn.disabled = false; });
+      return;
+    }
     signature = sig;
     animating = true;
     const token = ++runId;
@@ -88,6 +118,13 @@
       }
     }
   }
+
+  // 打字未完成时绝不允许点击进入下一轮。
+  options.addEventListener('click', (event) => {
+    if (!animating) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
 
   async function animateResultIfReady() {
     if (!resultPanel || resultAnimating || resultPanel.classList.contains('hidden')) return;
@@ -140,11 +177,12 @@
   }
 
   function schedule() {
+    lockRoundButtons();
     if (!animating) {
       clearTimeout(timer);
-      timer = setTimeout(animateIfReady, 80);
+      timer = setTimeout(animateIfReady, 50);
     }
-    setTimeout(animateResultIfReady, 80);
+    setTimeout(animateResultIfReady, 50);
   }
 
   const observer = new MutationObserver(schedule);
