@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  // 搜索逻辑由 ai-search.js 单独接管；其它页面功能仍由原 order.js 负责。
-  // 这里仅按顺序加载：AI搜索控制器 → 原顺序打字效果。
+  // ai-search.js 已由 shop.html 唯一加载。
+  // 本文件只加载打字效果，禁止再次加载搜索控制器，避免五轮流程重复执行。
   function loadScriptOnce(key, src, done) {
     if (window[key]) {
       done?.();
@@ -18,9 +18,7 @@
   }
 
   function init() {
-    loadScriptOnce('__gyxAiSearchLoader', 'ai-search.js?v=20260807-ai-search-1', () => {
-      loadScriptOnce('__gyxTypingEffectLoader', 'typing-effect.js?v=20260807-sequential-lock-4');
-    });
+    loadScriptOnce('__gyxTypingEffectLoader', 'typing-effect.js?v=20260808-sequential-lock-5');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init, { once: true });
