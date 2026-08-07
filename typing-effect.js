@@ -29,31 +29,37 @@
     });
   }
 
-  function typeInto(el, text, speed, token, done) {
-    if (!el) { done?.(); return; }
-    el.textContent = '';
-    let i = 0;
-    const tick = () => {
-      if (token !== runId) { el.textContent = text; done?.(); return; }
-      i = Math.min(text.length, i + 2); // 每次2个字，保留打字感但不拖慢
-      el.textContent = text.slice(0, i);
-      if (i < text.length) setTimeout(tick, speed);
-      else done?.();
-    };
-    tick();
+  function typeInto(el, text, speed, token) {
+    return new Promise((resolve) => {
+      if (!el) { resolve(); return; }
+      el.textContent = '';
+      let i = 0;
+      const tick = () => {
+        if (token !== runId) {
+          el.textContent = text;
+          resolve();
+          return;
+        }
+        i += 1;
+        el.textContent = text.slice(0, i);
+        if (i < text.length) setTimeout(tick, speed);
+        else resolve();
+      };
+      tick();
+    });
   }
 
-  function animateIfReady() {
+  async function animateIfReady() {
     if (animating) return;
     const r = roundNo();
     if (r < 2 || r > 5) return;
 
     const btns = buttons();
     if (btns.length !== 5) return;
+
     const labels = btns.map((b) => String(b.querySelector('strong')?.textContent || '').trim());
     const qText = String(question.textContent || '').trim();
 
-    // AI还在分析时不启动动画，避免出现空白选项。
     if (!qText || labels.some((x) => !x || x === '分析中…')) return;
     if (qText.includes('正在根据前') || qText.includes('正在分析')) return;
 
@@ -64,31 +70,34 @@
     const token = ++runId;
 
     btns.forEach((btn) => { btn.disabled = true; });
-
-    // 问题与5个答案快速打字，总体控制在约1秒内，不再逐项长时间等待。
-    typeInto(question, qText, 7, token);
-    labels.forEach((label, index) => {
-      const strong = btns[index].querySelector('strong');
-      setTimeout(() => {
-        typeInto(strong, label, 5, token, () => {
-          btns[index].disabled = false;
-          if (index === labels.length - 1) animating = false;
-        });
-      }, index * 45);
+    btns.forEach((btn) => {
+      const strong = btn.querySelector('strong');
+      if (strong) strong.textContent = '';
     });
 
-    // 保险：任何异常最多1.2秒后直接显示完整内容，绝不留空。
-    setTimeout(() => {
-      if (token !== runId) return;
-      finishNow(qText, labels, btns);
-      animating = false;
-    }, 1200);
+    try {
+      // 保留原来的感觉：先把问题逐字打完，再按1→2→3→4→5逐条完整打出。
+      await typeInto(question, qText, 18, token);
+
+      for (let i = 0; i < labels.length; i += 1) {
+        if (token !== runId) break;
+        const strong = btns[i].querySelector('strong');
+        await typeInto(strong, labels[i], 18, token);
+        btns[i].disabled = false;
+        await new Promise((resolve) => setTimeout(resolve, 70));
+      }
+    } finally {
+      if (token === runId) {
+        finishNow(qText, labels, btns);
+        animating = false;
+      }
+    }
   }
 
   function schedule() {
     if (animating) return;
     clearTimeout(timer);
-    timer = setTimeout(animateIfReady, 60);
+    timer = setTimeout(animateIfReady, 80);
   }
 
   const observer = new MutationObserver(schedule);
