@@ -8,7 +8,7 @@
     window.__gyxTypingEffectLoader = true;
 
     const script = document.createElement('script');
-    script.src = 'typing-effect.js?v=20260807-restore';
+    script.src = 'typing-effect.js?v=20260807-sequential';
     script.async = false;
     script.onerror = () => console.error('Typing effect failed to load');
     document.body.appendChild(script);
