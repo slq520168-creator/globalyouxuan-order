@@ -1,5 +1,19 @@
 (() => {
   'use strict';
-  // 暂停额外动态增强，恢复 order.js 原有稳定五轮匹配、结果页和付款流程。
-  // AI动态逻辑后续单独接入，不再覆盖原按钮、轮次和支付链路。
+
+  // 只恢复原来的逐字打字视觉效果。
+  // 不加载任何 AI 动态决策脚本，不改 order.js 的五轮、结果页、下单和付款链路。
+  function loadTypingEffectOnly() {
+    if (window.__gyxTypingEffectLoader) return;
+    window.__gyxTypingEffectLoader = true;
+
+    const script = document.createElement('script');
+    script.src = 'typing-effect.js?v=20260807-restore';
+    script.async = false;
+    script.onerror = () => console.error('Typing effect failed to load');
+    document.body.appendChild(script);
+  }
+
+  if (document.readyState === 'complete') loadTypingEffectOnly();
+  else window.addEventListener('load', loadTypingEffectOnly, { once: true });
 })();
