@@ -5,7 +5,6 @@
   const question = document.getElementById('quizQuestion');
   const step = document.getElementById('quizStepLabel');
   const resultPanel = document.getElementById('resultPanel');
-  const form = document.getElementById('problemForm');
   if (!options || !question || !step) return;
 
   let animating = false;
@@ -14,26 +13,6 @@
   let runId = 0;
   let resultSignature = '';
   let resultAnimating = false;
-  let delayedSubmitPass = false;
-  let submitDelayTimer = null;
-
-  // order.js 本身约 2.2 秒后进入第一轮；这里补 1.3 秒，恢复总计约 3.5 秒的搜索等待感。
-  if (form) {
-    form.addEventListener('submit', (event) => {
-      if (delayedSubmitPass) {
-        delayedSubmitPass = false;
-        return;
-      }
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      clearTimeout(submitDelayTimer);
-      submitDelayTimer = setTimeout(() => {
-        delayedSubmitPass = true;
-        if (typeof form.requestSubmit === 'function') form.requestSubmit();
-        else form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-      }, 1300);
-    }, true);
-  }
 
   function roundNo() {
     const m = String(step.textContent || '').match(/(\d+)/);
