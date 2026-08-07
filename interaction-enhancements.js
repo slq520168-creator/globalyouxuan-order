@@ -18,6 +18,7 @@
   let searchTimer = null;
   let animationToken = 0;
 
+  // 停止输入3秒后才自动搜索，避免用户还在打字就提前触发。
   input.addEventListener('input', (event) => {
     event.stopImmediatePropagation();
     clearTimeout(searchTimer);
@@ -39,6 +40,10 @@
   }, true);
 
   function typeText(element, text, speed, token, done) {
+    if (!element) {
+      if (done) done();
+      return;
+    }
     element.textContent = '';
     let index = 0;
     const tick = () => {
@@ -54,7 +59,7 @@
   function animateRound() {
     const match = String(step.textContent || '').match(/(\d+)/);
     const round = match ? Number(match[1]) : 1;
-    if (round <= 1) return;
+    if (round <= 1) return; // 第一轮继续使用原本已有的逐条打字动画。
 
     const buttons = Array.from(options.querySelectorAll('button.quiz-option'));
     if (!buttons.length) return;
@@ -66,11 +71,13 @@
       const heading = button.querySelector('strong');
       const text = heading ? heading.textContent : '';
       button.disabled = true;
+      button.classList.remove('gyx-type-show');
       button.classList.add('gyx-type-wait');
       if (heading) heading.textContent = '';
       return { button, heading, text };
     });
 
+    // 先打出本轮问题，再逐条打出5个选项。
     typeText(question, questionText, 24, token, () => {
       rows.forEach((row, index) => {
         setTimeout(() => {
@@ -85,10 +92,9 @@
     });
   }
 
-  let scheduled = null;
   const observer = new MutationObserver(() => {
-    clearTimeout(scheduled);
-    scheduled = setTimeout(animateRound, 0);
+    // MutationObserver 在浏览器绘制前执行，立即清空新选项，避免五个答案闪一下再开始打字。
+    animateRound();
   });
   observer.observe(options, { childList: true });
 })();
