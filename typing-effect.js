@@ -4,12 +4,15 @@
   const options = document.getElementById('quizOptions');
   const question = document.getElementById('quizQuestion');
   const step = document.getElementById('quizStepLabel');
+  const resultPanel = document.getElementById('resultPanel');
   if (!options || !question || !step) return;
 
   let animating = false;
   let timer = null;
   let signature = '';
   let runId = 0;
+  let resultSignature = '';
+  let resultAnimating = false;
 
   function roundNo() {
     const m = String(step.textContent || '').match(/(\d+)/);
@@ -53,32 +56,24 @@
     if (animating) return;
     const r = roundNo();
     if (r < 2 || r > 5) return;
-
     const btns = buttons();
     if (btns.length !== 5) return;
-
     const labels = btns.map((b) => String(b.querySelector('strong')?.textContent || '').trim());
     const qText = String(question.textContent || '').trim();
-
     if (!qText || labels.some((x) => !x || x === '分析中…')) return;
     if (qText.includes('正在根据前') || qText.includes('正在分析')) return;
-
     const sig = r + '|' + qText + '|' + labels.join('|');
     if (sig === signature) return;
     signature = sig;
     animating = true;
     const token = ++runId;
-
     btns.forEach((btn) => { btn.disabled = true; });
     btns.forEach((btn) => {
       const strong = btn.querySelector('strong');
       if (strong) strong.textContent = '';
     });
-
     try {
-      // 保留原来的感觉：先把问题逐字打完，再按1→2→3→4→5逐条完整打出。
       await typeInto(question, qText, 18, token);
-
       for (let i = 0; i < labels.length; i += 1) {
         if (token !== runId) break;
         const strong = btns[i].querySelector('strong');
@@ -94,14 +89,67 @@
     }
   }
 
+  async function animateResultIfReady() {
+    if (!resultPanel || resultAnimating || resultPanel.classList.contains('hidden')) return;
+    const title = document.getElementById('resultTitle');
+    const summary = document.getElementById('resultSummary');
+    const tier = document.getElementById('resultTier');
+    const price = document.getElementById('resultPrice');
+    const confidence = document.getElementById('resultConfidence');
+    const deliveries = Array.from(document.querySelectorAll('#deliveryList li'));
+    const titleText = String(title?.textContent || '').trim();
+    const summaryText = String(summary?.textContent || '').trim();
+    const tierText = String(tier?.textContent || '').trim();
+    const priceText = String(price?.textContent || '').trim();
+    const confidenceText = String(confidence?.textContent || '').trim();
+    const deliveryTexts = deliveries.map((x) => String(x.textContent || '').trim());
+    if (!titleText || titleText === '—' || !summaryText || !tierText || !priceText) return;
+    const sig = [titleText, summaryText, tierText, priceText, confidenceText, ...deliveryTexts].join('|');
+    if (sig === resultSignature) return;
+    resultSignature = sig;
+    resultAnimating = true;
+    const token = ++runId;
+    const orderBtn = document.getElementById('orderAnswerButton');
+    const favoriteBtn = document.getElementById('favoriteButton');
+    if (orderBtn) orderBtn.disabled = true;
+    if (favoriteBtn) favoriteBtn.disabled = true;
+    deliveries.forEach((li) => { li.textContent = ''; });
+    try {
+      await typeInto(title, titleText, 18, token);
+      await typeInto(summary, summaryText, 12, token);
+      await typeInto(confidence, confidenceText, 18, token);
+      await typeInto(tier, tierText, 18, token);
+      await typeInto(price, priceText, 18, token);
+      for (let i = 0; i < deliveries.length; i += 1) {
+        await typeInto(deliveries[i], deliveryTexts[i], 18, token);
+        await new Promise((resolve) => setTimeout(resolve, 70));
+      }
+    } finally {
+      if (token === runId) {
+        if (title) title.textContent = titleText;
+        if (summary) summary.textContent = summaryText;
+        if (confidence) confidence.textContent = confidenceText;
+        if (tier) tier.textContent = tierText;
+        if (price) price.textContent = priceText;
+        deliveries.forEach((li, i) => { li.textContent = deliveryTexts[i] || ''; });
+        if (orderBtn) orderBtn.disabled = false;
+        if (favoriteBtn) favoriteBtn.disabled = false;
+        resultAnimating = false;
+      }
+    }
+  }
+
   function schedule() {
-    if (animating) return;
-    clearTimeout(timer);
-    timer = setTimeout(animateIfReady, 80);
+    if (!animating) {
+      clearTimeout(timer);
+      timer = setTimeout(animateIfReady, 80);
+    }
+    setTimeout(animateResultIfReady, 80);
   }
 
   const observer = new MutationObserver(schedule);
   observer.observe(question, { childList: true, characterData: true, subtree: true });
   observer.observe(options, { childList: true, characterData: true, subtree: true });
   observer.observe(step, { childList: true, characterData: true, subtree: true });
+  if (resultPanel) observer.observe(resultPanel, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['class'] });
 })();
