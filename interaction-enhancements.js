@@ -1,17 +1,5 @@
 (() => {
   'use strict';
-
-  function loadDynamicDecisionEngine() {
-    if (window.__gyxDynamicDecisionLoader) return;
-    window.__gyxDynamicDecisionLoader = true;
-
-    const script = document.createElement('script');
-    script.src = 'ai-decision-v3.js?v=20260807-3';
-    script.async = false;
-    script.onerror = () => console.error('AI decision engine failed to load');
-    document.body.appendChild(script);
-  }
-
-  if (document.readyState === 'complete') loadDynamicDecisionEngine();
-  else window.addEventListener('load', loadDynamicDecisionEngine, { once: true });
+  // 暂停额外动态增强，恢复 order.js 原有稳定五轮匹配、结果页和付款流程。
+  // AI动态逻辑后续单独接入，不再覆盖原按钮、轮次和支付链路。
 })();
