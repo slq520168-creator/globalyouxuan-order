@@ -47,6 +47,22 @@
     };
   }
 
+  function syncSelectedTierUI() {
+    const selected = window.__gyxSelectedTier;
+    if (!selected) return;
+    const tierEl = document.getElementById('resultTier');
+    const resultPrice = document.getElementById('resultPrice');
+    const orderPrice = document.getElementById('orderProductPrice');
+    const orderDesc = document.getElementById('orderProductDescription');
+    if (tierEl && tierEl.textContent !== selected.label) tierEl.textContent = selected.label;
+    if (resultPrice && resultPrice.textContent !== selected.price) resultPrice.textContent = selected.price;
+    const modal = document.getElementById('orderModal');
+    if (modal?.classList.contains('show')) {
+      if (orderPrice && orderPrice.textContent !== selected.price) orderPrice.textContent = selected.price;
+      if (orderDesc && orderDesc.textContent !== selected.label) orderDesc.textContent = selected.label;
+    }
+  }
+
   function resetTierChoice() {
     customTierRound = false;
     pendingFinalButton = null;
@@ -107,7 +123,6 @@
     if (round <= 1 || customTierRound) return;
     const buttons = Array.from(options.querySelectorAll('button.quiz-option'));
     if (!buttons.length) return;
-
     animationToken += 1;
     const token = animationToken;
     const questionText = question.textContent || '';
@@ -120,7 +135,6 @@
       if (heading) heading.textContent = '';
       return { button, heading, text };
     });
-
     typeText(question, questionText, 22, token, () => {
       rows.forEach((row, index) => {
         setTimeout(() => {
@@ -142,7 +156,6 @@
     question.textContent = '最后选择你需要的资料级别';
     if (help) help.textContent = '价格由你自己选择，系统按对应档位交付资料。';
     options.replaceChildren();
-
     const token = animationToken;
     TIER_CHOICES.forEach((item, index) => {
       const button = document.createElement('button');
@@ -164,12 +177,7 @@
         const original = pendingFinalButton;
         pendingFinalButton = null;
         if (original) original.click();
-        setTimeout(() => {
-          const tierEl = document.getElementById('resultTier');
-          const priceEl = document.getElementById('resultPrice');
-          if (tierEl) tierEl.textContent = item.label;
-          if (priceEl) priceEl.textContent = item.price;
-        }, 60);
+        [50, 180, 450].forEach((ms) => setTimeout(syncSelectedTierUI, ms));
       });
       options.appendChild(button);
       setTimeout(() => {
@@ -191,14 +199,8 @@
   }, true);
 
   document.getElementById('orderAnswerButton')?.addEventListener('click', () => {
-    const selected = window.__gyxSelectedTier;
-    if (!selected) return;
-    setTimeout(() => {
-      const price = document.getElementById('orderProductPrice');
-      const desc = document.getElementById('orderProductDescription');
-      if (price) price.textContent = selected.price;
-      if (desc) desc.textContent = selected.label;
-    }, 80);
+    if (!window.__gyxSelectedTier) return;
+    [60, 220, 600, 1000].forEach((ms) => setTimeout(syncSelectedTierUI, ms));
   }, true);
 
   document.getElementById('restartMatchButton')?.addEventListener('click', resetTierChoice, true);
@@ -208,4 +210,8 @@
   observer.observe(options, { childList: true });
   const stepObserver = new MutationObserver(normalizeProgressLabel);
   stepObserver.observe(step, { childList: true, characterData: true, subtree: true });
+  const modal = document.getElementById('orderModal');
+  const resultPanel = document.getElementById('resultPanel');
+  if (modal) new MutationObserver(syncSelectedTierUI).observe(modal, { attributes: true, childList: true, subtree: true, characterData: true });
+  if (resultPanel) new MutationObserver(syncSelectedTierUI).observe(resultPanel, { attributes: true, childList: true, subtree: true, characterData: true });
 })();
