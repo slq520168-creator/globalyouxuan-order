@@ -2,7 +2,7 @@
 'use strict';
 const db=window.gyxSupabase,$=id=>document.getElementById(id);if(!db)return;
 let currentUser=null,currentOrder=null,currentProduct=null,currentMatch=null,authPromise=null;
-const PENDING_KEY='gyx_pending_checkout_v1';
+const PENDING_KEY='gyx_pending_checkout_v1',REQUEST_KEY='gyx_checkout_request';
 const msg=(id,text,ok=false)=>{const e=$(id);if(!e)return;e.textContent=text||'';e.className=text?`form-message show ${ok?'success':'error'}`:'form-message'};
 const toast=text=>{const e=$('toast');if(!e)return;e.textContent=text;e.className='toast show';clearTimeout(window.__checkoutToast);window.__checkoutToast=setTimeout(()=>e.className='toast',1800)};
 function step(name){const map={details:'orderStepDetails',payment:'orderStepPayment',success:'orderStepSuccess'};Object.values(map).forEach(id=>$(id)?.classList.remove('active'));$(map[name])?.classList.add('active')}
@@ -23,33 +23,10 @@ function setPaymentEnabled(enabled){const tx=$('paymentTxid'),b=$('submitPayment
 function showPaymentLoading(){currentOrder=null;$('paymentOrderNo').textContent='创建中…';$('paymentAmount').textContent=Number(currentProduct?.product_price||0).toFixed(2);$('paymentNetwork').textContent=window.GYX_CONFIG?.network||'USDT-TRC20';$('paymentWallet').textContent='订单创建后显示';$('paymentTxid').value='';msg('paymentMessage','正在创建订单…',true);setPaymentEnabled(false);step('payment')}
 function showPayment(order){currentOrder=order;$('paymentOrderNo').textContent=currentOrder.order_no;$('paymentAmount').textContent=Number(currentOrder.payable_amount||currentProduct?.product_price||0).toFixed(2);$('paymentNetwork').textContent=currentOrder.network||window.GYX_CONFIG?.network||'USDT-TRC20';$('paymentWallet').textContent=currentOrder.wallet_address||window.GYX_CONFIG?.wallet||'';$('paymentTxid').value=currentOrder.txid||'';msg('paymentMessage','');setPaymentEnabled(true);step('payment')}
 async function findExistingOrder(userId,productId){if(!userId||!productId)return null;try{const q=await db.from('orders').select('*').eq('user_id',userId).eq('product_id',productId).in('status',['pending','checking']).order('created_at',{ascending:false}).limit(1).maybeSingle();return q.data||null}catch{return null}}
-async function create(e){
-  e.preventDefault();if(!currentProduct)return;
-  const name=$('orderName').value.trim(),email=$('orderEmail').value.trim(),phone=$('orderPhone').value.trim();
-  if(!name){msg('orderFormMessage','请填写姓名');return}
-  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){msg('orderFormMessage','请填写正确的邮箱');return}
-  if(phone&&phone.length<6){msg('orderFormMessage','请填写正确的联系电话');return}
-  const b=$('createOrderButton');b.disabled=true;b.textContent='处理中…';showPaymentLoading();
-  try{
-    const u=await ensureUser();
-    if(!u){savePending(currentProduct,currentMatch);location.href='login.html?next='+encodeURIComponent('shop.html?resume=checkout');return}
-    const input={product_id:currentProduct.id,customer_name:name,customer_email:email};if(phone)input.customer_phone=phone;
-    if(currentMatch){Object.assign(input,{answer_id:Number.isFinite(Number(currentMatch.answer?.id))?Number(currentMatch.answer.id):null,customer_question:currentMatch.question,selection_path:currentMatch.selections||[],answer_tier:currentMatch.tier})}
-    const r=await window.gyxInvokeFunction('create-order',input);
-    currentOrder=r?.order;if(!currentOrder)throw new Error('ORDER_CREATE_FAILED');clearPending();showPayment(currentOrder);
-  }catch(err){
-    const code=String(err?.code||err?.message||'');
-    if(code.includes('OPEN_ORDER_ALREADY_EXISTS')||code.includes('409')){
-      const u=currentUser||await ensureUser();
-      const existing=await findExistingOrder(u?.id,currentProduct.id);
-      if(existing){clearPending();showPayment(existing);msg('paymentMessage','已恢复你尚未完成的订单，请继续付款。',true);return}
-    }
-    step('details');msg('orderFormMessage','订单创建失败，请稍后再试。');
-  }finally{b.disabled=false;b.textContent='确认下单'}
-}
+async function create(e){e.preventDefault();if(!currentProduct)return;const name=$('orderName').value.trim(),email=$('orderEmail').value.trim(),phone=$('orderPhone').value.trim();if(!name){msg('orderFormMessage','请填写姓名');return}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){msg('orderFormMessage','请填写正确的邮箱');return}if(phone&&phone.length<6){msg('orderFormMessage','请填写正确的联系电话');return}const b=$('createOrderButton');b.disabled=true;b.textContent='处理中…';showPaymentLoading();try{const u=await ensureUser();if(!u){savePending(currentProduct,currentMatch);location.href='login.html?next='+encodeURIComponent('shop.html?resume=checkout');return}const input={product_id:currentProduct.id,customer_name:name,customer_email:email};if(phone)input.customer_phone=phone;if(currentMatch){Object.assign(input,{answer_id:Number.isFinite(Number(currentMatch.answer?.id))?Number(currentMatch.answer.id):null,customer_question:currentMatch.question,selection_path:currentMatch.selections||[],answer_tier:currentMatch.tier})}const r=await window.gyxInvokeFunction('create-order',input);currentOrder=r?.order;if(!currentOrder)throw new Error('ORDER_CREATE_FAILED');clearPending();showPayment(currentOrder)}catch(err){const code=String(err?.code||err?.message||'');if(code.includes('OPEN_ORDER_ALREADY_EXISTS')||code.includes('409')){const u=currentUser||await ensureUser();const existing=await findExistingOrder(u?.id,currentProduct.id);if(existing){clearPending();showPayment(existing);msg('paymentMessage','已恢复你尚未完成的订单，请继续付款。',true);return}}step('details');msg('orderFormMessage','订单创建失败，请稍后再试。')}finally{b.disabled=false;b.textContent='确认下单'}}
 async function pay(e){e.preventDefault();if(!currentOrder)return;const tx=$('paymentTxid').value.trim().toUpperCase();if(!/^[0-9A-F]{64}$/.test(tx)){msg('paymentMessage','请输入正确的64位TRON交易哈希');return}const b=$('submitPaymentButton');b.disabled=true;b.textContent='正在核验付款…';try{const r=await window.gyxInvokeFunction('submit-payment',{order_id:currentOrder.id,order_no:currentOrder.order_no,txid:tx});const st=r?.status||'checking';if(['paid','delivered'].includes(st)){step('success');$('successCopy').textContent='订单已确认，可在会员中心查看交付内容。'}else msg('paymentMessage','链上仍在确认，请稍后在会员中心查看。',true)}catch{msg('paymentMessage','付款核验暂时未完成，请稍后再试。')}finally{b.disabled=false;b.textContent='提交并核验付款'}}
 async function copy(){const v=$('paymentWallet').textContent.trim();try{await navigator.clipboard.writeText(v);toast('收款地址已复制')}catch{toast(v)}}
-async function resume(){const p=new URLSearchParams(location.search);if(p.get('resume')!=='checkout')return;let pending=null;try{pending=JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch{};if(!pending?.product_id)return;const product=await loadProduct(pending.product_id);if(!product){clearPending();return}let match=null;if(pending.match){match={...pending.match,product};if(pending.match.answer)match.answer=pending.match.answer}openUnified(product,match);try{history.replaceState(null,'',location.pathname)}catch{}}
+async function resume(){const p=new URLSearchParams(location.search);let pending=null;if(p.get('resume')==='unified-checkout'){try{pending=JSON.parse(sessionStorage.getItem(REQUEST_KEY)||'null');sessionStorage.removeItem(REQUEST_KEY)}catch{};if(pending?.product_id){const product=await loadProduct(pending.product_id);if(product){const match=pending.match?{...pending.match,product}:null;openUnified(product,match)}try{history.replaceState(null,'',location.pathname)}catch{}return}}if(p.get('resume')!=='checkout')return;try{pending=JSON.parse(localStorage.getItem(PENDING_KEY)||'null')}catch{};if(!pending?.product_id)return;const product=await loadProduct(pending.product_id);if(!product){clearPending();return}let match=null;if(pending.match){match={...pending.match,product};if(pending.match.answer)match.answer=pending.match.answer}openUnified(product,match);try{history.replaceState(null,'',location.pathname)}catch{}}
 document.addEventListener('click',e=>{if(e.target.closest?.('#orderAnswerButton')){e.preventDefault();e.stopImmediatePropagation();openSearch();return}if(e.target.closest?.('.fixed-detail-buy')){e.preventDefault();e.stopImmediatePropagation();openFixed();return}},true);
 $('orderDetailsForm')?.addEventListener('submit',create,true);$('paymentForm')?.addEventListener('submit',pay,true);$('closeOrderButton')?.addEventListener('click',close,true);$('cancelOrderButton')?.addEventListener('click',close,true);$('successCloseButton')?.addEventListener('click',close,true);$('paymentBackButton')?.addEventListener('click',()=>step('details'),true);$('copyWalletButton')?.addEventListener('click',copy,true);$('orderModal')?.addEventListener('click',e=>{if(e.target===$('orderModal'))close()});window.GYX_OPEN_CHECKOUT=openUnified;setChineseLabels();resume();
 })();
