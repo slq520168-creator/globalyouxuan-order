@@ -9,8 +9,11 @@
     support: '@qqyousubot'
   });
 
+  // 搜索只需要公开配置，不能因为 Supabase SDK/CDN 加载失败而失效。
+  window.GYX_CONFIG = config;
+
   if (!window.supabase || typeof window.supabase.createClient !== 'function') {
-    console.error('Supabase client library failed to load.');
+    console.error('Supabase client library failed to load. Search configuration remains available.');
     return;
   }
 
@@ -24,13 +27,10 @@
   });
 
   async function getVerifiedUser() {
-    // 先读本地会话，避免网络抖动把已登录用户踢出
     try {
       const { data: sessionData } = await client.auth.getSession();
       const sessionUser = sessionData?.session?.user || null;
       if (!sessionUser) return null;
-
-      // 再尝试服务端校验；失败时仍保留本地会话用户
       try {
         const { data, error } = await client.auth.getUser();
         if (!error && data?.user) return data.user;
@@ -59,7 +59,6 @@
   async function invokeFunction(name, body) {
     const { data, error } = await client.functions.invoke(name, { body });
     if (!error) return data;
-
     let code = '';
     try {
       const payload = await error.context?.clone?.().json();
@@ -72,7 +71,6 @@
     throw wrapped;
   }
 
-  window.GYX_CONFIG = config;
   window.gyxSupabase = client;
   window.gyxGetVerifiedUser = getVerifiedUser;
   window.gyxSafeNext = safeNext;
