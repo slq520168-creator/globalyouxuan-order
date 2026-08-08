@@ -22,6 +22,7 @@ async function openFixed(){const m=$('fixedDetailModal');const id=m?.dataset?.pr
 function setPaymentEnabled(enabled){const tx=$('paymentTxid'),b=$('submitPaymentButton'),copy=$('copyWalletButton');if(tx)tx.disabled=!enabled;if(b)b.disabled=!enabled;if(copy)copy.disabled=!enabled}
 function showPaymentLoading(){currentOrder=null;$('paymentOrderNo').textContent='创建中…';$('paymentAmount').textContent=Number(currentProduct?.product_price||0).toFixed(2);$('paymentNetwork').textContent=window.GYX_CONFIG?.network||'USDT-TRC20';$('paymentWallet').textContent='订单创建后显示';$('paymentTxid').value='';msg('paymentMessage','正在创建订单…',true);setPaymentEnabled(false);step('payment')}
 function showPayment(order){currentOrder=order;$('paymentOrderNo').textContent=currentOrder.order_no;$('paymentAmount').textContent=Number(currentOrder.payable_amount||currentProduct?.product_price||0).toFixed(2);$('paymentNetwork').textContent=currentOrder.network||window.GYX_CONFIG?.network||'USDT-TRC20';$('paymentWallet').textContent=currentOrder.wallet_address||window.GYX_CONFIG?.wallet||'';$('paymentTxid').value=currentOrder.txid||'';msg('paymentMessage','');setPaymentEnabled(true);step('payment')}
+async function findExistingOrder(userId,productId){if(!userId||!productId)return null;try{const q=await db.from('orders').select('*').eq('user_id',userId).eq('product_id',productId).in('status',['pending','checking']).order('created_at',{ascending:false}).limit(1).maybeSingle();return q.data||null}catch{return null}}
 async function create(e){
   e.preventDefault();if(!currentProduct)return;
   const name=$('orderName').value.trim(),email=$('orderEmail').value.trim(),phone=$('orderPhone').value.trim();
@@ -38,9 +39,10 @@ async function create(e){
     currentOrder=r?.order;if(!currentOrder)throw new Error('ORDER_CREATE_FAILED');clearPending();showPayment(currentOrder);
   }catch(err){
     const code=String(err?.code||err?.message||'');
-    if(code.includes('OPEN_ORDER_ALREADY_EXISTS')){
-      const q=await db.from('orders').select('*').eq('product_id',currentProduct.id).in('status',['pending','checking']).order('created_at',{ascending:false}).limit(1).maybeSingle();
-      if(q.data){currentOrder=q.data;clearPending();showPayment(currentOrder);msg('paymentMessage','已打开你尚未完成的订单。',true);return}
+    if(code.includes('OPEN_ORDER_ALREADY_EXISTS')||code.includes('409')){
+      const u=currentUser||await ensureUser();
+      const existing=await findExistingOrder(u?.id,currentProduct.id);
+      if(existing){clearPending();showPayment(existing);msg('paymentMessage','已恢复你尚未完成的订单，请继续付款。',true);return}
     }
     step('details');msg('orderFormMessage','订单创建失败，请稍后再试。');
   }finally{b.disabled=false;b.textContent='确认下单'}
