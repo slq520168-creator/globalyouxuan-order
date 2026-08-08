@@ -20,8 +20,15 @@ function init(){
   const specificity=Math.min(1,q.length/8);
   for(const k of kws(r)){
    const nk=norm(k);if(!nk)continue;
-   if(nk===q)exactKw=Math.max(exactKw,.62+.28*specificity);
-   else if(nk.includes(q)||q.includes(nk))exactKw=Math.max(exactKw,.48+.24*specificity);
+   if(nk===q){
+    exactKw=Math.max(exactKw,.62+.28*specificity);
+   }else if(nk.includes(q)){
+    const ratio=q.length/Math.max(1,nk.length);
+    exactKw=Math.max(exactKw,.46+.28*Math.min(1,ratio));
+   }else if(q.includes(nk)){
+    const ratio=nk.length/Math.max(1,q.length);
+    exactKw=Math.max(exactKw,.28+.42*ratio);
+   }
    bestKw=Math.max(bestKw,sim(s,k));
   }
   const summary=sim(s,r.answer_summary),detail=sim(s,r.answer_detail_zh);
