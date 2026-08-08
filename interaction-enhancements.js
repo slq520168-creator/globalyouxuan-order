@@ -8,65 +8,27 @@
   const actions = document.querySelector('#resultPanel .result-actions');
   if (!form || !input || !button) return;
 
-  // 只恢复搜索区域原来的完整显示：5条选项和最终答案不再被固定高度裁切。
   if (!document.getElementById('gyx-search-full-visibility')) {
     const style = document.createElement('style');
     style.id = 'gyx-search-full-visibility';
     style.textContent = `
       .home-page #quizPanel.search-popover,
-      .home-page #resultPanel.search-popover {
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-        overscroll-behavior: auto !important;
-      }
-      .home-page #quizOptions,
-      .home-page .quiz-options {
-        max-height: none !important;
-        height: auto !important;
-        overflow: visible !important;
-      }
+      .home-page #resultPanel.search-popover {max-height:none!important;height:auto!important;overflow:visible!important;overscroll-behavior:auto!important}
+      .home-page #quizOptions,.home-page .quiz-options {max-height:none!important;height:auto!important;overflow:visible!important}
     `;
     document.head.appendChild(style);
   }
 
   let autoTimer = null;
   let autoSubmitting = false;
+  function cancelAuto(){if(autoTimer)clearTimeout(autoTimer);autoTimer=null}
+  function submitNow(){const value=String(input.value||'').trim();if(value.length<2)return;cancelAuto();autoSubmitting=true;try{form.requestSubmit(button)}finally{setTimeout(()=>{autoSubmitting=false},0)}}
 
-  function cancelAuto() {
-    if (autoTimer) clearTimeout(autoTimer);
-    autoTimer = null;
-  }
+  // 搜索模块只负责“停止输入4秒后开始搜索”；全站键盘收起由 core-foundation.js 唯一负责。
+  input.addEventListener('input',()=>{cancelAuto();const value=String(input.value||'').trim();if(value.length<2)return;autoTimer=setTimeout(submitNow,4000)});
+  button.addEventListener('click',()=>cancelAuto(),true);
+  form.addEventListener('submit',()=>cancelAuto(),true);
 
-  function submitNow() {
-    const value = String(input.value || '').trim();
-    if (value.length < 2) return;
-    cancelAuto();
-    try { input.blur(); } catch {}
-    autoSubmitting = true;
-    try { form.requestSubmit(button); }
-    finally { setTimeout(() => { autoSubmitting = false; }, 0); }
-  }
-
-  // 停止输入4秒：自动关闭键盘并开始搜索。
-  input.addEventListener('input', () => {
-    cancelAuto();
-    const value = String(input.value || '').trim();
-    if (value.length < 2) return;
-    autoTimer = setTimeout(submitNow, 4000);
-  });
-
-  // 点击放大镜：浏览器原生 submit 立即执行，不等待4秒。
-  button.addEventListener('click', () => cancelAuto(), true);
-
-  form.addEventListener('submit', () => {
-    cancelAuto();
-    if (!autoSubmitting) {
-      try { input.blur(); } catch {}
-    }
-  }, true);
-
-  // 恢复独立打字效果脚本。它只负责视觉呈现，不接管搜索逻辑。
   if (!window.__gyxTypingEffectLoader) {
     window.__gyxTypingEffectLoader = true;
     const script = document.createElement('script');
@@ -76,24 +38,19 @@
     document.body.appendChild(script);
   }
 
-  // 最终方案完整显示后清空搜索框，保留原有行为。
   if (result) {
     let cleared = false;
     const clearOnce = () => {
-      if (result.classList.contains('hidden')) {
-        cleared = false;
-        return;
-      }
+      if (result.classList.contains('hidden')) {cleared=false;return}
       if (cleared) return;
       const ready = actions && actions.offsetParent !== null;
       if (!ready) return;
-      input.value = '';
-      try { input.blur(); } catch {}
-      cleared = true;
+      input.value='';
+      cleared=true;
     };
-    const observer = new MutationObserver(() => requestAnimationFrame(clearOnce));
-    observer.observe(result, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true });
-    if (actions) observer.observe(actions, { attributes: true, subtree: true, childList: true });
+    const observer=new MutationObserver(()=>requestAnimationFrame(clearOnce));
+    observer.observe(result,{attributes:true,attributeFilter:['class'],subtree:true,childList:true});
+    if(actions)observer.observe(actions,{attributes:true,subtree:true,childList:true});
     clearOnce();
   }
 })();
