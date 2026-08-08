@@ -32,7 +32,7 @@ async function openUnified(product,match=null){
   step('details');
   const modal=$('orderModal');modal?.classList.add('show','open');modal?.setAttribute('aria-hidden','false');document.body.classList.add('modal-open');document.body.style.overflow='hidden';
 }
-async function openSearch(){const match=window.GYX_CURRENT_AI_MATCH;if(!match?.product){toast('当前方案暂时无法下单');return}if(Number(match.confidence||0)<80){toast('当前匹配度不足，暂不支持下单');return}await openUnified(match.product,match)}
+async function openSearch(){const match=window.GYX_CURRENT_AI_MATCH;if(!match?.product||!match?.answer||!Array.isArray(match.selections)||match.selections.length<5){toast('请先完成五轮匹配');return}await openUnified(match.product,match)}
 async function openFixed(){const m=$('fixedDetailModal');const id=m?.dataset?.productId||window.GYX_SELECTED_FIXED_PRODUCT?.id;let product=window.GYX_SELECTED_FIXED_PRODUCT?.id===id?window.GYX_SELECTED_FIXED_PRODUCT:null;if(!product)product=await loadProduct(id);if(!product){toast('当前方案暂时无法下单');return}await openUnified(product,null)}
 async function create(e){
   e.preventDefault();if(!currentUser||!currentProduct)return;
