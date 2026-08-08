@@ -10,6 +10,11 @@ function ensureStyle(){
  body{max-width:100vw;overflow-x:hidden}
  input,textarea,select{box-sizing:border-box;max-width:100%;min-width:0}
  .nav-svg svg{width:21px;height:21px;display:block}
+ .mobile-bottom-nav>a{color:#2877f3!important;font-weight:700!important}
+ .mobile-bottom-nav>a>span,.mobile-bottom-nav>a>b{color:inherit!important;font-weight:700!important}
+ .mobile-bottom-nav>a.nav-home{color:#e53935!important}
+ .mobile-bottom-nav>a.nav-home>span{font-size:22px!important;font-weight:900!important}
+ .mobile-bottom-nav>a.nav-home>b{font-size:11px!important;font-weight:800!important}
  @media(max-width:960px){
    input,textarea,select{font-size:16px!important;transform:none!important}
    body:not(.gyx-ios-app){padding-bottom:calc(92px + env(safe-area-inset-bottom,0px))!important}
@@ -20,6 +25,8 @@ function ensureStyle(){
    .mobile-bottom-nav>a{height:56px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:2px!important;padding:3px 1px!important;white-space:nowrap!important}
    .mobile-bottom-nav>a>span{height:22px!important;display:flex!important;align-items:center!important;justify-content:center!important;font-size:19px!important}
    .mobile-bottom-nav>a>b{font-size:10px!important;line-height:1.1!important}
+   .mobile-bottom-nav>a.nav-home>span{font-size:22px!important}
+   .mobile-bottom-nav>a.nav-home>b{font-size:11px!important}
    .support-fab{bottom:calc(82px + env(safe-area-inset-bottom,0px))!important}
    .music-toggle{bottom:calc(82px + env(safe-area-inset-bottom,0px))!important}
    html.gyx-ios-shell,html.gyx-ios-shell body{height:100%!important;min-height:0!important;overflow:hidden!important;overscroll-behavior:none!important}
