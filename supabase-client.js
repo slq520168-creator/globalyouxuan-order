@@ -1,6 +1,22 @@
 (() => {
   'use strict';
 
+  // 密码恢复链接必须先进入重置页，再让 Supabase SDK 解析。
+  // 否则 detectSessionInUrl 可能先在首页消费恢复参数，导致用户直接停留首页，无法设置新密码。
+  const currentPath = (window.location.pathname || '').toLowerCase();
+  const search = window.location.search || '';
+  const hash = window.location.hash || '';
+  const recoveryLink =
+    /(?:[?&#])(type=recovery|token_hash=|access_token=|refresh_token=|code=)/i.test(search + hash);
+
+  if (!currentPath.includes('reset-password') && recoveryLink) {
+    const target = new URL('reset-password.html', window.location.href);
+    target.search = search;
+    target.hash = hash;
+    window.location.replace(target.toString());
+    return;
+  }
+
   const config = Object.freeze({
     url: 'https://afzcohtnljnmucrkgcaz.supabase.co',
     publishableKey: 'sb_publishable_EqF-kTNRsSZWhUE8LWB8DQ_UNkTjImv',
