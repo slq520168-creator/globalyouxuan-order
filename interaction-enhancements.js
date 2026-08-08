@@ -22,11 +22,8 @@
     cancelAuto();
     try { input.blur(); } catch {}
     autoSubmitting = true;
-    try {
-      form.requestSubmit(button);
-    } finally {
-      setTimeout(() => { autoSubmitting = false; }, 0);
-    }
+    try { form.requestSubmit(button); }
+    finally { setTimeout(() => { autoSubmitting = false; }, 0); }
   }
 
   // 停止输入4秒：自动关闭键盘并开始搜索。
@@ -37,18 +34,25 @@
     autoTimer = setTimeout(submitNow, 4000);
   });
 
-  // 点击放大镜：立即搜索，不等待4秒。
-  button.addEventListener('click', () => {
-    cancelAuto();
-  }, true);
+  // 点击放大镜：浏览器原生 submit 立即执行，不等待4秒。
+  button.addEventListener('click', () => cancelAuto(), true);
 
-  // 手动提交时取消自动计时；不拦截原搜索程序的 submit 事件。
   form.addEventListener('submit', () => {
     cancelAuto();
     if (!autoSubmitting) {
       try { input.blur(); } catch {}
     }
   }, true);
+
+  // 恢复独立打字效果脚本。它只负责视觉呈现，不接管搜索逻辑。
+  if (!window.__gyxTypingEffectLoader) {
+    window.__gyxTypingEffectLoader = true;
+    const script = document.createElement('script');
+    script.src = 'typing-effect.js?v=20260808-human-typing-2';
+    script.async = false;
+    script.onerror = () => console.error('Typing effect failed to load');
+    document.body.appendChild(script);
+  }
 
   // 最终方案完整显示后清空搜索框，保留原有行为。
   if (result) {
