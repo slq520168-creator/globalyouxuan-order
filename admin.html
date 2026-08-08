@@ -1,82 +1,15 @@
 <!doctype html>
 <html lang="zh-CN" data-theme="light">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-  <meta name="theme-color" content="#f4f8ff">
-  <title>全球优选｜后台控制中心</title>
-  <link rel="stylesheet" href="site.css">
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .admin-body{background:var(--bg,#f4f8ff);color:var(--text,#172033);min-height:100vh}
-    .admin-shell{width:min(1180px,calc(100% - 24px));margin:0 auto;padding:18px 0 40px}
-    .admin-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
-    .admin-head h1{margin:0;font-size:24px}.admin-head p{margin:4px 0 0;opacity:.66;font-size:13px}
-    .admin-layout-v2{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px}
-    .admin-nav-v2,.admin-card-v2{background:var(--card,#fff);border:1px solid rgba(120,140,170,.18);border-radius:18px;box-shadow:0 10px 30px rgba(32,54,86,.06)}
-    .admin-nav-v2{padding:10px;height:max-content;position:sticky;top:12px}.admin-nav-v2 button{width:100%;border:0;background:transparent;text-align:left;padding:12px 14px;border-radius:12px;font-weight:700;color:inherit}.admin-nav-v2 button.active{background:rgba(30,110,255,.10);color:#1767e8}
-    .admin-card-v2{padding:18px}.admin-panel-v2.hidden{display:none}.admin-section-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}.admin-section-title h2{margin:0;font-size:21px}.admin-section-title p{margin:5px 0 0;opacity:.65;font-size:13px}
-    .status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.status-card{padding:14px;border:1px solid rgba(120,140,170,.18);border-radius:14px;background:rgba(255,255,255,.6)}.status-card span{font-size:12px;opacity:.62}.status-card strong{display:block;margin-top:7px;font-size:20px}.status-card small{display:block;margin-top:4px;opacity:.6}
-    .module-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.module-item{border:1px solid rgba(120,140,170,.18);border-radius:14px;padding:15px}.module-item h3{margin:0 0 6px;font-size:16px}.module-item p{margin:0;opacity:.66;font-size:13px;line-height:1.55}.module-badge{display:inline-flex;margin-top:10px;padding:4px 8px;border-radius:999px;background:rgba(30,110,255,.09);font-size:11px;font-weight:800}
-    .architecture-list{display:grid;gap:10px}.architecture-row{display:grid;grid-template-columns:130px 1fr;gap:12px;padding:12px 0;border-bottom:1px solid rgba(120,140,170,.14)}.architecture-row:last-child{border-bottom:0}.architecture-row b{font-size:13px}.architecture-row span{font-size:13px;opacity:.7;line-height:1.5}
-    .notice-safe{padding:12px 14px;border-radius:12px;background:rgba(24,180,120,.09);font-size:13px;line-height:1.55}.notice-warn{background:rgba(255,170,25,.10)}
-    @media(max-width:780px){.admin-layout-v2{grid-template-columns:1fr}.admin-nav-v2{position:static;display:flex;overflow:auto;gap:6px}.admin-nav-v2 button{width:auto;white-space:nowrap}.status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.module-list{grid-template-columns:1fr}.architecture-row{grid-template-columns:1fr;gap:4px}.admin-head{align-items:flex-start}.admin-head .btn{white-space:nowrap}}
-  </style>
-</head>
-<body class="admin-body">
-  <div class="admin-shell">
-    <header class="admin-head">
-      <div><h1>全球优选后台控制中心</h1><p>统一管理业务模块与服务状态，不复制前台业务逻辑</p></div>
-      <a class="btn btn-secondary" href="shop.html">查看前台</a>
-    </header>
-
-    <div class="admin-layout-v2">
-      <nav class="admin-nav-v2" aria-label="后台导航">
-        <button class="active" data-panel="dashboard">控制台</button>
-        <button data-panel="members">会员</button>
-        <button data-panel="orders">订单</button>
-        <button data-panel="products">商品/方案</button>
-        <button data-panel="answers">搜索答案库</button>
-        <button data-panel="fixed">固定模块</button>
-        <button data-panel="messages">站内信</button>
-        <button data-panel="delivery">交付资料</button>
-        <button data-panel="settings">网站设置</button>
-        <button data-panel="services">通知/服务状态</button>
-      </nav>
-
-      <main class="admin-card-v2">
-        <section id="dashboardPanel" class="admin-panel-v2">
-          <div class="admin-section-title"><div><h2>架构总览</h2><p>后台现在只保留管理职责，支付、通知、自动发货继续由服务层独立执行。</p></div></div>
-          <div class="status-grid" id="adminStats">
-            <div class="status-card"><span>核心层</span><strong>统一</strong><small>登录 / 导航 / 输入 / 弹窗 / 移动端</small></div>
-            <div class="status-card"><span>业务层</span><strong>模块化</strong><small>搜索 / 收藏 / 订单 / 固定模块</small></div>
-            <div class="status-card"><span>后台层</span><strong>控制中心</strong><small>只管理，不复制业务逻辑</small></div>
-            <div class="status-card"><span>服务层</span><strong>独立</strong><small>Supabase / 支付 / Worker / TG / 发货</small></div>
-          </div>
-          <div class="architecture-list" style="margin-top:18px">
-            <div class="architecture-row"><b>前台核心层</b><span>唯一登录、唯一下单/付款、唯一导航、统一输入/键盘、统一弹窗与移动端规则。</span></div>
-            <div class="architecture-row"><b>业务模块层</b><span>AI搜索、四个固定模块、收藏、会员订单、站内信，以及后续新增模块，只调用核心层能力。</span></div>
-            <div class="architecture-row"><b>后台控制层</b><span>会员、订单、商品/方案、答案库、固定模块、站内信、交付资料、设置、通知状态统一从这里管理。</span></div>
-            <div class="architecture-row"><b>后台服务层</b><span>Supabase数据、支付核验、Worker、唯一TG机器人、自动发货保持独立，不向页面复制实现。</span></div>
-          </div>
-          <div class="notice-safe" style="margin-top:16px">已移除旧后台“本机工作版 / 模拟付款 / 本地库存扣减”的架构定位。此控制中心不会通过 localStorage 伪造真实订单状态。</div>
-        </section>
-
-        <section id="membersPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>会员管理</h2><p>统一查看注册会员、账号状态、资料与关联订单。</p></div></div><div class="module-item"><h3>会员数据入口</h3><p>数据源固定为 Supabase Auth / 会员资料表。这里不再建立第二套本地会员数据。</p><span class="module-badge">正式数据源</span></div></section>
-        <section id="ordersPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>订单管理</h2><p>只读取和管理真实订单状态，付款确认必须由支付核验服务产生。</p></div></div><div class="notice-safe notice-warn">后台禁止恢复“点击按钮直接标记已付款”的旧逻辑，避免绕过链上核验。</div></section>
-        <section id="productsPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>商品 / 方案</h2><p>统一管理可售方案、价格、描述、启停状态及其交付映射。</p></div></div><div class="module-item"><h3>方案目录</h3><p>与前台下单使用同一份产品数据，不再通过 localStorage 建立后台专用商品库。</p><span class="module-badge">统一产品源</span></div></section>
-        <section id="answersPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>搜索答案库</h2><p>管理智能搜索使用的题目、关键词、答案摘要、详情、优先级与启停状态。</p></div></div><div class="module-item"><h3>答案库</h3><p>目标数据源：product_answer_options。前台AI搜索只读取这里的有效数据。</p><span class="module-badge">业务模块</span></div></section>
-        <section id="fixedPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>四个固定模块</h2><p>管理首页固定入口与对应方案，不在首页脚本里重复写业务控制。</p></div></div><div class="module-list"><div class="module-item"><h3>网站建设</h3><p>固定入口及其方案映射。</p></div><div class="module-item"><h3>智控未来</h3><p>固定入口及其方案映射。</p></div><div class="module-item"><h3>量化感知</h3><p>固定入口及其方案映射。</p></div><div class="module-item"><h3>数字学院</h3><p>固定入口及其方案映射。</p></div></div></section>
-        <section id="messagesPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>站内信</h2><p>后台统一发送和管理会员站内消息。</p></div></div><div class="module-item"><h3>消息中心</h3><p>业务模块仅消费消息；发送、状态和模板管理归后台控制层。</p><span class="module-badge">待接数据适配器</span></div></section>
-        <section id="deliveryPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>交付资料</h2><p>管理订单对应的文件、链接和一次性交付规则。</p></div></div><div class="notice-safe">自动发货执行仍归服务层。后台只配置“交付什么”，不复制“如何发货”的执行代码。</div></section>
-        <section id="settingsPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>网站设置</h2><p>集中管理站点级配置；支付敏感配置不由普通前端页面直接改写。</p></div></div><div class="module-item"><h3>站点设置适配器</h3><p>主题、语言、客服、展示信息等进入统一设置源；钱包和支付服务配置继续独立保护。</p><span class="module-badge">安全边界</span></div></section>
-        <section id="servicesPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><div><h2>通知 / 服务状态</h2><p>统一查看 Supabase、支付核验、Worker、Telegram通知、自动发货的状态。</p></div></div><div class="module-list" id="serviceStatusList"><div class="module-item"><h3>Supabase</h3><p data-service="supabase">等待检测</p></div><div class="module-item"><h3>支付核验</h3><p>保持现有真实链路，不在后台复制。</p></div><div class="module-item"><h3>Telegram通知</h3><p>唯一机器人通知链保持独立。</p></div><div class="module-item"><h3>自动发货</h3><p>由服务层根据已核验订单执行。</p></div></div></section>
-      </main>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
-  <script src="supabase-client.js?v=20260808-admin-foundation-1"></script>
-  <script src="admin.js?v=20260808-control-center-1"></script>
-</body>
-</html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="theme-color" content="#f4f8ff"><title>全球优选｜后台控制中心</title><link rel="stylesheet" href="site.css"><link rel="stylesheet" href="style.css"><style>
+.admin-body{background:var(--bg,#f4f8ff);color:var(--text,#172033);min-height:100vh}.admin-shell{width:min(1180px,calc(100% - 24px));margin:auto;padding:18px 0 40px}.admin-head{display:flex;justify-content:space-between;gap:12px;margin-bottom:16px}.admin-head h1{margin:0;font-size:24px}.admin-head p{margin:4px 0 0;opacity:.65;font-size:13px}.admin-layout-v2{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px}.admin-nav-v2,.admin-card-v2{background:var(--card,#fff);border:1px solid #dfe6f0;border-radius:18px}.admin-nav-v2{padding:10px;height:max-content;position:sticky;top:12px}.admin-nav-v2 button{width:100%;border:0;background:transparent;text-align:left;padding:12px;border-radius:12px;font-weight:700;color:inherit}.admin-nav-v2 button.active{background:#eaf2ff;color:#1767e8}.admin-card-v2{padding:18px}.hidden{display:none!important}.admin-section-title h2{margin:0}.admin-section-title p{margin:5px 0 14px;opacity:.65;font-size:13px}.status-grid,.data-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.status-card{padding:14px;border:1px solid #e2e8f0;border-radius:14px}.status-card span{font-size:12px;opacity:.65}.status-card strong{display:block;font-size:22px;margin-top:6px}.data-table{width:100%;border-collapse:collapse;font-size:13px}.data-table th,.data-table td{padding:10px 8px;border-bottom:1px solid #e8edf4;text-align:left;vertical-align:top}.data-table th{font-size:12px;opacity:.65}.table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:14px}.loading,.empty{padding:20px;text-align:center;opacity:.65}.badge{display:inline-block;padding:3px 7px;border-radius:999px;background:#edf4ff;font-size:11px}.refresh-btn{border:1px solid #d9e1ec;background:#fff;border-radius:10px;padding:8px 11px;font-weight:700}.panel-tools{display:flex;justify-content:flex-end;margin-bottom:10px}.notice{padding:12px;border-radius:12px;background:#fff7e6;font-size:13px}.architecture{margin-top:16px;line-height:1.8;font-size:13px}.architecture b{display:inline-block;width:100px}@media(max-width:780px){.admin-layout-v2{grid-template-columns:1fr}.admin-nav-v2{position:static;display:flex;overflow:auto}.admin-nav-v2 button{width:auto;white-space:nowrap}.status-grid,.data-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.admin-card-v2{padding:13px}}
+</style></head><body class="admin-body"><div class="admin-shell"><header class="admin-head"><div><h1>全球优选后台控制中心</h1><p>统一后台数据入口 · 读取真实 Supabase 数据</p></div><a class="btn btn-secondary" href="shop.html">查看前台</a></header><div class="admin-layout-v2"><nav class="admin-nav-v2"><button class="active" data-panel="dashboard">控制台</button><button data-panel="members">会员</button><button data-panel="orders">订单</button><button data-panel="products">商品/方案</button><button data-panel="answers">搜索答案库</button><button data-panel="fixed">固定模块</button><button data-panel="messages">站内信</button><button data-panel="delivery">交付资料</button><button data-panel="services">通知/服务状态</button></nav><main class="admin-card-v2">
+<section id="dashboardPanel" class="admin-panel-v2"><div class="admin-section-title"><h2>真实数据总览</h2><p>以下统计直接来自当前 Supabase 数据表，不使用 localStorage。</p></div><div id="adminStats" class="status-grid"><div class="status-card"><span>会员</span><strong data-stat="profiles">—</strong></div><div class="status-card"><span>订单</span><strong data-stat="orders">—</strong></div><div class="status-card"><span>商品/方案</span><strong data-stat="products">—</strong></div><div class="status-card"><span>搜索答案</span><strong data-stat="answers">—</strong></div><div class="status-card"><span>付款记录</span><strong data-stat="payments">—</strong></div><div class="status-card"><span>站内信</span><strong data-stat="messages">—</strong></div><div class="status-card"><span>通知队列</span><strong data-stat="notifications">—</strong></div><div class="status-card"><span>交付授权</span><strong data-stat="delivery">—</strong></div></div><div class="architecture"><div><b>核心层</b>登录 / 导航 / 输入 / 弹窗 / 下单付款统一控制</div><div><b>业务层</b>AI搜索 / 固定模块 / 收藏 / 订单 / 站内信</div><div><b>后台层</b>只管理真实数据和配置</div><div><b>服务层</b>支付核验 / Worker / TG / 自动发货独立运行</div></div></section>
+<section id="membersPanel" class="admin-panel-v2 hidden" data-table-panel="profiles"><div class="admin-section-title"><h2>会员管理</h2><p>profiles 真实会员资料入口。</p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="profiles">刷新</button></div><div data-table="profiles" class="loading">读取中…</div></section>
+<section id="ordersPanel" class="admin-panel-v2 hidden" data-table-panel="orders"><div class="admin-section-title"><h2>订单管理</h2><p>真实订单。后台不提供绕过支付核验的“标记已付款”。</p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="orders">刷新</button></div><div data-table="orders" class="loading">读取中…</div></section>
+<section id="productsPanel" class="admin-panel-v2 hidden" data-table-panel="products"><div class="admin-section-title"><h2>商品 / 方案</h2><p>前台下单使用的同一 products 数据源。</p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="products">刷新</button></div><div data-table="products" class="loading">读取中…</div></section>
+<section id="answersPanel" class="admin-panel-v2 hidden" data-table-panel="answers"><div class="admin-section-title"><h2>搜索答案库</h2><p>product_answer_options 真实答案数据入口。</p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="answers">刷新</button></div><div data-table="answers" class="loading">读取中…</div></section>
+<section id="fixedPanel" class="admin-panel-v2 hidden" data-table-panel="fixed"><div class="admin-section-title"><h2>固定模块</h2><p>product_answer_modules 四个模块真实数据入口。</p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="fixed">刷新</button></div><div data-table="fixed" class="loading">读取中…</div></section>
+<section id="messagesPanel" class="admin-panel-v2 hidden" data-table-panel="messages"><div class="admin-section-title"><h2>站内信</h2><p>member_inbox_messages 数据入口。</p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="messages">刷新</button></div><div data-table="messages" class="loading">读取中…</div></section>
+<section id="deliveryPanel" class="admin-panel-v2 hidden" data-table-panel="delivery"><div class="admin-section-title"><h2>交付资料</h2><p>product_files 与 download_grants 交付状态入口。</p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="delivery">刷新</button></div><div data-table="delivery" class="loading">读取中…</div></section>
+<section id="servicesPanel" class="admin-panel-v2 hidden" data-table-panel="services"><div class="admin-section-title"><h2>通知 / 服务状态</h2><p>付款记录与通知队列真实数据入口。</p></div><div class="notice">支付确认仍由真实核验服务产生；这里仅查看状态。</div><div class="panel-tools"><button class="refresh-btn" data-refresh="services">刷新</button></div><div data-table="services" class="loading">读取中…</div></section>
+</main></div></div><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script><script src="supabase-client.js?v=20260808-admin-data-1"></script><script src="admin.js?v=20260808-admin-data-1"></script></body></html>
