@@ -8,6 +8,28 @@
   const actions = document.querySelector('#resultPanel .result-actions');
   if (!form || !input || !button) return;
 
+  // 只恢复搜索区域原来的完整显示：5条选项和最终答案不再被固定高度裁切。
+  if (!document.getElementById('gyx-search-full-visibility')) {
+    const style = document.createElement('style');
+    style.id = 'gyx-search-full-visibility';
+    style.textContent = `
+      .home-page #quizPanel.search-popover,
+      .home-page #resultPanel.search-popover {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        overscroll-behavior: auto !important;
+      }
+      .home-page #quizOptions,
+      .home-page .quiz-options {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
   let autoTimer = null;
   let autoSubmitting = false;
 
