@@ -46,12 +46,10 @@
     });
   }
 
-  // 搜索开始语：模拟真人输入，不阻塞真实搜索请求。
   form?.addEventListener('submit', () => {
     if (!message) return;
     const token = ++runId;
-    const text = '正在理解你的问题，并从资料库筛选最相关的方向…';
-    typeInto(message, text, 26, token);
+    typeInto(message, '正在为您智能分析并匹配最合适的解决方案，请稍候…', 26, token);
   }, true);
 
   async function animateRoundIfReady() {
