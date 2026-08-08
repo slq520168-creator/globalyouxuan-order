@@ -1,39 +1,48 @@
 (()=>{
 'use strict';
-function boot(){
-const db=window.gyxSupabase,I=window.GYXI18N;if(!db||!I)return false;
-const $=id=>document.getElementById(id),F=$('problemForm'),N=$('problemInput'),M=$('problemMessage'),Q=$('quizPanel'),R=$('resultPanel'),S=$('quizStepLabel'),B=$('quizProgressBar'),O=$('originalQuestion'),H=$('quizQuestion'),P=$('quizHelp'),X=$('quizOptions'),BK=$('quizBackButton'),RS=$('restartMatchButton'),RT=$('resultTitle'),RU=$('resultSummary'),RC=$('resultConfidence'),RR=$('resultTier'),RP=$('resultPrice'),DL=$('deliveryList'),RQ=$('resultQuestion'),RL=$('resultSelections');if(!F||!N||!Q||!X)return false;
-if(F.dataset.gyxSearchBound==='1')return true;F.dataset.gyxSearchBound='1';
-const TP={essential:'answer-essential',standard:'answer-standard',detailed:'answer-detailed',professional:'answer-professional',custom:'answer-custom'};
-let A=[],PR=[],ready=false,q='',hist=[],busy=false,run=0,type=0;
-const c=v=>String(v||'').replace(/\s+/g,' ').trim();
-const lc=()=>I.locale||'zh-CN';
-const ttl=a=>lc()==='en'?(a.title_en||a.title):lc()==='km'?(a.title_km||a.title):a.title;
-const sum=a=>lc()==='en'?(a.answer_summary_en||a.answer_summary):lc()==='km'?(a.answer_summary_km||a.answer_summary):a.answer_summary;
-function msg(t){M.textContent=t||'';M.className=t?'form-message show success':'form-message'}
-function closeKeyboard(){try{N.blur();document.activeElement?.blur?.()}catch{}}
-function norm(s){return String(s||'').toLowerCase().replace(/[\s，。！？、；：,.!?;:()（）【】\[\]"'“”‘’_\-\/\\]+/g,'')}
-function grams(s,n=2){s=norm(s);const out=new Set();if(!s)return out;if(s.length<n){out.add(s);return out}for(let i=0;i<=s.length-n;i++)out.add(s.slice(i,i+n));return out}
-function simText(a,b){a=norm(a);b=norm(b);if(!a||!b)return 0;if(a===b)return 1;if(b.includes(a)||a.includes(b))return .94;const ga=grams(a),gb=grams(b);let hit=0;ga.forEach(x=>{if(gb.has(x))hit++});if(!ga.size||!gb.size)return 0;return Math.max(0,Math.min(1,(hit/ga.size)*.72+(hit/gb.size)*.28))}
-function fields(a){return{title:a.title||'',keywords:Array.isArray(a.keywords)?a.keywords.join(' '):(a.keywords||''),summary:a.answer_summary||'',detail:a.answer_detail_zh||''}}
-function relevance(a,text){const f=fields(a),n=norm(text);let s=Math.max(simText(text,f.title),simText(text,f.keywords)*.96,simText(text,f.summary)*.78,simText(text,f.detail)*.55);if(norm(f.title)===n)s=1;else if(norm(f.keywords).includes(n))s=Math.max(s,.97);return Math.max(0,Math.min(1,s))}
-function pathText(){return[q,...hist.map(x=>x.label)].filter(Boolean).join(' ')}
-async function load(){if(ready)return true;try{const r=await db.from('product_answer_options').select('*').eq('is_active',true).order('priority',{ascending:false}).limit(1000);if(r.error)throw r.error;A=Array.isArray(r.data)?r.data:[];ready=A.length>0;if(!ready)return false;try{const p=await db.from('products').select('id,product_name,product_price,description').eq('is_active',true).limit(100);PR=p.error?[]:(p.data||[])}catch{PR=[]}return true}catch(e){console.error('GYX_SEARCH_LOAD_ERROR',e);A=[];PR=[];ready=false;return false}}
-function rootFor(question){return A.map(a=>({a,s:relevance(a,question)})).sort((x,y)=>y.s-x.s)[0]||null}
-function rankCandidates(){const used=new Set(hist.map(x=>String(x.id))),root=rootFor(q),last=hist.at(-1)?.label||'',prior=hist.slice(0,-1).map(x=>x.label).join(' ');return A.map(a=>{let s;if(!hist.length){const qs=relevance(a,q),rs=root?relevance(a,[root.a.title,...(Array.isArray(root.a.keywords)?root.a.keywords:[])].join(' ')):0;s=qs*.72+rs*.28;if(root&&String(a.id)===String(root.a.id))s+=.12}else{s=relevance(a,last)*.5+relevance(a,q)*.22+relevance(a,pathText())*.2+(prior?relevance(a,prior):0)*.08}return{a,s}}).filter(x=>x.s>.08&&!used.has(String(x.a.id))).sort((x,y)=>y.s-x.s||(+y.a.priority||0)-(+x.a.priority||0))}
-function currentOptions(){const seen=new Set(),out=[];for(const x of rankCandidates()){const label=c(ttl(x.a));if(!label||seen.has(label))continue;seen.add(label);out.push({id:x.a.id,label});if(out.length===5)break}return out}
-function set(n,z){S.textContent=`第 ${n} / 5 轮`;if(B)B.style.width=n*20+'%';O.textContent=`“${q}”`;H.textContent=z;if(P)P.textContent='';if(BK)BK.classList.toggle('hidden',n===1)}
-function ti(el,z,k,spd=14){return new Promise(r=>{el.textContent='';let i=0;function f(){if(k!==type){el.textContent=z;r();return}el.textContent=z.slice(0,++i);i<z.length?setTimeout(f,spd):r()}f()})}
-async function render(n){busy=true;closeKeyboard();const k=++type,opts=currentOptions();set(n,n===1?'请选择与你当前问题最接近的方向':`围绕“${hist.at(-1)?.label||q}”，请选择下一步最接近的方向`);X.replaceChildren();if(!opts.length){busy=false;X.innerHTML='<div class="empty-state">暂时没有找到足够相关的选项</div>';return}for(let i=0;i<opts.length;i++){const o=opts[i],b=document.createElement('button');b.type='button';b.className='quiz-option compact';b.dataset.id=o.id;b.dataset.label=o.label;b.innerHTML=`<span class="option-number">${i+1}</span><strong></strong>`;X.appendChild(b);await ti(b.querySelector('strong'),o.label,k,12)}busy=false;setTimeout(()=>Q.scrollIntoView({behavior:'smooth',block:'start'}),30)}
-function tier(a){const z=(ttl(a)+' '+sum(a)+' '+(a.answer_detail_zh||'')).toLowerCase();if(/定制|专属|一对一/.test(z))return'custom';if(/完整|全流程|系统|长期|从.*到/.test(z))return'professional';if(/详细|模板|提示词|案例|清单/.test(z))return'detailed';if(/步骤|教程|操作|方法|流程/.test(z))return'standard';return'essential'}
-function productFor(a,tr){return PR.find(x=>x.id===a.product_id)||PR.find(x=>x.id===TP[tr])||PR.find(x=>x.id===TP.essential)||PR[0]||null}
-function finalRank(){const last=hist.at(-1)?.label||'',path=pathText(),prior=hist.slice(0,-1).map(x=>x.label).join(' ');return A.map(a=>{const s=relevance(a,q)*.3+relevance(a,last)*.35+relevance(a,path)*.25+(prior?relevance(a,prior):0)*.1;return{a,s}}).sort((x,y)=>y.s-x.s||(+y.a.priority||0)-(+x.a.priority||0))}
-function confidenceOf(x){if(!x)return 0;return Math.max(1,Math.min(99,Math.round((x.s*.88+(norm(x.a.title)===norm(q)?.12:0))*100)))}
-function delivery(tr){const m={essential:['针对当前问题的关键结论','可立即执行的操作要点','完成前检查清单'],standard:['针对当前问题的完整操作步骤','可直接使用的工具或模板','结果检查与修正方法'],detailed:['从当前情况开始的详细流程','可直接使用的模板、工具与方法','常见问题处理与交付检查清单'],professional:['围绕当前需求的完整执行路径','关键步骤、工具方法与可复用工作模板','风险检查、结果验收与优化方案'],custom:['根据五轮选择组合的专属执行方案','针对当前条件整理的步骤、模板与工具方法','专属检查清单与后续优化建议']};return m[tr]||m.standard}
-function tierName(t){return{essential:'基础实用',standard:'标准教程',detailed:'详细方案',professional:'专业方案',custom:'深度定制'}[t]||'实用方案'}
-async function showResult(){busy=true;Q.classList.add('hidden');R.classList.remove('hidden');const x=finalRank()[0];if(!x){busy=false;return}const tr=tier(x.a),p=productFor(x.a,tr),conf=confidenceOf(x),k=++type;if(RT)await ti(RT,`“${ttl(x.a)}”匹配方案`,k,14);if(RU)await ti(RU,sum(x.a)||'已根据你的原始问题和五轮选择，从资料库中选出相关度最高的方案。',k,12);if(RC)RC.textContent=conf+'%';if(RR)RR.textContent=tierName(tr);if(RP&&p)RP.textContent=Number(p.product_price||0).toFixed(Number(p.product_price||0)%1?2:0);if(DL){DL.replaceChildren();for(const z of delivery(tr)){const li=document.createElement('li');li.textContent=z;DL.appendChild(li)}}if(RQ)RQ.textContent=q;if(RL){RL.replaceChildren();hist.forEach(v=>{const li=document.createElement('li');li.textContent=v.label;RL.appendChild(li)})}window.GYX_CURRENT_AI_MATCH={answer:x.a,product:p,tier:tr,question:q,selections:hist.map(v=>v.label),confidence:conf,local_score:x.s,needs_cloud_assist:conf<85};busy=false;N.value='';setTimeout(()=>R.scrollIntoView({behavior:'smooth',block:'start'}),40)}
-async function start(e){e?.preventDefault();const id=++run,z=c(N.value);if(z.length<2||busy)return;q=z;hist=[];busy=true;closeKeyboard();Q.classList.add('hidden');R?.classList.add('hidden');msg('');if(!await load()||id!==run){busy=false;return}Q.classList.remove('hidden');await render(1)}
-F.addEventListener('submit',start);X.addEventListener('click',async e=>{const b=e.target.closest('.quiz-option');if(!b||busy)return;hist.push({id:b.dataset.id,label:b.dataset.label});if(hist.length>=5)return showResult();await render(hist.length+1)});BK?.addEventListener('click',async()=>{if(busy||!hist.length)return;hist.pop();await render(hist.length+1)});RS?.addEventListener('click',()=>{hist=[];q='';Q.classList.add('hidden');R?.classList.add('hidden');N.value='';N.focus()});return true;
+const $=id=>document.getElementById(id);
+function init(){
+ const F=$('problemForm'),N=$('problemInput'),Q=$('quizPanel'),R=$('resultPanel'),X=$('quizOptions'),S=$('quizStepLabel'),B=$('quizProgressBar'),O=$('originalQuestion'),H=$('quizQuestion'),P=$('quizHelp'),BK=$('quizBackButton'),RS=$('restartMatchButton'),RT=$('resultTitle'),RU=$('resultSummary'),RC=$('resultConfidence'),RR=$('resultTier'),RP=$('resultPrice'),DL=$('deliveryList'),RQ=$('resultQuestion'),RL=$('resultSelections');
+ if(!F||!N||!Q||!X||F.dataset.gyxLiveSearch==='1')return;
+ F.dataset.gyxLiveSearch='1';
+ let rows=[],products=[],question='',history=[],busy=false;
+ const norm=s=>String(s||'').toLowerCase().replace(/[\s，。！？、；：,.!?;:()（）【】\[\]"'“”‘’_\-\/\\]+/g,'');
+ const grams=s=>{s=norm(s);const a=new Set();if(s.length<2){if(s)a.add(s);return a}for(let i=0;i<s.length-1;i++)a.add(s.slice(i,i+2));return a};
+ const sim=(a,b)=>{a=norm(a);b=norm(b);if(!a||!b)return 0;if(a===b)return 1;if(a.includes(b)||b.includes(a))return .95;const x=grams(a),y=grams(b);let hit=0;x.forEach(v=>{if(y.has(v))hit++});return x.size&&y.size?Math.min(1,(hit/x.size)*.72+(hit/y.size)*.28):0};
+ const text=r=>[r.title,Array.isArray(r.keywords)?r.keywords.join(' '):r.keywords,r.answer_summary,r.answer_detail_zh].filter(Boolean).join(' ');
+ const score=(r,s)=>Math.max(sim(s,r.title),sim(s,Array.isArray(r.keywords)?r.keywords.join(' '):r.keywords)*.96,sim(s,r.answer_summary)*.78,sim(s,r.answer_detail_zh)*.55);
+ async function db(){
+  if(rows.length)return true;
+  const client=window.gyxSupabase;
+  if(!client)return false;
+  try{
+   const a=await client.from('product_answer_options').select('*').eq('is_active',true).limit(1000);
+   if(a.error||!a.data?.length)return false;
+   rows=a.data;
+   try{const p=await client.from('products').select('id,product_name,product_price,description').eq('is_active',true).limit(100);products=p.error?[]:(p.data||[])}catch{products=[]}
+   return true;
+  }catch{return false}
+ }
+ function rank(){
+  const used=new Set(history.map(v=>String(v.id))),last=history.at(-1)?.label||'',path=[question,...history.map(v=>v.label)].join(' ');
+  return rows.map(r=>{let s;if(!history.length)s=score(r,question);else s=score(r,last)*.5+score(r,question)*.25+score(r,path)*.25;return{r,s}}).filter(v=>v.s>.06&&!used.has(String(v.r.id))).sort((a,b)=>b.s-a.s||(+b.r.priority||0)-(+a.r.priority||0));
+ }
+ function options(){const out=[],seen=new Set();for(const v of rank()){const label=String(v.r.title||'').trim();if(!label||seen.has(label))continue;seen.add(label);out.push({id:v.r.id,label});if(out.length===5)break}return out}
+ function paint(round){
+  const opts=options();S.textContent=`第 ${round} / 5 轮`;if(B)B.style.width=round*20+'%';O.textContent=`“${question}”`;H.textContent=round===1?'请选择与你当前问题最接近的方向':`围绕“${history.at(-1)?.label||question}”，请选择下一步最接近的方向`;if(P)P.textContent='';if(BK)BK.classList.toggle('hidden',round===1);X.replaceChildren();
+  opts.forEach((o,i)=>{const b=document.createElement('button');b.type='button';b.className='quiz-option compact';b.dataset.id=o.id;b.dataset.label=o.label;b.innerHTML=`<span class="option-number">${i+1}</span><strong>${o.label}</strong>`;X.appendChild(b)});
+  Q.classList.remove('hidden');busy=false;setTimeout(()=>Q.scrollIntoView({behavior:'smooth',block:'start'}),20);
+ }
+ function final(){
+  const last=history.at(-1)?.label||'',path=[question,...history.map(v=>v.label)].join(' ');
+  const best=rows.map(r=>({r,s:score(r,question)*.3+score(r,last)*.4+score(r,path)*.3})).sort((a,b)=>b.s-a.s)[0];if(!best){busy=false;return}
+  const r=best.r,conf=Math.max(1,Math.min(99,Math.round(best.s*100))),tier=/完整|全流程|系统|长期/.test(text(r))?'professional':/详细|模板|案例|清单/.test(text(r))?'detailed':/步骤|教程|操作|方法|流程/.test(text(r))?'standard':'essential';
+  const p=products.find(x=>x.id===r.product_id)||products[0]||null;Q.classList.add('hidden');R?.classList.remove('hidden');if(RT)RT.textContent=`“${r.title}”匹配方案`;if(RU)RU.textContent=r.answer_summary||'已根据你的问题和五轮选择，从资料库选出相关度最高的方案。';if(RC)RC.textContent=conf+'%';if(RR)RR.textContent={professional:'专业方案',detailed:'详细方案',standard:'标准教程',essential:'基础实用'}[tier];if(RP&&p)RP.textContent=Number(p.product_price||0).toFixed(2);if(DL){DL.innerHTML='<li>针对当前问题的完整执行步骤</li><li>可直接使用的工具、方法与模板</li><li>结果检查与优化建议</li>'}if(RQ)RQ.textContent=question;if(RL){RL.replaceChildren();history.forEach(v=>{const li=document.createElement('li');li.textContent=v.label;RL.appendChild(li)})}window.GYX_CURRENT_AI_MATCH={answer:r,product:p,tier,question,selections:history.map(v=>v.label),confidence:conf,local_score:best.s,needs_cloud_assist:conf<85};busy=false;
+ }
+ F.addEventListener('submit',async e=>{e.preventDefault();if(busy)return;const v=String(N.value||'').trim();if(v.length<2)return;busy=true;question=v;history=[];R?.classList.add('hidden');Q.classList.add('hidden');try{N.blur()}catch{}if(!(await db())){busy=false;return}paint(1)});
+ X.addEventListener('click',e=>{const b=e.target.closest('.quiz-option');if(!b||busy)return;busy=true;history.push({id:b.dataset.id,label:b.dataset.label});history.length>=5?final():paint(history.length+1)});
+ BK?.addEventListener('click',()=>{if(busy||!history.length)return;history.pop();paint(history.length+1)});
+ RS?.addEventListener('click',()=>{history=[];question='';Q.classList.add('hidden');R?.classList.add('hidden');N.value='';N.focus()});
 }
-if(!boot()){let tries=0;const timer=setInterval(()=>{tries++;if(boot()||tries>=40)clearInterval(timer)},100)}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
