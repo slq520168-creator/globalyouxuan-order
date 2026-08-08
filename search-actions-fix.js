@@ -27,8 +27,16 @@ function computeConfidence(match){
 function realConfidence(){
   if(!confidence||result?.classList.contains('hidden'))return;
   const match=window.GYX_CURRENT_AI_MATCH;if(!match)return;
-  const pct=computeConfidence(match);match.confidence=pct;confidence.textContent=pct+'%';
-  if(order){const ok=pct>=80;order.disabled=!ok;order.setAttribute('aria-disabled',ok?'false':'true');order.textContent=ok?'直接下单':'匹配度不足，暂不可下单'}
+  const pct=computeConfidence(match);
+  match.confidence=pct;
+  match.needs_cloud_assist=pct<80;
+  match.delivery_review_required=pct<80;
+  confidence.textContent=pct+'%';
+  if(order){
+    order.disabled=false;
+    order.removeAttribute('aria-disabled');
+    order.textContent='直接下单';
+  }
 }
 const obs=result?new MutationObserver(()=>requestAnimationFrame(realConfidence)):null;obs?.observe(result,{attributes:true,childList:true,subtree:true});
 another?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();home()},true);
