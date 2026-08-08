@@ -1,5 +1,8 @@
 (() => {
   'use strict';
+  if(!document.getElementById('member-compact-layout')){
+    const s=document.createElement('style');s.id='member-compact-layout';s.textContent=`.page-hero{display:none!important}@media(max-width:960px){main{padding-top:0!important}.dashboard-grid{padding-top:10px!important;padding-bottom:160px!important}.dashboard-main{gap:14px!important;padding-bottom:40px!important}.panel{margin-bottom:0!important}#orders,#downloads,#materials{scroll-margin-bottom:120px!important}.order-list{padding-bottom:36px!important}}`;document.head.appendChild(s);
+  }
   const seen = new WeakSet();
   function enhanceFailedOrders(){
     document.querySelectorAll('#orderList .order-card').forEach(card=>{
