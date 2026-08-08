@@ -6,7 +6,7 @@ function init(){
  if(!F||!N||!Q||!X||F.dataset.gyxLiveSearch==='1')return;
  F.dataset.gyxLiveSearch='1';
  let rows=[],products=[],question='',history=[],busy=false,dbPromise=null;
- const CACHE_KEY='gyx_ai_search_cache_v4',CACHE_MS=10*60*1000;
+ const CACHE_KEY='gyx_ai_search_cache_v5',CACHE_MS=10*60*1000;
  const answerProduct={essential:'answer-essential',standard:'answer-standard',detailed:'answer-detailed',professional:'answer-professional',custom:'answer-custom'};
  const norm=s=>String(s||'').toLowerCase().replace(/[\s，。！？、；：,.!?;:()（）【】\[\]"'“”‘’_\-\/\\]+/g,'');
  const grams=s=>{s=norm(s);const a=new Set();if(s.length<2){if(s)a.add(s);return a}for(let i=0;i<s.length-1;i++)a.add(s.slice(i,i+2));return a};
