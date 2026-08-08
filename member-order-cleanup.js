@@ -4,6 +4,25 @@
   const db = window.gyxSupabase;
   if (!db) return;
 
+  // 仅会员页：阻止 iPhone 聚焦表单时自动放大页面。
+  function lockMemberViewport() {
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport) viewport.setAttribute('content', 'width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover');
+    if (!document.getElementById('member-ios-zoom-fix')) {
+      const style = document.createElement('style');
+      style.id = 'member-ios-zoom-fix';
+      style.textContent = `
+        html,body{max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%!important;text-size-adjust:100%!important}
+        #profileForm input,#profileForm select,#profileForm textarea,
+        #materialForm input,#materialForm select,#materialForm textarea,
+        #materialSearch,#orderFilters button{font-size:16px!important;max-width:100%!important;min-width:0!important;transform:none!important}
+        #profileForm,#materialForm,.dashboard-grid,.dashboard-main,.profile-card{min-width:0!important;max-width:100%!important}
+      `;
+      document.head.appendChild(style);
+    }
+  }
+  lockMemberViewport();
+
   let hiddenOrders = new Map();
   let initialized = false;
 
@@ -79,6 +98,7 @@
   async function init() {
     if (initialized) return;
     initialized = true;
+    lockMemberViewport();
     await loadHiddenOrders();
     processCards();
     const observer = new MutationObserver(processCards);
