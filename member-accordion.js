@@ -35,23 +35,23 @@ function setupProfile(){
      e.stopPropagation();
      const open=form.hidden;
      form.hidden=!open;edit.setAttribute('aria-expanded',String(open));edit.textContent=open?'收起修改':'修改资料';
-     if(open) setTimeout(()=>q('#profileName')?.focus(),80);
+     if(open)setTimeout(()=>q('#profileName')?.focus(),80);
    });
  }
  header.addEventListener('click',()=>toggle(header,body));
 }
 
-function sectionTitle(section){
- const h=q('.panel-head h2',section)||q('h2',section);
- return (h?.textContent||'').trim()||'内容';
-}
-function sectionBrief(section){
- if(section.id==='favorites')return '收藏的方案';
- if(section.id==='orders')return '订单与付款状态';
- if(section.id==='downloads')return '已付款交付内容';
- if(section.id==='materials')return '个人资料与长文本';
- return '点击展开';
-}
+const sectionCopy={
+ favorites:{title:'我的收藏',brief:'收藏的方案，可继续查看或取消收藏'},
+ orders:{title:'我的订单',brief:'已完成订单 · 待付款订单 · 失效订单'},
+ downloads:{title:'我的下载',brief:'已付款或已完成订单的交付内容'},
+ materials:{title:'我的资料',brief:'个人保存的资料与长文本'},
+ memberInbox:{title:'站内消息',brief:'付款核验异常、订单处理提醒'}
+};
+
+function sectionTitle(section){return sectionCopy[section.id]?.title||'会员内容'}
+function sectionBrief(section){return sectionCopy[section.id]?.brief||'点击展开查看'}
+
 function setupSection(section){
  if(!section||section.dataset.foldReady==='1')return;
  section.dataset.foldReady='1';
@@ -64,27 +64,47 @@ function setupSection(section){
  left.append(title,brief);header.append(left,makeChevron());section.append(header,body);body.hidden=true;
  header.addEventListener('click',()=>toggle(header,body));
 }
+
 function toggle(header,body,force){
  const open=typeof force==='boolean'?force:body.hidden;
  body.hidden=!open;header.setAttribute('aria-expanded',String(open));
- if(open) body.dispatchEvent(new CustomEvent('member:opened',{bubbles:true}));
+ if(open)body.dispatchEvent(new CustomEvent('member:opened',{bubbles:true}));
 }
+
+function placeInboxLast(){
+ const host=q('.dashboard-main');
+ const inbox=q('#memberInbox');
+ if(host&&inbox&&host.lastElementChild!==inbox)host.appendChild(inbox);
+ if(inbox)setupSection(inbox);
+}
+
+function watchInbox(){
+ const host=q('.dashboard-main');if(!host)return;
+ placeInboxLast();
+ new MutationObserver(()=>placeInboxLast()).observe(host,{childList:true});
+}
+
 function openHash(){
  const id=(location.hash||'').replace('#','');if(!id)return;
  const section=document.getElementById(id);if(!section)return;
+ if(section.id==='memberInbox')setupSection(section);
  const head=q(':scope > .member-fold-head',section),body=q(':scope > .member-fold-body',section);
  if(head&&body){toggle(head,body,true);setTimeout(()=>section.scrollIntoView({behavior:'smooth',block:'start'}),60)}
 }
-function wireOverview(){
- const overview=q('#memberOverview');if(!overview)return;
- overview.style.display='none';
-}
+
+function wireOverview(){const overview=q('#memberOverview');if(overview)overview.style.display='none'}
 function cleanHero(){
  const shortcuts=q('.member-shortcuts');if(shortcuts)shortcuts.style.display='none';
  const hero=q('.page-hero');if(hero)hero.classList.add('member-hero-compact');
 }
+
 function init(){
- cleanHero();setupProfile();['favorites','orders','downloads','materials'].forEach(id=>setupSection(document.getElementById(id)));wireOverview();openHash();
+ cleanHero();
+ setupProfile();
+ ['favorites','orders','downloads','materials'].forEach(id=>setupSection(document.getElementById(id)));
+ wireOverview();
+ watchInbox();
+ openHash();
  window.addEventListener('hashchange',openHash);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
