@@ -1,111 +1,21 @@
 (()=>{
 'use strict';
-
 function q(s,r=document){return r.querySelector(s)}
 function qa(s,r=document){return [...r.querySelectorAll(s)]}
-
+const L=()=>window.GYXLanguage?.current?.()||window.GYXI18N?.locale||'zh-CN';
+function tx(zh,en,km){return L()==='en'?en:L()==='km'?km:zh}
 function makeChevron(){const s=document.createElement('span');s.className='member-fold-chevron';s.textContent='⌄';return s}
-
-function setupProfile(){
- const card=q('.profile-card');
- if(!card||card.dataset.foldReady==='1')return;
- card.dataset.foldReady='1';
- const children=[...card.children];
- const body=document.createElement('div');
- body.className='member-fold-body profile-fold-body';
- children.forEach(n=>body.appendChild(n));
- const header=document.createElement('button');
- header.type='button';header.className='member-fold-head profile-fold-head';header.setAttribute('aria-expanded','false');
- const title=document.createElement('span');title.className='member-fold-title';title.textContent='我的资料';
- const brief=document.createElement('span');brief.className='member-fold-brief';brief.textContent='账号、会员编号、联系方式';
- const left=document.createElement('span');left.className='member-fold-labels';left.append(title,brief);
- header.append(left,makeChevron());
- card.append(header,body);
- body.hidden=true;
-
- const form=q('#profileForm',body);
- if(form){
-   form.classList.add('member-profile-edit');
-   form.hidden=true;
-   const edit=document.createElement('button');
-   edit.type='button';edit.className='btn btn-secondary btn-small member-edit-toggle';edit.textContent='修改资料';edit.setAttribute('aria-expanded','false');
-   const meta=q('.profile-meta',body);
-   (meta||q('.profile-name',body)||body).insertAdjacentElement('afterend',edit);
-   edit.addEventListener('click',e=>{
-     e.stopPropagation();
-     const open=form.hidden;
-     form.hidden=!open;edit.setAttribute('aria-expanded',String(open));edit.textContent=open?'收起修改':'修改资料';
-     if(open)setTimeout(()=>q('#profileName')?.focus(),80);
-   });
- }
- header.addEventListener('click',()=>toggle(header,body));
-}
-
-const sectionCopy={
- favorites:{title:'我的收藏',brief:'收藏的方案，可继续查看或取消收藏'},
- orders:{title:'我的订单',brief:'已完成订单 · 待付款订单 · 失效订单'},
- downloads:{title:'我的下载',brief:'已付款或已完成订单的交付内容'},
- materials:{title:'我的资料',brief:'个人保存的资料与长文本'},
- memberInbox:{title:'站内消息',brief:'付款核验异常、订单处理提醒'}
-};
-
-function sectionTitle(section){return sectionCopy[section.id]?.title||'会员内容'}
-function sectionBrief(section){return sectionCopy[section.id]?.brief||'点击展开查看'}
-
-function setupSection(section){
- if(!section||section.dataset.foldReady==='1')return;
- section.dataset.foldReady='1';
- const children=[...section.children];
- const body=document.createElement('div');body.className='member-fold-body';children.forEach(n=>body.appendChild(n));
- const header=document.createElement('button');header.type='button';header.className='member-fold-head';header.setAttribute('aria-expanded','false');
- const left=document.createElement('span');left.className='member-fold-labels';
- const title=document.createElement('span');title.className='member-fold-title';title.textContent=sectionTitle(section);
- const brief=document.createElement('span');brief.className='member-fold-brief';brief.textContent=sectionBrief(section);
- left.append(title,brief);header.append(left,makeChevron());section.append(header,body);body.hidden=true;
- header.addEventListener('click',()=>toggle(header,body));
-}
-
-function toggle(header,body,force){
- const open=typeof force==='boolean'?force:body.hidden;
- body.hidden=!open;header.setAttribute('aria-expanded',String(open));
- if(open)body.dispatchEvent(new CustomEvent('member:opened',{bubbles:true}));
-}
-
-function placeInboxLast(){
- const host=q('.dashboard-main');
- const inbox=q('#memberInbox');
- if(host&&inbox&&host.lastElementChild!==inbox)host.appendChild(inbox);
- if(inbox)setupSection(inbox);
-}
-
-function watchInbox(){
- const host=q('.dashboard-main');if(!host)return;
- placeInboxLast();
- new MutationObserver(()=>placeInboxLast()).observe(host,{childList:true});
-}
-
-function openHash(){
- const id=(location.hash||'').replace('#','');if(!id)return;
- const section=document.getElementById(id);if(!section)return;
- if(section.id==='memberInbox')setupSection(section);
- const head=q(':scope > .member-fold-head',section),body=q(':scope > .member-fold-body',section);
- if(head&&body){toggle(head,body,true);setTimeout(()=>section.scrollIntoView({behavior:'smooth',block:'start'}),60)}
-}
-
+function profileText(){return{title:tx('我的资料','My Profile','ព័ត៌មានរបស់ខ្ញុំ'),brief:tx('账号、会员编号、联系方式','Account, member ID and contacts','គណនី លេខសមាជិក និងទំនាក់ទំនង'),edit:tx('修改资料','Edit profile','កែព័ត៌មាន'),close:tx('收起修改','Close editing','បិទការកែ')}}
+function setupProfile(){const card=q('.profile-card');if(!card||card.dataset.foldReady==='1')return;card.dataset.foldReady='1';const children=[...card.children],body=document.createElement('div');body.className='member-fold-body profile-fold-body';children.forEach(n=>body.appendChild(n));const header=document.createElement('button');header.type='button';header.className='member-fold-head profile-fold-head';header.setAttribute('aria-expanded','false');const title=document.createElement('span');title.className='member-fold-title';title.dataset.foldRole='profile-title';const brief=document.createElement('span');brief.className='member-fold-brief';brief.dataset.foldRole='profile-brief';const left=document.createElement('span');left.className='member-fold-labels';left.append(title,brief);header.append(left,makeChevron());card.append(header,body);body.hidden=true;const form=q('#profileForm',body);if(form){form.classList.add('member-profile-edit');form.hidden=true;const edit=document.createElement('button');edit.type='button';edit.className='btn btn-secondary btn-small member-edit-toggle';edit.dataset.foldRole='profile-edit';edit.setAttribute('aria-expanded','false');const meta=q('.profile-meta',body);(meta||q('.profile-name',body)||body).insertAdjacentElement('afterend',edit);edit.addEventListener('click',e=>{e.stopPropagation();const open=form.hidden;form.hidden=!open;edit.setAttribute('aria-expanded',String(open));paintLabels();if(open)setTimeout(()=>q('#profileName')?.focus(),80)})}header.addEventListener('click',()=>toggle(header,body));paintLabels()}
+function sectionInfo(section){if(section.id==='favorites')return{title:tx('我的收藏','My Favorites','ចំណូលចិត្តរបស់ខ្ញុំ'),brief:tx('收藏的方案，可继续查看或取消收藏','Saved plans; view or remove anytime','ផែនការដែលបានរក្សាទុក អាចមើលឬលុបបាន')};if(section.id==='orders')return{title:tx('我的订单','My Orders','ការបញ្ជាទិញរបស់ខ្ញុំ'),brief:tx('已完成订单 · 待付款订单 · 失效订单','Completed · Pending payment · Expired','បានបញ្ចប់ · រង់ចាំបង់ប្រាក់ · ផុតកំណត់')};if(section.id==='downloads')return{title:tx('我的下载','My Downloads','ការទាញយករបស់ខ្ញុំ'),brief:tx('已付款或已完成订单的交付内容','Delivery content for paid or completed orders','មាតិកាប្រគល់សម្រាប់ការបញ្ជាទិញដែលបានបង់ឬបញ្ចប់')};if(section.id==='materials')return{title:tx('我的资料','My Materials','ឯកសាររបស់ខ្ញុំ'),brief:tx('个人保存的资料与长文本','Your saved materials and long text','ឯកសារ និងអត្ថបទវែងដែលអ្នកបានរក្សាទុក')};if(section.id==='memberInbox')return{title:tx('站内消息','Messages','សារ'),brief:tx('付款核验异常、订单处理提醒','Payment verification and order alerts','ការផ្ទៀងផ្ទាត់ការបង់ប្រាក់ និងការជូនដំណឹងការបញ្ជាទិញ')};return{title:tx('内容','Content','មាតិកា'),brief:tx('点击展开','Tap to open','ចុចដើម្បីបើក')}}
+function setupSection(section){if(!section||section.dataset.foldReady==='1')return;section.dataset.foldReady='1';const children=[...section.children],body=document.createElement('div');body.className='member-fold-body';children.forEach(n=>body.appendChild(n));const header=document.createElement('button');header.type='button';header.className='member-fold-head';header.setAttribute('aria-expanded','false');const left=document.createElement('span');left.className='member-fold-labels';const title=document.createElement('span');title.className='member-fold-title';title.dataset.foldRole='section-title';const brief=document.createElement('span');brief.className='member-fold-brief';brief.dataset.foldRole='section-brief';left.append(title,brief);header.append(left,makeChevron());section.append(header,body);body.hidden=true;header.addEventListener('click',()=>toggle(header,body));paintSection(section)}
+function paintSection(section){const info=sectionInfo(section),title=q('[data-fold-role="section-title"]',section),brief=q('[data-fold-role="section-brief"]',section);if(title)title.textContent=info.title;if(brief)brief.textContent=info.brief}
+function paintLabels(){const p=profileText(),card=q('.profile-card');if(card){const t=q('[data-fold-role="profile-title"]',card),b=q('[data-fold-role="profile-brief"]',card),e=q('[data-fold-role="profile-edit"]',card);if(t)t.textContent=p.title;if(b)b.textContent=p.brief;if(e)e.textContent=e.getAttribute('aria-expanded')==='true'?p.close:p.edit}qa('.dashboard-main>.panel').forEach(paintSection)}
+function toggle(header,body,force){const open=typeof force==='boolean'?force:body.hidden;body.hidden=!open;header.setAttribute('aria-expanded',String(open));if(open)body.dispatchEvent(new CustomEvent('member:opened',{bubbles:true}))}
+function openHash(){const id=(location.hash||'').replace('#','');if(!id)return;const section=document.getElementById(id);if(!section)return;const head=q(':scope > .member-fold-head',section),body=q(':scope > .member-fold-body',section);if(head&&body){toggle(head,body,true);setTimeout(()=>section.scrollIntoView({behavior:'smooth',block:'start'}),60)}}
 function wireOverview(){const overview=q('#memberOverview');if(overview)overview.style.display='none'}
-function cleanHero(){
- const shortcuts=q('.member-shortcuts');if(shortcuts)shortcuts.style.display='none';
- const hero=q('.page-hero');if(hero)hero.classList.add('member-hero-compact');
-}
-
-function init(){
- cleanHero();
- setupProfile();
- ['favorites','orders','downloads','materials'].forEach(id=>setupSection(document.getElementById(id)));
- wireOverview();
- watchInbox();
- openHash();
- window.addEventListener('hashchange',openHash);
-}
+function cleanHero(){const shortcuts=q('.member-shortcuts');if(shortcuts)shortcuts.style.display='none';const hero=q('.page-hero');if(hero)hero.classList.add('member-hero-compact')}
+function setupInboxObserver(){const host=q('.dashboard-main');if(!host)return;const move=()=>{const inbox=q('#memberInbox');if(inbox){setupSection(inbox);host.appendChild(inbox);paintSection(inbox)}};new MutationObserver(move).observe(host,{childList:true});move()}
+function init(){cleanHero();setupProfile();['favorites','orders','downloads','materials'].forEach(id=>setupSection(document.getElementById(id)));wireOverview();setupInboxObserver();openHash();window.addEventListener('hashchange',openHash);window.addEventListener('gyx:languagechange',paintLabels)}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
