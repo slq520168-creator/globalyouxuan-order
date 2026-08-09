@@ -53,7 +53,7 @@
   if (!window.__gyxTypingEffectLoader) {
     window.__gyxTypingEffectLoader = true;
     const script = document.createElement('script');
-    script.src = 'typing-effect.js?v=20260808-human-typing-2';
+    script.src = 'typing-effect.js?v=20260809-round-only-1';
     script.async = false;
     script.onerror = () => console.error('Typing effect failed to load');
     document.body.appendChild(script);
