@@ -74,8 +74,11 @@ function normalizePhone(){
  const select=document.getElementById('profileCountry');
  const dial=select?.selectedOptions?.[0]?.dataset?.dial||'';
  if(!raw)return'';
- if(!dial){const compact=raw.replace(/[\s()\-]/g,'');return /^\+[1-9]\d{6,14}$/.test(compact)?compact:''}
+ const compactRaw=raw.replace(/[\s()\-]/g,'');
+ if(/^\+[1-9]\d{6,14}$/.test(compactRaw))return compactRaw;
+ if(!dial)return'';
  const local=raw.replace(/\D/g,'').replace(/^0+/,'');
+ if(!local)return'';
  const compact=dial+local;
  return /^\+[1-9]\d{6,14}$/.test(compact)?compact:'';
 }
@@ -110,13 +113,16 @@ async function resolveUser(){
   paintMemberId();
   const account=document.getElementById('profileAccountValue');
   if(account)account.textContent=currentUser?.email||'—';
- }catch{}
+ }catch{currentUser=null}
+ return currentUser;
 }
 
 async function loadContactProfile(){
- if(!db||!currentUser)return;
- const {data}=await db.from('profiles').select('phone,phone_country_code,phone_country_name,wechat,whatsapp').eq('user_id',currentUser.id).maybeSingle();
- if(!data)return;
+ if(!db)return;
+ if(!currentUser)await resolveUser();
+ if(!currentUser)return;
+ const {data,error}=await db.from('profiles').select('phone,phone_country_code,phone_country_name,wechat,whatsapp').eq('user_id',currentUser.id).maybeSingle();
+ if(error||!data)return;
  splitStoredPhone(data.phone||'',data.phone_country_code||'');
  const wx=document.getElementById('profileWechat'),wa=document.getElementById('profileWhatsapp');
  if(wx)wx.value=data.wechat||'';
@@ -130,7 +136,10 @@ function installProfileSave(){
  form.addEventListener('submit',async e=>{
   e.preventDefault();
   e.stopImmediatePropagation();
-  if(!db||!currentUser){message('登录状态已失效，请重新登录');return}
+  message('');
+  if(!db){message('数据库连接失败，请刷新页面后再试');return}
+  if(!currentUser)await resolveUser();
+  if(!currentUser){message('登录状态已失效，请重新登录');return}
   const displayName=String(document.getElementById('profileName')?.value||'').trim();
   const phone=normalizePhone();
   const locale=String(document.getElementById('profileLocale')?.value||'zh-CN');
@@ -138,17 +147,24 @@ function installProfileSave(){
   const whatsapp=String(document.getElementById('profileWhatsapp')?.value||'').trim();
   const country=selectedCountry();
   if(!displayName){message('会员名称不能为空');return}
-  if(!phone){message('请输入有效的国际手机号');document.getElementById('profilePhone')?.focus();return}
+  if(!phone){message('请输入有效的国际手机号，例如选择柬埔寨后填写本地号码，或直接输入 +85512345678');document.getElementById('profilePhone')?.focus();return}
   const button=document.getElementById('saveProfileButton');
   if(button){button.disabled=true;button.textContent='正在保存…'}
   try{
-   const {error}=await db.from('profiles').update({display_name:displayName,phone,phone_country_code:country.code||null,phone_country_name:country.name||null,wechat:wechat||null,whatsapp:whatsapp||null,locale}).eq('user_id',currentUser.id);
+   const payload={display_name:displayName,phone,phone_country_code:country.code||null,phone_country_name:country.name||null,wechat:wechat||null,whatsapp:whatsapp||null,locale,updated_at:new Date().toISOString()};
+   const {data,error}=await db.from('profiles').update(payload).eq('user_id',currentUser.id).select('user_id').maybeSingle();
    if(error)throw error;
+   if(!data?.user_id)throw new Error('PROFILE_NOT_UPDATED');
    try{await db.auth.updateUser({data:{display_name:displayName,phone,phone_country_code:country.code,phone_country_name:country.name,wechat,whatsapp}})}catch{}
    message('会员资料已保存','success');
    const heading=document.getElementById('profileHeading');if(heading)heading.textContent=displayName;
-  }catch{message('保存失败，请稍后再试')}
-  finally{if(button){button.disabled=false;button.textContent='保存会员资料'}}
+   splitStoredPhone(phone,country.code);
+  }catch(err){
+   console.error('profile save failed',err);
+   const text=String(err?.message||'');
+   if(/JWT|session|auth/i.test(text))message('登录状态已失效，请重新登录');
+   else message('保存失败，请刷新页面后再试');
+  }finally{if(button){button.disabled=false;button.textContent='保存会员资料'}}
  },true);
 }
 
@@ -176,7 +192,7 @@ function cleanLegacySpace(){const hero=document.querySelector('.page-hero .shell
 async function init(){
  compact();cleanLegacySpace();buildOverview();addAccountRow();buildContactFields();installProfileSave();buttonFeedback();observeProfile();observeCounts();
  await resolveUser();await loadContactProfile();
- window.addEventListener('pageshow',async()=>{compact();paintMemberId();updateOverview();await resolveUser()},{passive:true});
+ window.addEventListener('pageshow',async()=>{compact();paintMemberId();updateOverview();await resolveUser();await loadContactProfile()},{passive:true});
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
