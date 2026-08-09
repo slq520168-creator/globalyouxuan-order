@@ -43,9 +43,11 @@ function setupProfile(){
 
 const sectionCopy={
  favorites:{title:'我的收藏',brief:'收藏的方案，可继续查看或取消收藏'},
+ searches:{title:'我的搜索',brief:'5轮匹配完成后自动保存，可随时回来查看'},
  orders:{title:'我的订单',brief:'已完成订单 · 待付款订单 · 失效订单'},
  downloads:{title:'我的下载',brief:'已付款或已完成订单的交付内容'},
  materials:{title:'我的资料',brief:'个人保存的资料与长文本'},
+ inbox:{title:'站内消息',brief:'付款核验异常、订单处理提醒'},
  memberInbox:{title:'站内消息',brief:'付款核验异常、订单处理提醒'}
 };
 
@@ -73,7 +75,7 @@ function toggle(header,body,force){
 
 function placeInboxLast(){
  const host=q('.dashboard-main');
- const inbox=q('#memberInbox');
+ const inbox=q('#memberInbox')||q('#inbox');
  if(host&&inbox&&host.lastElementChild!==inbox)host.appendChild(inbox);
  if(inbox)setupSection(inbox);
 }
@@ -87,7 +89,7 @@ function watchInbox(){
 function openHash(){
  const id=(location.hash||'').replace('#','');if(!id)return;
  const section=document.getElementById(id);if(!section)return;
- if(section.id==='memberInbox')setupSection(section);
+ setupSection(section);
  const head=q(':scope > .member-fold-head',section),body=q(':scope > .member-fold-body',section);
  if(head&&body){toggle(head,body,true);setTimeout(()=>section.scrollIntoView({behavior:'smooth',block:'start'}),60)}
 }
@@ -101,7 +103,7 @@ function cleanHero(){
 function init(){
  cleanHero();
  setupProfile();
- ['favorites','orders','downloads','materials'].forEach(id=>setupSection(document.getElementById(id)));
+ ['profile','favorites','searches','orders','downloads','materials','inbox'].forEach(id=>setupSection(document.getElementById(id)));
  wireOverview();
  watchInbox();
  openHash();
