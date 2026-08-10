@@ -11,21 +11,23 @@ body{background:#f4f8ff}.lab{width:min(720px,calc(100% - 24px));margin:0 auto;pa
 <div class="lab">
 <h1>财富路径搜索·真实测试</h1>
 <p class="lab-note">独立实验页，不影响正式首页。任意合法输入由云端AI理解，结合内部资料库能力逐轮收窄，第5轮形成可执行方案。</p>
-<div class="lab-box"><form id="f" class="lab-form"><input id="q" maxlength="300" placeholder="输入任意词，例如：大海、葡萄、梦、白鹿" required><button type="submit">开始</button></form></div>
+<div class="lab-box"><form id="f" class="lab-form"><input id="q" data-user-content maxlength="300" placeholder="输入任意词，例如：大海、葡萄、梦、白鹿" required><button type="submit">开始</button></form></div>
 <div id="state"></div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
 <script src="supabase-client.js?v=20260810-wealth-lab-3"></script>
+<script src="i18n.js"></script>
+<script src="global-locale.js?v=20260811-global-auto-1"></script>
 <script>
 (()=>{'use strict';
 const $=id=>document.getElementById(id);let query='',history=[],round=1,busy=false;const state=$('state');
-function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function renderLoading(){state.innerHTML='<div class="lab-box loading">正在生成第 '+round+' 轮结果…</div>'}
+function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]))}
+function renderLoading(){state.innerHTML='<div class="lab-box loading">正在生成第 '+round+' 轮结果…</div>';window.GYXLocale?.apply?.(state)}
 async function callEdge(body){const db=window.gyxSupabase,cfg=window.GYX_CONFIG;if(!db||!cfg)throw new Error('Supabase连接未初始化');const {data:{session},error}=await db.auth.getSession();if(error)throw error;if(!session)throw new Error('请先登录会员账号，再打开这个测试页。');const res=await fetch(cfg.url+'/functions/v1/wealth-search-lab',{method:'POST',headers:{'content-type':'application/json','apikey':cfg.publishableKey,'authorization':'Bearer '+session.access_token},body:JSON.stringify(body)});let payload=null,text='';try{text=await res.text();payload=text?JSON.parse(text):null}catch{}if(!res.ok)throw new Error('Edge Function HTTP '+res.status+'：'+(payload?.message||payload?.error||text||'请求失败'));if(!payload)throw new Error('Edge Function返回空数据');return payload}
-async function invoke(){if(busy)return;busy=true;renderLoading();try{const t0=performance.now(),d=await callEdge({query,history,round});render(d,Math.round(performance.now()-t0))}catch(e){state.innerHTML='<div class="lab-box error"><b>测试失败</b><br>'+esc(e.message||e)+'</div>'}finally{busy=false}}
-function render(d,browserMs){const final=d.final_plan;const stage=d.stage||'动态推演';let html='<div class="lab-box"><div class="path"><b>原始输入：</b>'+esc(query)+(history.length?'<br><b>当前路径：</b>'+history.map(esc).join(' → '):'')+'</div><div class="progress">'+[1,2,3,4,5].map(i=>'<span class="dot '+(i<=Number(d.round||round)?'on':'')+'"></span>').join('')+'</div><div class="meta"><span class="chip">第 '+esc(d.round)+' 轮</span><span class="chip">端到端 '+browserMs+' ms</span></div><div class="stage-title">'+esc(stage)+'</div><div class="q">'+esc(d.question||'请选择最接近的一项')+'</div><div class="opts">';(d.options||[]).forEach((x,i)=>html+='<button class="opt" type="button" data-opt="'+i+'">'+(i+1)+'. '+esc(x)+'</button>');html+='</div></div>';
+async function invoke(){if(busy)return;busy=true;renderLoading();try{const t0=performance.now(),d=await callEdge({query,history,round});render(d,Math.round(performance.now()-t0))}catch(e){state.innerHTML='<div class="lab-box error"><b>测试失败</b><br>'+esc(e.message||e)+'</div>';window.GYXLocale?.apply?.(state)}finally{busy=false}}
+function render(d,browserMs){const final=d.final_plan;const stage=d.stage||'动态推演';let html='<div class="lab-box"><div class="path"><b>原始输入：</b><span data-user-content>'+esc(query)+'</span>'+(history.length?'<br><b>当前路径：</b>'+history.map(x=>'<span>'+esc(x)+'</span>').join(' → '):'')+'</div><div class="progress">'+[1,2,3,4,5].map(i=>'<span class="dot '+(i<=Number(d.round||round)?'on':'')+'"></span>').join('')+'</div><div class="meta"><span class="chip">第 '+esc(d.round)+' 轮</span><span class="chip">端到端 '+browserMs+' ms</span></div><div class="stage-title">'+esc(stage)+'</div><div class="q">'+esc(d.question||'请选择最接近的一项')+'</div><div class="opts">';(d.options||[]).forEach((x,i)=>html+='<button class="opt" type="button" data-opt="'+i+'">'+(i+1)+'. '+esc(x)+'</button>');html+='</div></div>';
 if(final){const text=typeof final==='string'?final:(final.text||'');html+='<div class="lab-box final"><h2>最终执行方案</h2><div style="white-space:pre-wrap;line-height:1.75">'+esc(text)+'</div></div>'}
-html+='<div class="lab-box debug"><details><summary>开发调试数据</summary><pre>'+esc(JSON.stringify({timing_ms:d.timing_ms,intent:d.intent,search_terms:d.search_terms,evidence:d.evidence,engine:d.engine},null,2))+'</pre></details></div>';state.innerHTML=html;state.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{history.push(d.options[Number(b.dataset.opt)]);round=history.length+1;invoke()})}
+html+='<div class="lab-box debug"><details><summary>开发调试数据</summary><pre data-no-i18n>'+esc(JSON.stringify({timing_ms:d.timing_ms,intent:d.intent,search_terms:d.search_terms,evidence:d.evidence,engine:d.engine},null,2))+'</pre></details></div>';state.innerHTML=html;window.GYXLocale?.apply?.(state);state.querySelectorAll('[data-opt]').forEach(b=>b.onclick=()=>{history.push(d.options[Number(b.dataset.opt)]);round=history.length+1;invoke()})}
 $('f').addEventListener('submit',e=>{e.preventDefault();query=$('q').value.trim();if(!query)return;history=[];round=1;invoke()});
 })();
 </script>
