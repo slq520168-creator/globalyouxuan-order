@@ -1,0 +1,12 @@
+(()=>{
+'use strict';
+const I=window.GYXI18N;if(!I)return;
+const X={
+zh:{memberExpand:'展开',memberCollapse:'收起',memberEditProfile:'修改资料',memberCollapseEdit:'收起修改',memberProfileBrief:'账号、会员编号、联系方式',memberSearchBrief:'5轮匹配完成后自动保存，可随时回来查看',memberOrdersBrief:'已完成订单 · 待付款订单 · 失效订单',memberCloudTitle:'我的云服务',memberCloudBrief:'云端智能服务',memberCloudLead:'直接输入你的问题或需求',memberNewSession:'新会话',memberCloudPrompt:'说出你现在想解决的问题…',memberSend:'发送',memberInboxTitle:'站内消息',memberInboxBrief:'付款核验异常、订单处理提醒',memberContent:'会员内容',memberTapExpand:'点击展开查看'},
+en:{memberExpand:'Expand',memberCollapse:'Collapse',memberEditProfile:'Edit profile',memberCollapseEdit:'Close editing',memberProfileBrief:'Account, member ID and contact details',memberSearchBrief:'Five-round matches are saved automatically for later review',memberOrdersBrief:'Completed · pending · expired orders',memberCloudTitle:'My Cloud Service',memberCloudBrief:'Cloud intelligent service',memberCloudLead:'Enter the question or need you want to solve',memberNewSession:'New chat',memberCloudPrompt:'Tell us what you want to solve now…',memberSend:'Send',memberInboxTitle:'Messages',memberInboxBrief:'Payment verification and order processing alerts',memberContent:'Member content',memberTapExpand:'Tap to expand'},
+km:{memberExpand:'ពង្រីក',memberCollapse:'បង្រួម',memberEditProfile:'កែព័ត៌មាន',memberCollapseEdit:'បិទការកែ',memberProfileBrief:'គណនី លេខសមាជិក និងព័ត៌មានទំនាក់ទំនង',memberSearchBrief:'លទ្ធផលផ្គូផ្គង 5 ជុំត្រូវបានរក្សាទុកដោយស្វ័យប្រវត្តិ',memberOrdersBrief:'បានបញ្ចប់ · រង់ចាំបង់ · ផុតកំណត់',memberCloudTitle:'សេវាកម្ម Cloud របស់ខ្ញុំ',memberCloudBrief:'សេវាកម្មឆ្លាតវៃលើ Cloud',memberCloudLead:'បញ្ចូលសំណួរ ឬតម្រូវការដែលអ្នកចង់ដោះស្រាយ',memberNewSession:'ការសន្ទនាថ្មី',memberCloudPrompt:'ប្រាប់អ្វីដែលអ្នកចង់ដោះស្រាយឥឡូវនេះ…',memberSend:'ផ្ញើ',memberInboxTitle:'សារ',memberInboxBrief:'ការជូនដំណឹងអំពីការផ្ទៀងផ្ទាត់ការទូទាត់ និងការបញ្ជាទិញ',memberContent:'មាតិកាសមាជិក',memberTapExpand:'ចុចដើម្បីពង្រីក'}
+};
+const base=Object.keys(X.zh).sort();for(const l of ['en','km']){const k=Object.keys(X[l]).sort();if(base.length!==k.length||base.some((x,i)=>x!==k[i]))throw new Error(`member i18n coverage failed: ${l}`)}
+for(const l of ['zh','en','km']){Object.assign(I.resources[l],X[l]);if(window.i18next?.isInitialized)for(const [k,v] of Object.entries(X[l]))window.i18next.addResource(l,'translation',k,v)}
+I.render?.(document);
+})();
