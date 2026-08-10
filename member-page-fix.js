@@ -1,1 +1,556 @@
-(()=>{'use strict';let rawUserId='',currentUser=null;const db=window.gyxSupabase,I=window.GYXI18N;if(!db||!I)return;const X={zh:{memberAccount:'会员账号',countryRegion:'国家/地区',phoneLocal:'填写本地手机号',phoneFull:'请直接输入完整国际号码，例如 +85512345678',phoneDial:'国际区号 {{dial}}，只需填写本地手机号',phoneIntlSave:'按国际格式保存',wechatOptional:'微信（选填）',wechatId:'微信号',whatsappOptional:'WhatsApp（选填）',whatsappId:'WhatsApp号码/账号',telegramOptional:'TG（选填）',telegramId:'Telegram用户名',dbFailed:'数据库连接失败，请刷新页面后再试',sessionExpired:'登录状态已失效，请重新登录',nameRequired:'会员名称不能为空',phoneInvalid:'请输入有效的国际手机号',savingProfile:'正在保存…',profileSaved:'会员资料已保存',profileSaveFailed:'保存失败，请刷新页面后再试',ordersShort:'订单',favoritesShort:'收藏',deliveryShort:'交付',materialsShort:'资料',memberOverviewLead:'账号、订单、交付和个人资料，一页管理。',otherRegion:'其他国家/地区'},en:{memberAccount:'Member account',countryRegion:'Country / region',phoneLocal:'Enter local phone number',phoneFull:'Enter the full international number, e.g. +85512345678',phoneDial:'Dial code {{dial}}; enter the local phone number only',phoneIntlSave:'Saved in international format',wechatOptional:'WeChat (optional)',wechatId:'WeChat ID',whatsappOptional:'WhatsApp (optional)',whatsappId:'WhatsApp number / account',telegramOptional:'TG (optional)',telegramId:'Telegram username',dbFailed:'Database connection failed. Refresh and try again.',sessionExpired:'Your session has expired. Please sign in again.',nameRequired:'Member name is required',phoneInvalid:'Enter a valid international phone number',savingProfile:'Saving…',profileSaved:'Member profile saved',profileSaveFailed:'Save failed. Refresh and try again.',ordersShort:'Orders',favoritesShort:'Saved',deliveryShort:'Delivery',materialsShort:'Materials',memberOverviewLead:'Manage your account, orders, delivery and profile in one place.',otherRegion:'Other country / region'},km:{memberAccount:'គណនីសមាជិក',countryRegion:'ប្រទេស / តំបន់',phoneLocal:'បញ្ចូលលេខទូរស័ព្ទក្នុងស្រុក',phoneFull:'បញ្ចូលលេខអន្តរជាតិពេញលេញ ឧ. +85512345678',phoneDial:'លេខកូដប្រទេស {{dial}}; បញ្ចូលតែលេខក្នុងស្រុក',phoneIntlSave:'រក្សាទុកជាទម្រង់អន្តរជាតិ',wechatOptional:'WeChat (ជាជម្រើស)',wechatId:'លេខសម្គាល់ WeChat',whatsappOptional:'WhatsApp (ជាជម្រើស)',whatsappId:'លេខ / គណនី WhatsApp',telegramOptional:'TG (ជាជម្រើស)',telegramId:'ឈ្មោះអ្នកប្រើ Telegram',dbFailed:'ការតភ្ជាប់មូលដ្ឋានទិន្នន័យបរាជ័យ។ សូមផ្ទុកឡើងវិញ។',sessionExpired:'សម័យចូលបានផុតកំណត់។ សូមចូលម្ដងទៀត។',nameRequired:'ត្រូវបញ្ចូលឈ្មោះសមាជិក',phoneInvalid:'បញ្ចូលលេខទូរស័ព្ទអន្តរជាតិដែលត្រឹមត្រូវ',savingProfile:'កំពុងរក្សាទុក…',profileSaved:'បានរក្សាទុកព័ត៌មានសមាជិក',profileSaveFailed:'រក្សាទុកបរាជ័យ។ សូមផ្ទុកឡើងវិញ។',ordersShort:'ការបញ្ជាទិញ',favoritesShort:'ការរក្សាទុក',deliveryShort:'ការប្រគល់',materialsShort:'ឯកសារ',memberOverviewLead:'គ្រប់គ្រងគណនី ការបញ្ជាទិញ ការប្រគល់ និងព័ត៌មានផ្ទាល់ខ្លួននៅទីតាំងតែមួយ។',otherRegion:'ប្រទេស / តំបន់ផ្សេងទៀត'}};for(const l of ['zh','en','km']){Object.assign(I.resources[l],X[l]);if(window.i18next?.isInitialized)for(const [k,v] of Object.entries(X[l]))window.i18next.addResource(l,'translation',k,v)}const t=(k,v)=>I.t(k,v),DIAL=[['CN','+86'],['KH','+855'],['US','+1'],['GB','+44'],['AU','+61'],['SG','+65'],['MY','+60'],['TH','+66'],['VN','+84'],['PH','+63'],['ID','+62'],['JP','+81'],['KR','+82'],['IN','+91'],['AE','+971'],['FR','+33'],['DE','+49'],['IT','+39'],['ES','+34'],['BR','+55'],['MX','+52'],['ZA','+27'],['NG','+234'],['OTHER','']];function regionName(code){if(code==='OTHER')return t('otherRegion');try{const loc=I.locale==='zh'?'zh-CN':I.locale==='km'?'km-KH':'en-US';return new Intl.DisplayNames([loc],{type:'region'}).of(code)||code}catch{return code}}function makeMemberId(raw){const clean=String(raw||'').replace(/[^a-zA-Z0-9]/g,'').toUpperCase();if(!clean)return'—';let hash=2166136261;for(let i=0;i<clean.length;i++){hash^=clean.charCodeAt(i);hash=Math.imul(hash,16777619)}const base=(clean+Math.abs(hash>>>0).toString(36).toUpperCase()).replace(/[^A-Z0-9]/g,'');return('GY'+base).slice(0,15).padEnd(15,'0')}function paintMemberId(){const el=document.getElementById('profileUserId');if(!el||!rawUserId)return;el.textContent=makeMemberId(rawUserId);el.title=t('memberId')}function addAccountRow(){const meta=document.querySelector('.profile-meta');if(!meta||document.getElementById('profileAccountValue'))return;const row=document.createElement('div');row.className='meta-row';row.innerHTML=`<span>${t('memberAccount')}</span><strong id="profileAccountValue">—</strong>`;const joined=document.getElementById('profileJoinedAt')?.closest('.meta-row');if(joined)meta.insertBefore(row,joined);else meta.appendChild(row);document.getElementById('profileEmail')?.classList.add('profile-email-compact-hide')}function buildContactFields(){const phone=document.getElementById('profilePhone');if(!phone||document.getElementById('profileCountry'))return;phone.required=true;phone.maxLength=24;phone.placeholder=t('phoneLocal');phone.setAttribute('aria-required','true');const pg=phone.closest('.form-group'),label=pg?.querySelector('label[for="profilePhone"]');if(label&&!label.querySelector('.required-mark'))label.insertAdjacentHTML('beforeend','<span class="required-mark"> *</span>');const cg=document.createElement('div');cg.className='form-group';cg.innerHTML=`<label for="profileCountry">${t('countryRegion')}</label><select id="profileCountry" class="select">${DIAL.map(([code,dial])=>`<option value="${code}" data-dial="${dial}">${regionName(code)}${dial?' '+dial:''}</option>`).join('')}</select><span id="profilePhoneHint" class="form-help">${t('phoneIntlSave')}</span>`;pg?.parentNode?.insertBefore(cg,pg);const opt=document.createElement('div');opt.className='member-contact-grid';opt.innerHTML=`<div class="form-group"><label for="profileWechat">${t('wechatOptional')}</label><input id="profileWechat" class="field" type="text" maxlength="80" placeholder="${t('wechatId')}"></div><div class="form-group"><label for="profileTelegram">${t('telegramOptional')}</label><input id="profileTelegram" class="field" type="text" maxlength="80" placeholder="${t('telegramId')}"></div><div class="form-group"><label for="profileWhatsapp">${t('whatsappOptional')}</label><input id="profileWhatsapp" class="field" type="text" maxlength="80" placeholder="${t('whatsappId')}"></div>`;pg?.insertAdjacentElement('afterend',opt);document.getElementById('profileCountry')?.addEventListener('change',updatePhoneHint);updatePhoneHint()}function updatePhoneHint(){const s=document.getElementById('profileCountry'),h=document.getElementById('profilePhoneHint'),i=document.getElementById('profilePhone');if(!s||!h||!i)return;const d=s.selectedOptions[0]?.dataset?.dial||'';if(d){h.textContent=t('phoneDial',{dial:d});i.placeholder=t('phoneLocal')}else{h.textContent=t('phoneFull');i.placeholder='+85512345678'}}function normalizePhone(){const raw=String(document.getElementById('profilePhone')?.value||'').trim(),dial=document.getElementById('profileCountry')?.selectedOptions?.[0]?.dataset?.dial||'';if(!raw)return'';const compact=raw.replace(/[\s()\-]/g,'');if(/^\+[1-9]\d{6,14}$/.test(compact))return compact;if(!dial)return'';const local=raw.replace(/\D/g,'').replace(/^0+/,'');const out=dial+local;return /^\+[1-9]\d{6,14}$/.test(out)?out:''}function splitStoredPhone(phone,countryCode){const input=document.getElementById('profilePhone'),select=document.getElementById('profileCountry');if(!input||!select)return;let selected=[...select.options].find(o=>o.value===countryCode);if(!selected&&phone)selected=[...select.options].filter(o=>o.dataset.dial&&String(phone).startsWith(o.dataset.dial)).sort((a,b)=>b.dataset.dial.length-a.dataset.dial.length)[0];if(selected){select.value=selected.value;const d=selected.dataset.dial||'';input.value=d&&String(phone).startsWith(d)?String(phone).slice(d.length):String(phone||'')}else{select.value='OTHER';input.value=String(phone||'')}updatePhoneHint()}function selectedCountry(){const o=document.getElementById('profileCountry')?.selectedOptions?.[0];return{code:String(o?.value||''),name:regionName(String(o?.value||'OTHER'))}}function message(text,kind='error'){const e=document.getElementById('profileMessage');if(!e)return;e.textContent=text;e.className=`form-message show ${kind}`}async function resolveUser(){try{currentUser=await window.gyxGetVerifiedUser?.();rawUserId=currentUser?.id||'';paintMemberId();const a=document.getElementById('profileAccountValue');if(a)a.textContent=currentUser?.email||'—'}catch{currentUser=null}return currentUser}async function loadContactProfile(){if(!currentUser)await resolveUser();if(!currentUser)return;const {data,error}=await db.from('profiles').select('phone,phone_country_code,wechat,whatsapp,telegram').eq('user_id',currentUser.id).maybeSingle();if(error||!data)return;splitStoredPhone(data.phone||'',data.phone_country_code||'');const wx=document.getElementById('profileWechat'),wa=document.getElementById('profileWhatsapp'),tg=document.getElementById('profileTelegram');if(wx)wx.value=data.wechat||'';if(wa)wa.value=data.whatsapp||'';if(tg)tg.value=data.telegram||''}function installProfileSave(){const form=document.getElementById('profileForm');if(!form||form.dataset.gyxInternationalSave==='1')return;form.dataset.gyxInternationalSave='1';form.addEventListener('submit',async e=>{e.preventDefault();e.stopImmediatePropagation();message('');if(!currentUser)await resolveUser();if(!currentUser){message(t('sessionExpired'));return}const displayName=String(document.getElementById('profileName')?.value||'').trim(),phone=normalizePhone(),locale=String(document.getElementById('profileLocale')?.value||'zh-CN'),wechat=String(document.getElementById('profileWechat')?.value||'').trim(),whatsapp=String(document.getElementById('profileWhatsapp')?.value||'').trim(),telegram=String(document.getElementById('profileTelegram')?.value||'').trim(),country=selectedCountry();if(!displayName){message(t('nameRequired'));return}if(!phone){message(t('phoneInvalid'));document.getElementById('profilePhone')?.focus();return}const button=document.getElementById('saveProfileButton');if(button){button.disabled=true;button.textContent=t('savingProfile')}try{const payload={display_name:displayName,phone,phone_country_code:country.code||null,phone_country_name:country.name||null,wechat:wechat||null,whatsapp:whatsapp||null,telegram:telegram||null,locale,updated_at:new Date().toISOString()};const {data,error}=await db.from('profiles').update(payload).eq('user_id',currentUser.id).select('user_id,profile_locked_at').maybeSingle();if(error)throw error;if(!data?.user_id)throw new Error('PROFILE_NOT_UPDATED');try{await db.auth.updateUser({data:{display_name:displayName}})}catch{}message(t('profileSaved'),'success');const h=document.getElementById('profileHeading');if(h)h.textContent=displayName;splitStoredPhone(phone,country.code);window.dispatchEvent(new CustomEvent('gyx:profile-updated'))}catch(err){console.error('profile save failed',err);message(/JWT|session|auth/i.test(String(err?.message||''))?t('sessionExpired'):t('profileSaveFailed'))}finally{if(button&&document.body.contains(button)){button.disabled=false;button.textContent=t('saveProfile')}}},true)}function buildOverview(){const grid=document.querySelector('.dashboard-grid');if(!grid||document.getElementById('memberOverview'))return;const o=document.createElement('section');o.id='memberOverview';o.className='member-overview';o.innerHTML=`<button type="button" class="member-stat" data-jump="#orders"><span class="member-stat-icon">▤</span><b id="memberOrderCount">0</b><small>${t('ordersShort')}</small></button><button type="button" class="member-stat" data-jump="#favorites"><span class="member-stat-icon">☆</span><b id="memberFavoriteCount">0</b><small>${t('favoritesShort')}</small></button><button type="button" class="member-stat" data-jump="#downloads"><span class="member-stat-icon">↓</span><b id="memberDownloadCount">0</b><small>${t('deliveryShort')}</small></button><button type="button" class="member-stat" data-jump="#materials"><span class="member-stat-icon">▣</span><b id="memberMaterialCount">0</b><small>${t('materialsShort')}</small></button>`;grid.parentNode.insertBefore(o,grid);o.addEventListener('click',e=>{const b=e.target.closest('[data-jump]');if(b)document.querySelector(b.dataset.jump)?.scrollIntoView({behavior:'smooth',block:'start'})})}function updateOverview(){const count=s=>document.querySelectorAll(s).length,set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};set('memberOrderCount',count('#orderList>.order-card'));set('memberFavoriteCount',count('#favoriteList>.favorite-card'));set('memberDownloadCount',count('#downloadList>.order-card'));set('memberMaterialCount',count('#materialList>.material-card'))}function observeCounts(){['orderList','favoriteList','downloadList','materialList'].forEach(id=>{const el=document.getElementById(id);if(el)new MutationObserver(updateOverview).observe(el,{childList:true})});updateOverview()}function buttonFeedback(){document.addEventListener('click',e=>{const b=e.target.closest?.('.member-page button,.member-page a.btn');if(!b||b.disabled)return;b.classList.add('member-action-hit');setTimeout(()=>b?.classList.remove('member-action-hit'),160)},true)}function cleanLegacySpace(){const hero=document.querySelector('.page-hero .shell'),lead=hero?.querySelector(':scope>p:not(.eyebrow)');if(lead)lead.textContent=t('memberOverviewLead')}async function init(){cleanLegacySpace();buildOverview();addAccountRow();buildContactFields();installProfileSave();buttonFeedback();observeCounts();await resolveUser();await loadContactProfile();window.addEventListener('pageshow',async()=>{paintMemberId();updateOverview();await resolveUser();await loadContactProfile()},{passive:true})}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()})();
+(() => {
+  "use strict";
+
+  const db = window.gyxSupabase;
+  const I = window.GYXI18N;
+  if (!db || !I) return;
+
+  const t = (key, values) => I.t(key, values);
+  const $ = (id) => document.getElementById(id);
+  const countries = [
+    ["CN", "+86"],
+    ["KH", "+855"],
+    ["US", "+1", "CA"],
+    ["GB", "+44"],
+    ["AU", "+61"],
+    ["SG", "+65"],
+    ["MY", "+60"],
+    ["TH", "+66"],
+    ["VN", "+84"],
+    ["PH", "+63"],
+    ["ID", "+62"],
+    ["JP", "+81"],
+    ["KR", "+82"],
+    ["IN", "+91"],
+    ["AE", "+971"],
+    ["FR", "+33"],
+    ["DE", "+49"],
+    ["IT", "+39"],
+    ["ES", "+34"],
+    ["BR", "+55"],
+    ["MX", "+52"],
+    ["ZA", "+27"],
+    ["NG", "+234"],
+    ["OTHER", ""],
+  ];
+
+  let currentUser = null;
+  let rawUserId = "";
+  let profileLocked = false;
+
+  function localeTag() {
+    return I.locale === "km" ? "km-KH" : I.locale === "en" ? "en" : "zh-CN";
+  }
+
+  function regionName(code, secondaryCode) {
+    if (code === "OTHER") return t("memberCountryOther");
+    try {
+      const names = new Intl.DisplayNames([localeTag()], { type: "region" });
+      const first = names.of(code) || code;
+      return secondaryCode
+        ? `${first}/${names.of(secondaryCode) || secondaryCode}`
+        : first;
+    } catch {
+      return secondaryCode ? `${code}/${secondaryCode}` : code;
+    }
+  }
+
+  function makeMemberId(raw) {
+    const clean = String(raw || "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase();
+    if (!clean) return "—";
+    let hash = 2166136261;
+    for (let i = 0; i < clean.length; i += 1) {
+      hash ^= clean.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+    const base = `${clean}${Math.abs(hash >>> 0)
+      .toString(36)
+      .toUpperCase()}`.replace(/[^A-Z0-9]/g, "");
+    return `GY${base}`.slice(0, 15).padEnd(15, "0");
+  }
+
+  function paintMemberId() {
+    const element = $("profileUserId");
+    if (!element || !rawUserId) return;
+    element.textContent = makeMemberId(rawUserId);
+    element.title = t("memberId");
+  }
+
+  function addAccountRow() {
+    const meta = document.querySelector(".profile-meta");
+    if (!meta || $("profileAccountValue")) return;
+    const row = document.createElement("div");
+    row.className = "meta-row";
+    row.innerHTML =
+      '<span data-i18n="memberAccount"></span><strong id="profileAccountValue">—</strong>';
+    const joined = $("profileJoinedAt")?.closest(".meta-row");
+    if (joined) meta.insertBefore(row, joined);
+    else meta.appendChild(row);
+    $("profileEmail")?.classList.add("profile-email-compact-hide");
+    I.render?.(row);
+  }
+
+  function rebuildCountryOptions() {
+    const select = $("profileCountry");
+    if (!select) return;
+    const selected = select.value || "CN";
+    select.replaceChildren();
+    for (const [code, dial, secondaryCode] of countries) {
+      const option = document.createElement("option");
+      const name = regionName(code, secondaryCode);
+      option.value = code;
+      option.dataset.dial = dial;
+      option.dataset.countryName = name;
+      option.textContent = `${name}${dial ? ` ${dial}` : ""}`;
+      select.appendChild(option);
+    }
+    select.value = [...select.options].some(
+      (option) => option.value === selected,
+    )
+      ? selected
+      : "OTHER";
+  }
+
+  function buildContactFields() {
+    const phone = $("profilePhone");
+    if (!phone || $("profileCountry")) return;
+    phone.required = true;
+    phone.maxLength = 24;
+    phone.setAttribute("aria-required", "true");
+    phone.dataset.i18nPlaceholder = "memberPhoneLocalPlaceholder";
+
+    const phoneGroup = phone.closest(".form-group");
+    const label = phoneGroup?.querySelector('label[for="profilePhone"]');
+    if (label && !label.querySelector(".required-mark")) {
+      const mark = document.createElement("span");
+      mark.className = "required-mark";
+      mark.textContent = " *";
+      label.appendChild(mark);
+    }
+
+    const countryGroup = document.createElement("div");
+    countryGroup.className = "form-group";
+    countryGroup.innerHTML =
+      '<label for="profileCountry" data-i18n="memberCountryRegion"></label>' +
+      '<select id="profileCountry" class="select"></select>' +
+      '<span id="profilePhoneHint" class="form-help"></span>';
+    phoneGroup?.parentNode?.insertBefore(countryGroup, phoneGroup);
+
+    const optional = document.createElement("div");
+    optional.className = "member-contact-grid";
+    optional.innerHTML =
+      '<div class="form-group"><label for="profileWechat" data-i18n="memberWechatOptional"></label><input id="profileWechat" class="field" type="text" maxlength="80" data-i18n-placeholder="memberWechatPlaceholder"></div>' +
+      '<div class="form-group"><label for="profileTelegram" data-i18n="memberTelegramOptional"></label><input id="profileTelegram" class="field" type="text" maxlength="80" data-i18n-placeholder="memberTelegramPlaceholder"></div>' +
+      '<div class="form-group"><label for="profileWhatsapp" data-i18n="memberWhatsappOptional"></label><input id="profileWhatsapp" class="field" type="text" maxlength="80" data-i18n-placeholder="memberWhatsappPlaceholder"></div>';
+    phoneGroup?.insertAdjacentElement("afterend", optional);
+
+    rebuildCountryOptions();
+    $("profileCountry")?.addEventListener("change", updatePhoneHint);
+    I.render?.(countryGroup);
+    I.render?.(optional);
+    updatePhoneHint();
+  }
+
+  function updatePhoneHint() {
+    const select = $("profileCountry");
+    const hint = $("profilePhoneHint");
+    const input = $("profilePhone");
+    if (!select || !hint || !input) return;
+    const dial = select.selectedOptions[0]?.dataset?.dial || "";
+    if (dial) {
+      hint.textContent = t("memberPhoneHintDial", { dial });
+      input.placeholder = t("memberPhoneLocalPlaceholder");
+    } else {
+      hint.textContent = t("memberPhoneHintFull");
+      input.placeholder = t("memberPhoneFullPlaceholder");
+    }
+  }
+
+  function normalizePhone() {
+    const raw = String($("profilePhone")?.value || "").trim();
+    const dial = $("profileCountry")?.selectedOptions[0]?.dataset?.dial || "";
+    if (!raw) return "";
+    const compactRaw = raw.replace(/[\s()\-]/g, "");
+    if (/^\+[1-9]\d{6,14}$/.test(compactRaw)) return compactRaw;
+    if (!dial) return "";
+    const local = raw.replace(/\D/g, "").replace(/^0+/, "");
+    if (!local) return "";
+    const compact = `${dial}${local}`;
+    return /^\+[1-9]\d{6,14}$/.test(compact) ? compact : "";
+  }
+
+  function splitStoredPhone(phone, countryCode) {
+    const input = $("profilePhone");
+    const select = $("profileCountry");
+    if (!input || !select) return;
+    let selected = [...select.options].find(
+      (option) => option.value === countryCode,
+    );
+    if (
+      selected?.dataset.dial &&
+      phone &&
+      !String(phone).startsWith(selected.dataset.dial)
+    )
+      selected = null;
+    if (!selected && phone) {
+      selected = [...select.options]
+        .filter(
+          (option) =>
+            option.dataset.dial &&
+            String(phone).startsWith(option.dataset.dial),
+        )
+        .sort((a, b) => b.dataset.dial.length - a.dataset.dial.length)[0];
+    }
+    if (selected) {
+      select.value = selected.value;
+      const dial = selected.dataset.dial || "";
+      input.value =
+        dial && String(phone).startsWith(dial)
+          ? String(phone).slice(dial.length)
+          : String(phone || "");
+    } else {
+      select.value = "OTHER";
+      input.value = String(phone || "");
+    }
+    updatePhoneHint();
+  }
+
+  function selectedCountry() {
+    const option = $("profileCountry")?.selectedOptions[0];
+    return {
+      code: String(option?.value || ""),
+      name: String(option?.dataset?.countryName || ""),
+    };
+  }
+
+  function message(text, kind = "error") {
+    const element = $("profileMessage");
+    if (!element) return;
+    element.textContent = text;
+    element.className = text ? `form-message show ${kind}` : "form-message";
+  }
+
+  function applyProfileLock(locked) {
+    profileLocked = Boolean(locked);
+    const form = $("profileForm");
+    if (!form) return;
+    form.dataset.profileLocked = profileLocked ? "1" : "0";
+
+    let note = $("profileLockNote");
+    if (!note) {
+      note = document.createElement("div");
+      note.id = "profileLockNote";
+      form.insertBefore(note, form.firstChild);
+    }
+    note.className =
+      `form-message show ${profileLocked ? "success" : ""}`.trim();
+    note.textContent = t(
+      profileLocked ? "memberProfileLocked" : "memberProfileFirstSave",
+    );
+
+    form.querySelectorAll("input,select,textarea").forEach((control) => {
+      control.disabled = profileLocked;
+      control.setAttribute("aria-readonly", String(profileLocked));
+    });
+
+    const save = $("saveProfileButton");
+    if (save) save.hidden = profileLocked;
+
+    const editToggle = document.querySelector(".member-edit-toggle");
+    if (editToggle) editToggle.hidden = profileLocked;
+
+    let support = $("profileSupportLink");
+    if (profileLocked && !support) {
+      support = document.createElement("a");
+      support.id = "profileSupportLink";
+      support.className = "btn btn-secondary btn-block";
+      support.href = "https://t.me/qqyousubot";
+      support.target = "_blank";
+      support.rel = "noopener";
+      form.insertAdjacentElement("afterend", support);
+    } else if (support?.parentNode === form) {
+      form.insertAdjacentElement("afterend", support);
+    }
+    if (support) {
+      support.hidden = !profileLocked;
+      support.textContent = t("memberContactSupportModify");
+    }
+  }
+
+  async function resolveUser() {
+    try {
+      currentUser = await window.gyxGetVerifiedUser?.();
+      rawUserId = currentUser?.id || "";
+      paintMemberId();
+      const account = $("profileAccountValue");
+      if (account) account.textContent = currentUser?.email || "—";
+    } catch {
+      currentUser = null;
+    }
+    return currentUser;
+  }
+
+  async function loadContactProfile() {
+    if (!currentUser) await resolveUser();
+    if (!currentUser) return;
+    const { data, error } = await db
+      .from("profiles")
+      .select(
+        "display_name,phone,locale,phone_country_code,phone_country_name,wechat,telegram,whatsapp,profile_locked_at",
+      )
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+    if (error) {
+      message(t("memberProfileLoadFailed"));
+      return;
+    }
+
+    const profile = data || {};
+    if ($("profileName")) $("profileName").value = profile.display_name || "";
+    if ($("profileLocale"))
+      $("profileLocale").value = profile.locale || "zh-CN";
+    splitStoredPhone(profile.phone || "", profile.phone_country_code || "");
+    if ($("profileWechat")) $("profileWechat").value = profile.wechat || "";
+    if ($("profileTelegram"))
+      $("profileTelegram").value = profile.telegram || "";
+    if ($("profileWhatsapp"))
+      $("profileWhatsapp").value = profile.whatsapp || "";
+    applyProfileLock(Boolean(profile.profile_locked_at));
+  }
+
+  function installProfileSave() {
+    const form = $("profileForm");
+    if (!form || form.dataset.gyxOneTimeSave === "1") return;
+    form.dataset.gyxOneTimeSave = "1";
+    form.addEventListener(
+      "submit",
+      async (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        message("");
+
+        if (profileLocked) {
+          message(t("memberProfileLocked"));
+          return;
+        }
+        if (!currentUser) await resolveUser();
+        if (!currentUser) {
+          message(t("memberSessionExpired"));
+          return;
+        }
+
+        const displayName = String($("profileName")?.value || "").trim();
+        const phone = normalizePhone();
+        const locale = String($("profileLocale")?.value || "zh-CN");
+        const wechat = String($("profileWechat")?.value || "").trim();
+        const telegram = String($("profileTelegram")?.value || "").trim();
+        const whatsapp = String($("profileWhatsapp")?.value || "").trim();
+        const country = selectedCountry();
+        if (!displayName) {
+          message(t("errorName"));
+          return;
+        }
+        if (!phone) {
+          message(t("memberInvalidInternationalPhone"));
+          $("profilePhone")?.focus();
+          return;
+        }
+
+        const button = $("saveProfileButton");
+        if (button) {
+          button.disabled = true;
+          button.textContent = t("saving");
+        }
+
+        try {
+          const payload = {
+            display_name: displayName,
+            phone,
+            phone_country_code: country.code || null,
+            phone_country_name: country.name || null,
+            wechat: wechat || null,
+            telegram: telegram || null,
+            whatsapp: whatsapp || null,
+            locale,
+          };
+          const { data, error } = await db
+            .from("profiles")
+            .update(payload)
+            .eq("user_id", currentUser.id)
+            .is("profile_locked_at", null)
+            .select(
+              "user_id,display_name,phone,locale,phone_country_code,wechat,telegram,whatsapp,profile_locked_at",
+            )
+            .maybeSingle();
+          if (error) throw error;
+          if (!data?.user_id || !data.profile_locked_at)
+            throw new Error("PROFILE_LOCKED");
+
+          try {
+            await db.auth.updateUser({
+              data: {
+                display_name: displayName,
+                phone,
+                phone_country_code: country.code,
+                phone_country_name: country.name,
+                wechat,
+                telegram,
+                whatsapp,
+              },
+            });
+          } catch {}
+
+          const heading = $("profileHeading");
+          if (heading) heading.textContent = displayName;
+          splitStoredPhone(phone, country.code);
+          message(t("memberProfileSavedLocked"), "success");
+          applyProfileLock(true);
+          window.dispatchEvent(new CustomEvent("gyx:profile-updated"));
+          if ((locale === "zh-CN" ? "zh" : locale) !== I.locale)
+            I.changeLanguage(locale);
+        } catch (error) {
+          console.error("profile save failed", error);
+          const text = String(error?.message || "");
+          if (/PROFILE_LOCKED|42501/i.test(text)) {
+            await loadContactProfile();
+            message(t("memberProfileLocked"));
+          } else if (/JWT|session|auth/i.test(text)) {
+            message(t("memberSessionExpired"));
+          } else {
+            message(t("memberProfileSaveFailed"));
+          }
+        } finally {
+          if (button && !profileLocked) {
+            button.disabled = false;
+            button.textContent = t("saveProfile");
+          }
+        }
+      },
+      true,
+    );
+  }
+
+  function buildOverview() {
+    const grid = document.querySelector(".dashboard-grid");
+    if (!grid || $("memberOverview")) return;
+    const overview = document.createElement("section");
+    overview.id = "memberOverview";
+    overview.className = "member-overview";
+    overview.innerHTML =
+      '<button type="button" class="member-stat" data-jump="#orders"><span class="member-stat-icon">▤</span><b id="memberOrderCount">0</b><small data-i18n="memberOverviewOrders"></small></button>' +
+      '<button type="button" class="member-stat" data-jump="#favorites"><span class="member-stat-icon">☆</span><b id="memberFavoriteCount">0</b><small data-i18n="memberOverviewFavorites"></small></button>' +
+      '<button type="button" class="member-stat" data-jump="#downloads"><span class="member-stat-icon">↓</span><b id="memberDownloadCount">0</b><small data-i18n="memberOverviewDownloads"></small></button>' +
+      '<button type="button" class="member-stat" data-jump="#materials"><span class="member-stat-icon">▣</span><b id="memberMaterialCount">0</b><small data-i18n="memberOverviewMaterials"></small></button>';
+    grid.parentNode.insertBefore(overview, grid);
+    overview.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-jump]");
+      if (button)
+        document
+          .querySelector(button.dataset.jump)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    I.render?.(overview);
+  }
+
+  function updateOverview() {
+    const count = (selector) => document.querySelectorAll(selector).length;
+    const set = (id, value) => {
+      const element = $(id);
+      if (element) element.textContent = String(value);
+    };
+    set("memberOrderCount", count("#orderList>.order-card"));
+    set("memberFavoriteCount", count("#favoriteList>.favorite-card"));
+    set("memberDownloadCount", count("#downloadList>.order-card"));
+    set("memberMaterialCount", count("#materialList>.material-card"));
+  }
+
+  function observeCounts() {
+    ["orderList", "favoriteList", "downloadList", "materialList"].forEach(
+      (id) => {
+        const element = $(id);
+        if (element)
+          new MutationObserver(updateOverview).observe(element, {
+            childList: true,
+            subtree: false,
+          });
+      },
+    );
+    updateOverview();
+  }
+
+  function buttonFeedback() {
+    document.addEventListener(
+      "click",
+      (event) => {
+        const button = event.target.closest?.(
+          ".member-page button,.member-page a.btn",
+        );
+        if (!button || button.disabled) return;
+        button.classList.add("member-action-hit");
+        setTimeout(() => button?.classList.remove("member-action-hit"), 160);
+      },
+      true,
+    );
+  }
+
+  function compact() {
+    document
+      .querySelectorAll(".dashboard-main>.panel")
+      .forEach((panel) => (panel.style.minHeight = "0"));
+  }
+
+  function observeProfile() {
+    const element = $("profileUserId");
+    if (element)
+      new MutationObserver(() => {
+        if (rawUserId) requestAnimationFrame(paintMemberId);
+      }).observe(element, {
+        childList: true,
+        characterData: true,
+        subtree: true,
+      });
+  }
+
+  function renderDynamicLanguage() {
+    const selectedCountryCode = $("profileCountry")?.value;
+    rebuildCountryOptions();
+    if (selectedCountryCode && $("profileCountry"))
+      $("profileCountry").value = selectedCountryCode;
+    updatePhoneHint();
+    paintMemberId();
+    applyProfileLock(profileLocked);
+    I.render?.($("memberOverview") || document);
+  }
+
+  async function init() {
+    compact();
+    buildOverview();
+    addAccountRow();
+    buildContactFields();
+    installProfileSave();
+    buttonFeedback();
+    observeProfile();
+    observeCounts();
+    await resolveUser();
+    await loadContactProfile();
+
+    window.addEventListener("gyx:languagechange", renderDynamicLanguage);
+    window.addEventListener(
+      "pageshow",
+      async () => {
+        compact();
+        paintMemberId();
+        updateOverview();
+        await resolveUser();
+        await loadContactProfile();
+      },
+      { passive: true },
+    );
+  }
+
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  else init();
+})();

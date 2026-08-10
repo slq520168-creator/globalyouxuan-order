@@ -1,2 +1,166 @@
-(()=>{'use strict';const db=window.gyxSupabase;if(!db)return;const SEARCH_PRODUCTS={essential:'answer-essential',standard:'answer-standard',professional:'answer-professional',custom:'answer-custom'};const toast=(text,error=false)=>{const e=document.getElementById('toast');if(!e)return;e.textContent=text;e.className='toast show'+(error?' error':'');clearTimeout(window.__memberQuickToast);window.__memberQuickToast=setTimeout(()=>e.className='toast',1800)};let currentUser=null,hiddenOrders=new Map(),orderIds=new Map(),favoriteCache=[],busyOrders=new Set();async function user(){if(currentUser)return currentUser;currentUser=await window.gyxGetVerifiedUser?.();return currentUser}function cleanQuote(v){return String(v||'').trim().replace(/^[“\"']|[”\"']$/g,'')}function tierKey(row){if(SEARCH_PRODUCTS[row?.tier])return row.tier;const p=Number(row?.quoted_price||0);return p>=39?'custom':p>=19?'professional':p>=9?'standard':'essential'}function cardKey(card){return{question:cleanQuote(card.querySelector('.favorite-question')?.textContent||''),title:String(card.querySelector('h3')?.textContent||'').trim()}}function favoriteRow(card){const k=cardKey(card);return favoriteCache.find(r=>(!k.question||r.question===k.question)&&(!k.title||r.matched_title===k.title))||null}async function quickRemoveFavorite(card){if(!confirm('确定取消收藏吗？'))return;const row=favoriteRow(card),u=await user();if(!row||!u){toast('收藏记录正在同步，请稍后再试',true);return}const parent=card.parentNode,next=card.nextSibling;card.style.opacity='.45';card.style.pointerEvents='none';requestAnimationFrame(()=>card.remove());try{const r=await db.from('answer_favorites').delete().eq('id',row.id).eq('user_id',u.id);if(r.error)throw r.error;favoriteCache=favoriteCache.filter(x=>x.id!==row.id);toast('已取消收藏')}catch{card.style.opacity='';card.style.pointerEvents='';if(parent){if(next&&next.parentNode===parent)parent.insertBefore(card,next);else parent.appendChild(card)}toast('取消收藏失败，请稍后再试',true)}}function quickOrderFavorite(card,button){const row=favoriteRow(card);if(!row?.answer_id){toast('收藏记录正在同步，请稍后再试',true);return}const tier=tierKey(row),productId=SEARCH_PRODUCTS[tier];const match={question:row.question||'',selections:Array.isArray(row.selections)?row.selections:[],tier,answer:{id:Number(row.answer_id),title:row.matched_title||'',answer_summary:row.matched_summary||'',keywords:[]}};window.GYX_MEMBER_CHECKOUT?.open(productId,match)}function orderNoFromCard(card){const m=(card.textContent||'').match(/GYX[A-Z0-9]{10,40}/);return m?m[0]:''}async function preloadIndexes(){const u=await user();if(!u)return;const [or,fr]=await Promise.all([db.from('orders').select('id,order_no,hidden_by_user').eq('user_id',u.id).order('created_at',{ascending:false}).limit(300),db.from('answer_favorites').select('id,answer_id,question,selections,tier,product_id,quoted_price,matched_title,matched_summary').eq('user_id',u.id).order('updated_at',{ascending:false}).limit(300)]);orderIds=new Map();hiddenOrders=new Map();for(const r of or.data||[]){const no=String(r.order_no||'');if(!no)continue;orderIds.set(no,Number(r.id));if(r.hidden_by_user)hiddenOrders.set(no,Number(r.id))}favoriteCache=fr.data||[]}
-async function hideOrder(card,orderNo,button){if(busyOrders.has(orderNo))return;if(!confirm('确定删除这条订单记录吗？'))return;const id=orderIds.get(orderNo);if(!id){toast('订单记录正在同步，请稍后再试',true);return}busyOrders.add(orderNo);button.disabled=true;button.textContent='删除中…';const parent=card.parentNode,next=card.nextSibling;card.style.opacity='.45';card.style.pointerEvents='none';requestAnimationFrame(()=>card.remove());try{const r=await db.rpc('hide_own_order',{p_order_id:id});if(r.error||r.data!==true)throw 0;hiddenOrders.set(orderNo,id);toast('已删除')}catch{card.style.opacity='';card.style.pointerEvents='';button.disabled=false;button.textContent='删除';if(parent){if(next&&next.parentNode===parent)parent.insertBefore(card,next);else parent.appendChild(card)}toast('删除失败，请稍后再试',true)}finally{busyOrders.delete(orderNo)}}function enhanceCard(card){if(!(card instanceof Element)||!card.matches('.order-card'))return;const orderNo=orderNoFromCard(card);if(!orderNo)return;if(hiddenOrders.has(orderNo)){card.remove();return}if(card.querySelector('[data-member-delete-order]'))return;const actions=card.querySelector('.order-actions')||document.createElement('div');if(!actions.parentNode){actions.className='order-actions';card.appendChild(actions)}const b=document.createElement('button');b.type='button';b.className='btn btn-delete btn-small';b.dataset.memberDeleteOrder='1';b.textContent='删除';b.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();hideOrder(card,orderNo,b)});actions.appendChild(b)}function enhanceContainer(container){container?.querySelectorAll(':scope > .order-card').forEach(enhanceCard)}document.addEventListener('click',e=>{const button=e.target.closest?.('a,button');if(!button)return;const card=button.closest?.('.favorite-card');if(!card)return;if(button.matches('a[href*="resume=order"],a[href*="favorite="]')){e.preventDefault();e.stopImmediatePropagation();quickOrderFavorite(card,button);return}if(button.classList.contains('btn-danger')){e.preventDefault();e.stopImmediatePropagation();quickRemoveFavorite(card)}},true);async function init(){window.GYX_MEMBER_CHECKOUT?.prewarm?.();preloadIndexes().then(()=>{const orderList=document.getElementById('orderList'),downloadList=document.getElementById('downloadList');enhanceContainer(orderList);downloadList?.querySelectorAll(':scope > .order-card').forEach(c=>{const n=orderNoFromCard(c);if(n&&hiddenOrders.has(n))c.remove()});if(orderList)new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes){if(n instanceof Element){if(n.matches('.order-card'))enhanceCard(n);else n.querySelectorAll?.('.order-card').forEach(enhanceCard)}}}).observe(orderList,{childList:true})}).catch(()=>{})}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()})();
+(() => {
+  "use strict";
+
+  const db = window.gyxSupabase;
+  const I = window.GYXI18N;
+  if (!db || !I) return;
+
+  const t = (key) => I.t(key);
+  const invalidStatuses = new Set(["expired", "failed", "cancelled"]);
+  const orderIndex = new Map();
+  const busyOrders = new Set();
+  let currentUser = null;
+
+  function toast(text, error = false) {
+    const element = document.getElementById("toast");
+    if (!element) return;
+    element.textContent = text;
+    element.className = `toast show${error ? " error" : ""}`;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => (element.className = "toast"), 2200);
+  }
+
+  async function user() {
+    if (!currentUser) currentUser = await window.gyxGetVerifiedUser?.();
+    return currentUser;
+  }
+
+  function orderNoFromCard(card) {
+    const match = String(card.textContent || "").match(/GYX[A-Z0-9]{10,40}/);
+    return match?.[0] || "";
+  }
+
+  function removeHiddenCards() {
+    document
+      .querySelectorAll("#orderList>.order-card,#downloadList>.order-card")
+      .forEach((card) => {
+        const orderNo = orderNoFromCard(card);
+        if (orderNo && orderIndex.get(orderNo)?.hidden_by_user) card.remove();
+      });
+  }
+
+  async function preloadOrders() {
+    const member = await user();
+    if (!member) return;
+    const { data, error } = await db
+      .from("orders")
+      .select("id,order_no,status,hidden_by_user")
+      .eq("user_id", member.id)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    orderIndex.clear();
+    for (const row of data || []) {
+      const orderNo = String(row.order_no || "");
+      if (orderNo) orderIndex.set(orderNo, row);
+    }
+  }
+
+  async function hideInvalidOrder(card, orderNo, button) {
+    if (busyOrders.has(orderNo)) return;
+    const row = orderIndex.get(orderNo);
+    if (!row || !invalidStatuses.has(row.status)) {
+      toast(t("memberOrderDeleteNotAllowed"), true);
+      return;
+    }
+    if (!window.confirm(t("memberDeleteInvalidOrderConfirm"))) return;
+
+    busyOrders.add(orderNo);
+    button.disabled = true;
+    button.textContent = t("memberDeleting");
+    try {
+      const { data, error } = await db.rpc("hide_own_order", {
+        p_order_id: row.id,
+      });
+      if (error) throw error;
+      if (data !== true) throw new Error("ORDER_NOT_HIDDEN");
+      row.hidden_by_user = true;
+      card.remove();
+      toast(t("memberInvalidOrderDeleted"));
+    } catch (error) {
+      console.error("delete invalid order failed", error);
+      button.disabled = false;
+      button.textContent = t("delete");
+      toast(t("memberInvalidOrderDeleteFailed"), true);
+    } finally {
+      busyOrders.delete(orderNo);
+    }
+  }
+
+  function enhanceCard(card) {
+    if (!(card instanceof Element) || !card.matches(".order-card")) return;
+    const orderNo = orderNoFromCard(card);
+    if (!orderNo) return;
+    const row = orderIndex.get(orderNo);
+    if (!row) return;
+    if (row.hidden_by_user) {
+      card.remove();
+      return;
+    }
+    if (!invalidStatuses.has(row.status)) {
+      card.querySelector("[data-member-delete-order]")?.remove();
+      return;
+    }
+    if (card.querySelector("[data-member-delete-order]")) return;
+
+    let actions = card.querySelector(".order-actions");
+    if (!actions) {
+      actions = document.createElement("div");
+      actions.className = "order-actions";
+      card.appendChild(actions);
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "btn btn-delete btn-small";
+    button.dataset.memberDeleteOrder = "1";
+    button.textContent = t("delete");
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      hideInvalidOrder(card, orderNo, button);
+    });
+    actions.appendChild(button);
+  }
+
+  function enhanceExisting() {
+    removeHiddenCards();
+    document.querySelectorAll("#orderList>.order-card").forEach(enhanceCard);
+  }
+
+  function observeOrders() {
+    const orderList = document.getElementById("orderList");
+    if (!orderList) return;
+    new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (!(node instanceof Element)) continue;
+          if (node.matches(".order-card")) enhanceCard(node);
+          else node.querySelectorAll?.(".order-card").forEach(enhanceCard);
+        }
+      }
+    }).observe(orderList, { childList: true });
+  }
+
+  function syncLabels() {
+    document
+      .querySelectorAll("[data-member-delete-order]")
+      .forEach((button) => {
+        if (!button.disabled) button.textContent = t("delete");
+      });
+  }
+
+  async function init() {
+    try {
+      await preloadOrders();
+      enhanceExisting();
+      observeOrders();
+      window.addEventListener("gyx:languagechange", syncLabels);
+    } catch (error) {
+      console.error("load order cleanup index failed", error);
+    }
+  }
+
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  else init();
+})();

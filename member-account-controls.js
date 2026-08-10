@@ -1,1 +1,514 @@
-(()=>{'use strict';const db=window.gyxSupabase,I=window.GYXI18N;if(!db||!I)return;const $=id=>document.getElementById(id);const X={zh:{memberClearFavorites:'一键取消全部收藏',memberClearFavoritesConfirm:'确定取消全部收藏吗？',memberClearSearches:'一键删除搜索记录',memberClearSearchesConfirm:'确定删除全部搜索记录吗？',memberClearExpired:'一键删除失效订单',memberClearExpiredConfirm:'确定删除全部失效订单吗？',memberBulkDone:'处理完成',memberBulkFailed:'处理失败，请稍后再试',memberProfileLocked:'会员资料已锁定。如需修改，请联系客服确认后由管理员修改。',memberProfileFirstSave:'会员资料首次保存后将锁定，会员不能自行修改。',memberContactSupport:'联系客服',memberDeleteExpired:'删除失效订单',memberDeleteExpiredConfirm:'确定删除这条失效订单吗？',memberLevel:'会员等级',memberOrdersCount:'有效订单',memberSpent:'累计消费',memberAvatar:'会员头像',memberChangeAvatar:'更换头像',memberAvatarHint:'JPG / PNG / WebP，最大2MB',memberAvatarTooLarge:'图片不得超过2MB',memberAvatarType:'仅支持 JPG、PNG、WebP 图片',memberAvatarSaved:'头像已更新',memberTheme:'会员中心配色',memberThemeSaved:'会员中心配色已更新',memberNameShort:'名字',memberPhoneShort:'电话',memberWechatShort:'微信',memberWhatsappShort:'WhatsApp',memberTelegramShort:'TG',memberNoShort:'会员编号',memberAccountShort:'账号',memberJoinedShort:'注册时间',memberLanguageShort:'语言',memberStatusShort:'状态',memberLockedShort:'已锁定',memberOpenShort:'待完善'},en:{memberClearFavorites:'Remove all saved',memberClearFavoritesConfirm:'Remove all saved items?',memberClearSearches:'Delete all searches',memberClearSearchesConfirm:'Delete all search history?',memberClearExpired:'Delete expired orders',memberClearExpiredConfirm:'Delete all expired orders?',memberBulkDone:'Completed',memberBulkFailed:'Failed. Please try again later.',memberProfileLocked:'Your member profile is locked. Contact support; an administrator must confirm and make any changes.',memberProfileFirstSave:'After the first save, your member profile will be locked and cannot be edited by the member.',memberContactSupport:'Contact support',memberDeleteExpired:'Delete expired order',memberDeleteExpiredConfirm:'Delete this expired order?',memberLevel:'Member level',memberOrdersCount:'Valid orders',memberSpent:'Total spent',memberAvatar:'Profile photo',memberChangeAvatar:'Change photo',memberAvatarHint:'JPG / PNG / WebP, maximum 2MB',memberAvatarTooLarge:'Image must not exceed 2MB',memberAvatarType:'Only JPG, PNG and WebP are supported',memberAvatarSaved:'Profile photo updated',memberTheme:'Member center colors',memberThemeSaved:'Member center colors updated',memberNameShort:'Name',memberPhoneShort:'Phone',memberWechatShort:'WeChat',memberWhatsappShort:'WhatsApp',memberTelegramShort:'TG',memberNoShort:'Member ID',memberAccountShort:'Account',memberJoinedShort:'Joined',memberLanguageShort:'Language',memberStatusShort:'Status',memberLockedShort:'Locked',memberOpenShort:'Incomplete'},km:{memberClearFavorites:'លុបការរក្សាទុកទាំងអស់',memberClearFavoritesConfirm:'លុបការរក្សាទុកទាំងអស់ឬ?',memberClearSearches:'លុបប្រវត្តិស្វែងរកទាំងអស់',memberClearSearchesConfirm:'លុបប្រវត្តិស្វែងរកទាំងអស់ឬ?',memberClearExpired:'លុបការបញ្ជាទិញផុតកំណត់',memberClearExpiredConfirm:'លុបការបញ្ជាទិញផុតកំណត់ទាំងអស់ឬ?',memberBulkDone:'បានបញ្ចប់',memberBulkFailed:'បរាជ័យ សូមព្យាយាមម្ដងទៀត។',memberProfileLocked:'ព័ត៌មានសមាជិកត្រូវបានចាក់សោ។ សូមទាក់ទងជំនួយ ហើយអ្នកគ្រប់គ្រងត្រូវបញ្ជាក់ និងកែប្រែ។',memberProfileFirstSave:'បន្ទាប់ពីរក្សាទុកលើកដំបូង ព័ត៌មានសមាជិកនឹងត្រូវចាក់សោ ហើយសមាជិកមិនអាចកែដោយខ្លួនឯងបានទេ។',memberContactSupport:'ទាក់ទងជំនួយ',memberDeleteExpired:'លុបការបញ្ជាទិញផុតកំណត់',memberDeleteExpiredConfirm:'លុបការបញ្ជាទិញផុតកំណត់នេះឬ?',memberLevel:'កម្រិតសមាជិក',memberOrdersCount:'ការបញ្ជាទិញមានសុពលភាព',memberSpent:'ចំណាយសរុប',memberAvatar:'រូបសមាជិក',memberChangeAvatar:'ប្តូររូប',memberAvatarHint:'JPG / PNG / WebP អតិបរមា 2MB',memberAvatarTooLarge:'រូបភាពមិនអាចលើស 2MB',memberAvatarType:'គាំទ្រតែ JPG, PNG និង WebP',memberAvatarSaved:'បានធ្វើបច្ចុប្បន្នភាពរូបសមាជិក',memberTheme:'ពណ៌មជ្ឈមណ្ឌលសមាជិក',memberThemeSaved:'បានធ្វើបច្ចុប្បន្នភាពពណ៌',memberNameShort:'ឈ្មោះ',memberPhoneShort:'ទូរស័ព្ទ',memberWechatShort:'WeChat',memberWhatsappShort:'WhatsApp',memberTelegramShort:'TG',memberNoShort:'លេខសមាជិក',memberAccountShort:'គណនី',memberJoinedShort:'ថ្ងៃចុះឈ្មោះ',memberLanguageShort:'ភាសា',memberStatusShort:'ស្ថានភាព',memberLockedShort:'បានចាក់សោ',memberOpenShort:'មិនទាន់ពេញ'}};for(const l of ['zh','en','km']){Object.assign(I.resources[l],X[l]);if(window.i18next?.isInitialized)for(const [k,v] of Object.entries(X[l]))window.i18next.addResource(l,'translation',k,v)}const t=k=>I.t(k),COLORS={blue:'#1478ff',purple:'#7c4dff',green:'#12a36d',orange:'#f28c28',red:'#e44747',cyan:'#00a6b8'};let u=null,busy=false,profile=null,invalidOrders=new Map(),hiddenOrderNos=new Set();const toast=(s,e=false)=>{const x=$('toast');if(!x)return;x.textContent=s;x.className='toast show'+(e?' error':'');clearTimeout(toast.timer);toast.timer=setTimeout(()=>x.className='toast',2200)};async function user(){if(!u)u=await window.gyxGetVerifiedUser?.();return u}function addAction(section,id,key,fn){const head=document.querySelector(`#${section} .panel-head`);if(!head||$(id))return;const b=document.createElement('button');b.id=id;b.type='button';b.className='btn btn-danger btn-small';b.textContent=t(key);b.addEventListener('click',fn);head.appendChild(b)}async function clearFavorites(){if(busy||!confirm(t('memberClearFavoritesConfirm')))return;const x=await user();if(!x)return;busy=true;try{const r=await db.from('answer_favorites').delete().eq('user_id',x.id);if(r.error)throw r.error;toast(t('memberBulkDone'));location.reload()}catch(e){console.error(e);toast(t('memberBulkFailed'),true)}finally{busy=false}}async function clearSearches(){if(busy||!confirm(t('memberClearSearchesConfirm')))return;const x=await user();if(!x)return;busy=true;try{const r=await db.from('search_history').delete().eq('user_id',x.id);if(r.error)throw r.error;toast(t('memberBulkDone'));location.reload()}catch(e){console.error(e);toast(t('memberBulkFailed'),true)}finally{busy=false}}async function fetchInvalidOrders(){const x=await user();if(!x)return;const q=await db.from('orders').select('id,order_no,status,hidden_by_user').eq('user_id',x.id).order('created_at',{ascending:false}).limit(500);if(q.error)throw q.error;const rows=q.data||[];hiddenOrderNos=new Set(rows.filter(o=>o.hidden_by_user).map(o=>String(o.order_no||'')));invalidOrders=new Map(rows.filter(o=>!o.hidden_by_user&&['expired','failed','cancelled'].includes(o.status)).map(o=>[String(o.order_no||''),o]));enhanceInvalidOrderCards()}async function hideInvalid(o){const r=await db.rpc('hide_own_order',{p_order_id:o.id});if(r.error||r.data!==true)throw r.error||new Error('NOT_HIDDEN');const no=String(o.order_no||'');invalidOrders.delete(no);hiddenOrderNos.add(no)}async function clearExpired(){if(busy||!confirm(t('memberClearExpiredConfirm')))return;busy=true;try{await fetchInvalidOrders();for(const o of [...invalidOrders.values()])await hideInvalid(o);toast(t('memberBulkDone'));location.reload()}catch(e){console.error(e);toast(t('memberBulkFailed'),true)}finally{busy=false}}function orderNo(card){const txt=card?.querySelector('.order-number')?.textContent||card?.textContent||'';const m=String(txt).match(/GYX[A-Z0-9-]{6,50}/);return m?.[0]||''}function enhanceInvalidOrderCards(){document.querySelectorAll('#orderList>.order-card').forEach(card=>{const no=orderNo(card);if(no&&hiddenOrderNos.has(no)){card.remove();return}const o=invalidOrders.get(no),old=card.querySelector('[data-delete-invalid-order]');if(!o){old?.remove();return}if(old)return;const b=document.createElement('button');b.type='button';b.className='btn btn-danger btn-small';b.dataset.deleteInvalidOrder='1';b.textContent=t('memberDeleteExpired');b.addEventListener('click',async e=>{e.preventDefault();e.stopPropagation();if(!confirm(t('memberDeleteExpiredConfirm')))return;b.disabled=true;try{await hideInvalid(o);card.remove();toast(t('memberBulkDone'))}catch(err){console.error(err);b.disabled=false;toast(t('memberBulkFailed'),true)}});card.appendChild(b)})}function makeMemberId(raw){const clean=String(raw||'').replace(/[^a-zA-Z0-9]/g,'').toUpperCase();if(!clean)return'—';let hash=2166136261;for(let i=0;i<clean.length;i++){hash^=clean.charCodeAt(i);hash=Math.imul(hash,16777619)}const base=(clean+Math.abs(hash>>>0).toString(36).toUpperCase()).replace(/[^A-Z0-9]/g,'');return('GY'+base).slice(0,15).padEnd(15,'0')}function applyTheme(c){const color=COLORS[c]||COLORS.blue;document.documentElement.style.setProperty('--member-accent',color);document.body.dataset.memberTheme=c}function paintAvatar(url){const a=$('profileAvatar');if(!a)return;if(url){a.style.backgroundImage=`url("${String(url).replace(/"/g,'')}")`;a.style.backgroundSize='cover';a.style.backgroundPosition='center';a.textContent=''}else{a.style.backgroundImage=''}}function levelHTML(){const level=Math.max(1,Math.min(4,Number(profile?.member_level)||1));return `<div class="member-level-title">${t('memberLevel')}</div><div class="member-level-suns">${[1,2,3,4].map(n=>`<span class="member-level-sun ${n<=level?'on':'off'}">☀️</span>`).join('')}</div>`}function buildLevel(){let box=$('memberLevelBox');if(!box){box=document.createElement('div');box.id='memberLevelBox';box.className='member-level-box';$('profileHeading')?.insertAdjacentElement('afterend',box)}box.innerHTML=levelHTML()}function buildAvatar(){if($('memberAvatarFile'))return;const wrap=document.createElement('div');wrap.className='member-avatar-tools';wrap.innerHTML=`<input id="memberAvatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden><button id="memberAvatarButton" class="btn btn-secondary btn-small" type="button">${t('memberChangeAvatar')}</button><small>${t('memberAvatarHint')}</small>`;$('profileAvatar')?.insertAdjacentElement('afterend',wrap);$('memberAvatarButton').onclick=()=>$('memberAvatarFile').click();$('memberAvatarFile').addEventListener('change',uploadAvatar)}async function uploadAvatar(e){const f=e.target.files?.[0];if(!f)return;if(f.size>2097152){toast(t('memberAvatarTooLarge'),true);e.target.value='';return}if(!['image/jpeg','image/png','image/webp'].includes(f.type)){toast(t('memberAvatarType'),true);e.target.value='';return}const x=await user();if(!x)return;const ext=f.type==='image/png'?'png':f.type==='image/webp'?'webp':'jpg',path=`${x.id}/avatar-${Date.now()}.${ext}`;try{const up=await db.storage.from('member-avatars').upload(path,f,{contentType:f.type,upsert:false});if(up.error)throw up.error;const url=db.storage.from('member-avatars').getPublicUrl(path).data.publicUrl;const r=await db.from('profiles').update({avatar_url:url}).eq('user_id',x.id);if(r.error)throw r.error;profile.avatar_url=url;paintAvatar(url);toast(t('memberAvatarSaved'))}catch(err){console.error(err);toast(t('memberBulkFailed'),true)}finally{e.target.value=''}}function formatDate(v){if(!v)return'—';try{return new Intl.DateTimeFormat(I.locale==='zh'?'zh-CN':I.locale==='km'?'km-KH':'en',{year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(v))}catch{return String(v)}}function shortValue(v){const s=String(v??'').trim();return s||'—'}function buildSummary(){const card=$('profile');if(!card||!profile)return;let box=$('memberProfileSummary');if(!box){box=document.createElement('div');box.id='memberProfileSummary';box.className='member-profile-summary';const form=$('profileForm');const host=form?.parentNode||card;if(form&&form.parentNode===host)host.insertBefore(box,form);else host.appendChild(box)}const x=u||{};const facts=[[t('memberNameShort'),shortValue(profile.display_name)],[t('memberPhoneShort'),shortValue(profile.phone)],[t('memberWechatShort'),shortValue(profile.wechat)],[t('memberTelegramShort'),shortValue(profile.telegram)],[t('memberWhatsappShort'),shortValue(profile.whatsapp)],[t('memberStatusShort'),profile.profile_locked_at?t('memberLockedShort'):t('memberOpenShort')],[t('memberLanguageShort'),shortValue(profile.locale)],[t('memberOrdersCount'),String(Number(profile.valid_order_count||0))],[t('memberSpent'),`${Number(profile.total_spent||0).toFixed(2)} USDT`],[t('memberJoinedShort'),formatDate(profile.created_at)],[t('memberNoShort'),makeMemberId(x.id)],[t('memberAccountShort'),shortValue(x.email)]];facts.sort((a,b)=>String(a[1]).length-String(b[1]).length);box.innerHTML=facts.map(([k,v])=>{const len=String(v).length,cls=len<=10?'short':len<=20?'medium':'long';return `<div class="member-fact ${cls}"><span>${k}</span><strong>${String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}</strong></div>`}).join('')}function buildTheme(){let box=$('memberThemeChooser');if(!box){box=document.createElement('div');box.id='memberThemeChooser';box.className='member-theme-chooser';const form=$('profileForm');form?.insertAdjacentElement('afterend',box)}box.innerHTML=`<label>${t('memberTheme')}</label><div class="member-theme-row"></div>`;const row=box.querySelector('.member-theme-row');for(const [key,color] of Object.entries(COLORS)){const b=document.createElement('button');b.type='button';b.className='member-theme-dot'+(profile?.theme_color===key?' active':'');b.dataset.theme=key;b.style.setProperty('--swatch',color);b.setAttribute('aria-label',key);b.onclick=async()=>{const x=await user();if(!x)return;const r=await db.from('profiles').update({theme_color:key}).eq('user_id',x.id);if(r.error){toast(t('memberBulkFailed'),true);return}profile.theme_color=key;applyTheme(key);row.querySelectorAll('button').forEach(z=>z.classList.toggle('active',z===b));toast(t('memberThemeSaved'))};row.appendChild(b)}}async function loadProfile(){const x=await user();if(!x)return;const r=await db.from('profiles').select('display_name,phone,wechat,whatsapp,telegram,locale,created_at,profile_locked_at,member_level,valid_order_count,total_spent,avatar_url,theme_color').eq('user_id',x.id).maybeSingle();if(r.error)return;profile=r.data||{};applyTheme(profile.theme_color||'blue');paintAvatar(profile.avatar_url);buildAvatar();buildLevel();buildSummary();buildTheme();lockProfile()}function lockProfile(){const form=$('profileForm');if(!form||!profile)return;const locked=!!profile.profile_locked_at;let note=$('profileLockNote');if(!note){note=document.createElement('div');note.id='profileLockNote';note.className='form-message show success';form.insertBefore(note,form.firstChild)}note.textContent=t(locked?'memberProfileLocked':'memberProfileFirstSave');if(!locked)return;['profileName','profilePhone','profileCountry','profileWechat','profileWhatsapp','profileTelegram'].forEach(id=>{const e=$(id);if(e)e.disabled=true});const b=$('saveProfileButton');b?.remove();form.querySelectorAll('.form-group,.member-contact-grid').forEach(e=>e.classList.add('member-locked-field'));if(!$('memberProfileSupport')){const a=document.createElement('a');a.id='memberProfileSupport';a.className='btn btn-secondary btn-block';a.href='https://t.me/qqyousubot';a.target='_blank';a.rel='noopener';a.textContent=t('memberContactSupport');form.appendChild(a)}}async function init(){await user();addAction('favorites','clearAllFavorites','memberClearFavorites',clearFavorites);addAction('searches','clearAllSearches','memberClearSearches',clearSearches);addAction('orders','clearExpiredOrders','memberClearExpired',clearExpired);await Promise.allSettled([loadProfile(),fetchInvalidOrders()]);const ol=$('orderList');if(ol)new MutationObserver(enhanceInvalidOrderCards).observe(ol,{childList:true});const pm=$('profileMessage');if(pm)new MutationObserver(()=>{if(pm.classList.contains('success'))setTimeout(loadProfile,120)}).observe(pm,{childList:true,subtree:true,attributes:true});window.addEventListener('gyx:profile-updated',()=>setTimeout(loadProfile,80))}if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()})();
+(() => {
+  "use strict";
+
+  const db = window.gyxSupabase;
+  const I = window.GYXI18N;
+  if (!db || !I) return;
+
+  const t = (key, values) => I.t(key, values);
+  const $ = (id) => document.getElementById(id);
+  const operations = new Set();
+  const themeColors = Object.freeze({
+    blue: "#1478ff",
+    purple: "#7c4dff",
+    green: "#12a36d",
+    orange: "#f28c28",
+    red: "#e44747",
+    cyan: "#00a6b8",
+  });
+  let currentUser = null;
+  let memberProfile = null;
+
+  function toast(text, error = false) {
+    const element = $("toast");
+    if (!element) return;
+    element.textContent = text;
+    element.className = `toast show${error ? " error" : ""}`;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => (element.className = "toast"), 2400);
+  }
+
+  async function user() {
+    if (!currentUser) currentUser = await window.gyxGetVerifiedUser?.();
+    return currentUser;
+  }
+
+  function makeMemberId(raw) {
+    const clean = String(raw || "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase();
+    if (!clean) return "—";
+    let hash = 2166136261;
+    for (let index = 0; index < clean.length; index += 1) {
+      hash ^= clean.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    const base = (
+      clean +
+      Math.abs(hash >>> 0)
+        .toString(36)
+        .toUpperCase()
+    ).replace(/[^A-Z0-9]/g, "");
+    return `GY${base}`.slice(0, 15).padEnd(15, "0");
+  }
+
+  function formatDate(value) {
+    if (!value) return "—";
+    try {
+      const locale =
+        I.locale === "zh" ? "zh-CN" : I.locale === "km" ? "km-KH" : "en";
+      return new Intl.DateTimeFormat(locale, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      }).format(new Date(value));
+    } catch {
+      return String(value);
+    }
+  }
+
+  function shortValue(value) {
+    return String(value ?? "").trim() || "—";
+  }
+
+  function escapeHtml(value) {
+    const entities = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return String(value).replace(
+      /[&<>"']/g,
+      (character) => entities[character],
+    );
+  }
+
+  function addAction(sectionId, buttonId, labelKey, handler) {
+    const head = document.querySelector(`#${sectionId} .panel-head`);
+    if (!head || $(buttonId)) return;
+    const button = document.createElement("button");
+    button.id = buttonId;
+    button.type = "button";
+    button.className = "btn btn-danger btn-small member-bulk-action";
+    button.dataset.labelKey = labelKey;
+    button.textContent = t(labelKey);
+    button.addEventListener("click", () => handler(button));
+    head.appendChild(button);
+  }
+
+  async function runOperation(name, button, confirmKey, operation) {
+    if (operations.has(name) || !window.confirm(t(confirmKey))) return;
+    const member = await user();
+    if (!member) {
+      toast(t("memberSessionExpired"), true);
+      return;
+    }
+
+    operations.add(name);
+    const labelKey = button.dataset.labelKey;
+    button.disabled = true;
+    button.textContent = t("memberDeleting");
+    try {
+      const count = await operation(member);
+      toast(t("memberBulkDoneCount", { count: Number(count || 0) }));
+      window.setTimeout(() => window.location.reload(), 220);
+    } catch (error) {
+      console.error(`${name} failed`, error);
+      toast(t("memberBulkFailed"), true);
+      button.disabled = false;
+      button.textContent = t(labelKey);
+    } finally {
+      operations.delete(name);
+    }
+  }
+
+  function clearFavorites(button) {
+    return runOperation(
+      "favorites",
+      button,
+      "memberClearFavoritesConfirm",
+      async (member) => {
+        const { data, error } = await db
+          .from("answer_favorites")
+          .delete()
+          .eq("user_id", member.id)
+          .select("id");
+        if (error) throw error;
+        return data?.length || 0;
+      },
+    );
+  }
+
+  function clearSearches(button) {
+    return runOperation(
+      "searches",
+      button,
+      "memberClearSearchesConfirm",
+      async (member) => {
+        const { data, error } = await db
+          .from("search_history")
+          .delete()
+          .eq("user_id", member.id)
+          .select("id");
+        if (error) throw error;
+        return data?.length || 0;
+      },
+    );
+  }
+
+  function clearInvalidOrders(button) {
+    return runOperation(
+      "orders",
+      button,
+      "memberClearExpiredConfirm",
+      async () => {
+        const { data, error } = await db.rpc("hide_own_invalid_orders");
+        if (error) throw error;
+        return Number(data || 0);
+      },
+    );
+  }
+
+  function applyTheme(theme) {
+    const key = themeColors[theme] ? theme : "blue";
+    document.documentElement.style.setProperty(
+      "--member-accent",
+      themeColors[key],
+    );
+    document.body.dataset.memberTheme = key;
+    let style = $("memberThemeStyle");
+    if (!style) {
+      style = document.createElement("style");
+      style.id = "memberThemeStyle";
+      style.textContent =
+        ".member-page .btn:not(.btn-danger),.member-page .member-stat.active{border-color:var(--member-accent)!important}" +
+        ".member-page .btn:not(.btn-secondary):not(.btn-danger){background:var(--member-accent)!important}" +
+        ".member-page .profile-card{border-top:3px solid var(--member-accent)}" +
+        ".member-level-sun.on{opacity:1;filter:saturate(1.2)}.member-level-sun.off{opacity:.22;filter:grayscale(1)}" +
+        ".member-avatar-tools{display:grid;gap:7px;margin:10px 0 14px}" +
+        ".member-level-box{margin:8px 0 14px;text-align:center}" +
+        ".member-level-suns{font-size:23px;letter-spacing:3px}" +
+        ".member-level-meta{font-size:12px;opacity:.72;margin-top:4px}" +
+        ".member-theme-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px}" +
+        ".member-theme-dot{width:32px;height:32px;border-radius:50%;border:2px solid transparent;padding:0}" +
+        ".member-theme-dot.active{outline:3px solid color-mix(in srgb,var(--member-accent) 28%,transparent)}";
+      document.head.appendChild(style);
+    }
+  }
+
+  function paintAvatar(url) {
+    const avatar = $("profileAvatar");
+    if (!avatar) return;
+    const safeUrl = String(url || "").replace(/["\\\r\n]/g, "");
+    avatar.style.backgroundImage = safeUrl
+      ? `url(${JSON.stringify(safeUrl)})`
+      : "";
+    avatar.style.backgroundSize = safeUrl ? "cover" : "";
+    avatar.style.backgroundPosition = safeUrl ? "center" : "";
+    if (safeUrl) avatar.textContent = "";
+  }
+
+  function renderLevel() {
+    const card = $("profile");
+    if (!card || !memberProfile) return;
+    let box = $("memberLevelBox");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "memberLevelBox";
+      box.className = "member-level-box";
+      $("profileHeading")?.insertAdjacentElement("afterend", box);
+    }
+    const level = Math.max(
+      1,
+      Math.min(4, Number(memberProfile.member_level) || 1),
+    );
+    box.innerHTML =
+      `<div class="member-level-title">${t("memberLevel")}</div>` +
+      `<div class="member-level-suns">${[1, 2, 3, 4]
+        .map(
+          (number) =>
+            `<span class="member-level-sun ${number <= level ? "on" : "off"}">☀️</span>`,
+        )
+        .join("")}</div>`;
+  }
+
+  function renderSummary() {
+    const card = $("profile");
+    const form = $("profileForm");
+    if (!card || !form || !memberProfile) return;
+
+    let box = $("memberProfileSummary");
+    if (!box) {
+      box = document.createElement("div");
+      box.id = "memberProfileSummary";
+      box.className = "member-profile-summary";
+      const host = form.parentNode || card;
+      if (form.parentNode === host) host.insertBefore(box, form);
+      else host.appendChild(box);
+    }
+
+    const facts = [
+      [t("memberNameShort"), shortValue(memberProfile.display_name)],
+      [t("memberPhoneShort"), shortValue(memberProfile.phone)],
+      [t("memberWechatShort"), shortValue(memberProfile.wechat)],
+      [t("memberTelegramShort"), shortValue(memberProfile.telegram)],
+      [t("memberWhatsappShort"), shortValue(memberProfile.whatsapp)],
+      [
+        t("memberStatusShort"),
+        memberProfile.profile_locked_at
+          ? t("memberLockedShort")
+          : t("memberOpenShort"),
+      ],
+      [t("memberLanguageShort"), shortValue(memberProfile.locale)],
+      [
+        t("memberOrdersCount"),
+        String(Number(memberProfile.valid_order_count || 0)),
+      ],
+      [
+        t("memberSpent"),
+        `${Number(memberProfile.total_spent || 0).toFixed(2)} USDT`,
+      ],
+      [t("memberJoinedShort"), formatDate(memberProfile.created_at)],
+      [t("memberNoShort"), makeMemberId(currentUser?.id)],
+      [t("memberAccountShort"), shortValue(currentUser?.email)],
+    ];
+    facts.sort(
+      (left, right) => String(left[1]).length - String(right[1]).length,
+    );
+    box.innerHTML = facts
+      .map(([label, value]) => {
+        const length = String(value).length;
+        const size = length <= 10 ? "short" : length <= 20 ? "medium" : "long";
+        return `<div class="member-fact ${size}"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`;
+      })
+      .join("");
+  }
+
+  function buildAvatarControls() {
+    const avatar = $("profileAvatar");
+    if (!avatar || $("memberAvatarFile")) return;
+    const wrap = document.createElement("div");
+    wrap.className = "member-avatar-tools";
+    wrap.innerHTML =
+      '<input id="memberAvatarFile" type="file" accept="image/jpeg,image/png,image/webp" hidden>' +
+      '<button id="memberAvatarButton" class="btn btn-secondary btn-small" type="button"></button>' +
+      '<small id="memberAvatarHint"></small>';
+    avatar.insertAdjacentElement("afterend", wrap);
+    $("memberAvatarButton")?.addEventListener("click", () =>
+      $("memberAvatarFile")?.click(),
+    );
+    $("memberAvatarFile")?.addEventListener("change", uploadAvatar);
+  }
+
+  async function uploadAvatar(event) {
+    const input = event.currentTarget;
+    const file = input?.files?.[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast(t("memberAvatarTooLarge"), true);
+      input.value = "";
+      return;
+    }
+    if (!new Set(["image/jpeg", "image/png", "image/webp"]).has(file.type)) {
+      toast(t("memberAvatarType"), true);
+      input.value = "";
+      return;
+    }
+
+    const member = await user();
+    if (!member) {
+      toast(t("memberSessionExpired"), true);
+      input.value = "";
+      return;
+    }
+
+    const button = $("memberAvatarButton");
+    if (button) button.disabled = true;
+    const extension =
+      file.type === "image/png"
+        ? "png"
+        : file.type === "image/webp"
+          ? "webp"
+          : "jpg";
+    const path = `${member.id}/avatar-${Date.now()}.${extension}`;
+    try {
+      const uploaded = await db.storage
+        .from("member-avatars")
+        .upload(path, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+      if (uploaded.error) throw uploaded.error;
+      const url = db.storage.from("member-avatars").getPublicUrl(path)
+        .data.publicUrl;
+      const { data, error } = await db
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("user_id", member.id)
+        .select("avatar_url")
+        .maybeSingle();
+      if (error) throw error;
+      if (!data?.avatar_url) throw new Error("AVATAR_NOT_UPDATED");
+      memberProfile.avatar_url = data.avatar_url;
+      paintAvatar(data.avatar_url);
+      toast(t("memberAvatarSaved"));
+    } catch (error) {
+      console.error("avatar update failed", error);
+      toast(t("memberAvatarSaveFailed"), true);
+    } finally {
+      if (button) button.disabled = false;
+      input.value = "";
+    }
+  }
+
+  async function updateTheme(theme, button) {
+    const member = await user();
+    if (!member || !themeColors[theme]) return;
+    button.disabled = true;
+    try {
+      const { data, error } = await db
+        .from("profiles")
+        .update({ theme_color: theme })
+        .eq("user_id", member.id)
+        .select("theme_color")
+        .maybeSingle();
+      if (error) throw error;
+      if (data?.theme_color !== theme) throw new Error("THEME_NOT_UPDATED");
+      memberProfile.theme_color = theme;
+      applyTheme(theme);
+      document
+        .querySelectorAll(".member-theme-dot")
+        .forEach((dot) => dot.classList.toggle("active", dot === button));
+      toast(t("memberThemeSaved"));
+    } catch (error) {
+      console.error("theme update failed", error);
+      toast(t("memberBulkFailed"), true);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
+  function buildThemeControls() {
+    const form = $("profileForm");
+    if (!form || $("memberThemeChooser")) return;
+    const box = document.createElement("div");
+    box.id = "memberThemeChooser";
+    box.className = "member-theme-chooser";
+    const label = document.createElement("label");
+    label.id = "memberThemeLabel";
+    const row = document.createElement("div");
+    row.className = "member-theme-row";
+    for (const [key, color] of Object.entries(themeColors)) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "member-theme-dot";
+      button.dataset.theme = key;
+      button.dataset.colorKey =
+        "memberColor" + key.charAt(0).toUpperCase() + key.slice(1);
+      button.style.setProperty("--swatch", color);
+      button.addEventListener("click", () => updateTheme(key, button));
+      row.appendChild(button);
+    }
+    box.append(label, row);
+    form.insertAdjacentElement("afterend", box);
+  }
+
+  function syncExtraLabels() {
+    renderLevel();
+    renderSummary();
+    const avatarButton = $("memberAvatarButton");
+    const avatarHint = $("memberAvatarHint");
+    const themeLabel = $("memberThemeLabel");
+    if (avatarButton) avatarButton.textContent = t("memberChangeAvatar");
+    if (avatarHint) avatarHint.textContent = t("memberAvatarHint");
+    if (themeLabel) themeLabel.textContent = t("memberTheme");
+    document
+      .querySelectorAll(".member-theme-dot[data-color-key]")
+      .forEach((button) => {
+        const color = t(button.dataset.colorKey);
+        const label = `${t("memberTheme")}: ${color}`;
+        button.title = label;
+        button.setAttribute("aria-label", label);
+      });
+  }
+
+  async function loadMemberExtras() {
+    const member = await user();
+    if (!member) return;
+    const { data, error } = await db
+      .from("profiles")
+      .select(
+        "display_name,phone,wechat,whatsapp,telegram,locale,created_at,profile_locked_at,member_level,valid_order_count,total_spent,avatar_url,theme_color",
+      )
+      .eq("user_id", member.id)
+      .maybeSingle();
+    if (error) throw error;
+    memberProfile = data || {
+      member_level: 1,
+      valid_order_count: 0,
+      total_spent: 0,
+      avatar_url: null,
+      theme_color: "blue",
+    };
+    applyTheme(memberProfile.theme_color || "blue");
+    paintAvatar(memberProfile.avatar_url);
+    renderLevel();
+    buildAvatarControls();
+    buildThemeControls();
+    document
+      .querySelectorAll(".member-theme-dot")
+      .forEach((button) =>
+        button.classList.toggle(
+          "active",
+          button.dataset.theme === (memberProfile.theme_color || "blue"),
+        ),
+      );
+    syncExtraLabels();
+  }
+
+  function syncLabels() {
+    document
+      .querySelectorAll(".member-bulk-action[data-label-key]")
+      .forEach((button) => {
+        if (!button.disabled) button.textContent = t(button.dataset.labelKey);
+      });
+    syncExtraLabels();
+  }
+
+  async function init() {
+    await user();
+    addAction(
+      "favorites",
+      "clearAllFavorites",
+      "memberClearFavorites",
+      clearFavorites,
+    );
+    addAction(
+      "searches",
+      "clearAllSearches",
+      "memberClearSearches",
+      clearSearches,
+    );
+    addAction(
+      "orders",
+      "clearExpiredOrders",
+      "memberClearExpired",
+      clearInvalidOrders,
+    );
+    loadMemberExtras().catch((error) =>
+      console.error("load member extras failed", error),
+    );
+    window.addEventListener("gyx:languagechange", syncLabels);
+    window.addEventListener("gyx:profile-updated", () =>
+      loadMemberExtras().catch((error) =>
+        console.error("refresh member extras failed", error),
+      ),
+    );
+  }
+
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  else init();
+})();

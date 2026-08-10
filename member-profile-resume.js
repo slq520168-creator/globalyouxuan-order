@@ -1,1 +1,33 @@
-(()=>{'use strict';const p=new URLSearchParams(location.search);if(p.get('resume')!=='checkout')return;const I=window.GYXI18N,form=document.getElementById('profileForm'),m=document.getElementById('profileMessage');if(!I||!form||!m)return;const X={zh:'请完善并保存会员资料，保存成功后自动返回下单。',en:'Complete and save your member profile. You will return to checkout automatically after saving.',km:'សូមបំពេញ និងរក្សាទុកព័ត៌មានសមាជិក។ បន្ទាប់ពីរក្សាទុក អ្នកនឹងត្រឡប់ទៅការបញ្ជាទិញដោយស្វ័យប្រវត្តិ។'};const note=document.createElement('div');note.className='form-message show success';note.textContent=X[I.locale]||X.zh;form.insertBefore(note,form.firstChild);let done=false;new MutationObserver(()=>{if(done||!m.classList.contains('success'))return;done=true;window.dispatchEvent(new CustomEvent('gyx:profile-updated'));setTimeout(()=>location.href='shop.html?resume=profile-checkout',350)}).observe(m,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});document.getElementById('profile')?.scrollIntoView({block:'start'})})();
+(() => {
+  "use strict";
+  const params = new URLSearchParams(location.search);
+  if (params.get("resume") !== "checkout") return;
+
+  const form = document.getElementById("profileForm");
+  const I = window.GYXI18N;
+  if (!form || !I) return;
+
+  const note = document.createElement("div");
+  note.id = "profileCheckoutResumeNote";
+  note.className = "form-message show success";
+  const render = () =>
+    (note.textContent = I.t("memberCompleteProfileForCheckout"));
+  render();
+  form.insertBefore(note, form.firstChild);
+
+  let done = false;
+  const resumeCheckout = () => {
+    if (done) return;
+    done = true;
+    window.setTimeout(
+      () => (window.location.href = "shop.html?resume=profile-checkout"),
+      350,
+    );
+  };
+
+  window.addEventListener("gyx:profile-updated", resumeCheckout, {
+    once: true,
+  });
+  window.addEventListener("gyx:languagechange", render);
+  document.getElementById("profile")?.scrollIntoView({ block: "start" });
+})();

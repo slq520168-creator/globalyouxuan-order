@@ -1,5 +1,207 @@
-(()=>{'use strict';const $=id=>document.getElementById(id),I=window.GYXI18N,t=(k,v)=>I.t(k,v);const SEARCH_PRODUCTS={essential:'answer-essential',standard:'answer-standard',professional:'answer-professional',custom:'answer-custom'};let deleting=new Set();const esc=v=>String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function empty(list,key='memberNoSearchHistory'){list.replaceChildren();const d=document.createElement('div');d.className='empty-state';d.textContent=t(key);list.appendChild(d)}function tierKey(r){if(SEARCH_PRODUCTS[r?.tier])return r.tier;const c=Number(r?.confidence||0);return c>=93?'custom':c>=85?'professional':c>=75?'standard':'essential'}function pick(answer,base){const l=I.locale;if(l==='en')return answer?.[base+'_en']||answer?.[base]||'';if(l==='km')return answer?.[base+'_km']||answer?.[base]||'';return answer?.[base]||''}
-async function init(){const list=$('searchHistoryList');if(!list||list.dataset.gyxHistoryReady==='1')return;list.dataset.gyxHistoryReady='1';const db=window.gyxSupabase;if(!db){empty(list,'memberSearchUnavailable');return}let u;try{u=await window.gyxGetVerifiedUser?.()}catch{}if(!u){empty(list,'memberSearchLogin');return}
-async function load(){const {data,error}=await db.from('search_history').select('id,question,selections,matched_answer_id,matched_title,matched_summary,tier,confidence,created_at').eq('user_id',u.id).order('created_at',{ascending:false}).limit(100);if(error){empty(list,'memberSearchLoadFailed');return}if(!data?.length){empty(list,'memberSearchEmptyLead');return}const ids=[...new Set(data.map(r=>Number(r.matched_answer_id)).filter(Number.isFinite))];const answerMap=new Map();if(ids.length){const ar=await db.from('product_answer_options').select('id,title,title_en,title_km,answer_summary,answer_summary_en,answer_summary_km').in('id',ids);for(const a of ar.data||[])answerMap.set(Number(a.id),a)}list.replaceChildren();for(const r of data){const card=document.createElement('article');card.className='favorite-card search-history-card';card.dataset.historyId=String(r.id);const loc=I.locale==='km'?'km-KH':I.locale==='en'?'en-US':'zh-CN';const time=new Date(r.created_at).toLocaleString(loc);const sels=Array.isArray(r.selections)?r.selections.filter(Boolean):[];const answer=answerMap.get(Number(r.matched_answer_id))||null;const matched=String(pick(answer,'title')||r.matched_title||t('memberPrivatePlan')).trim();const summary=String(pick(answer,'answer_summary')||r.matched_summary||'').trim();const path=sels.length?`<details class="search-path"><summary>${esc(t('memberViewFiveRounds'))}</summary><ol>${sels.map(x=>`<li>${esc(x)}</li>`).join('')}</ol></details>`:'';const canOrder=Number.isFinite(Number(r.matched_answer_id));const controls=`<div class="search-history-controls">${canOrder?`<button type="button" class="history-order-btn" data-order-history="${esc(r.id)}">${esc(t('orderFavorite'))}</button>`:''}<button type="button" class="history-delete-btn" data-del-history="${esc(r.id)}">${esc(t('delete'))}</button></div>`;card.innerHTML=`<div class="favorite-card-head search-history-head"><div><strong>${esc(r.question)}</strong><p class="muted">${esc(time)} · ${esc(t('memberMatchRate',{value:Number(r.confidence||0)}))}</p></div>${controls}</div><div class="search-final"><span class="muted">${esc(t('memberMatchedPlan'))}</span><h3>${esc(matched)}</h3>${summary?`<p class="muted">${esc(summary)}</p>`:''}</div>${path}`;card._history={...r,answer,matched};list.appendChild(card)}}
-list.addEventListener('click',e=>{const orderBtn=e.target.closest?.('[data-order-history]');if(orderBtn){e.preventDefault();e.stopPropagation();const card=orderBtn.closest('article');const h=card?._history;if(!h||!Number.isFinite(Number(h.matched_answer_id)))return;const tier=tierKey(h),productId=SEARCH_PRODUCTS[tier];const match={question:h.question||'',selections:Array.isArray(h.selections)?h.selections:[],tier,confidence:Number(h.confidence||0),answer:{id:Number(h.matched_answer_id),title:h.matched,answer_summary:pick(h.answer,'answer_summary')||h.matched_summary||'',keywords:[]}};window.GYX_MEMBER_CHECKOUT?.open(productId,match);return}const b=e.target.closest?.('[data-del-history]');if(!b)return;e.preventDefault();e.stopPropagation();const id=String(b.dataset.delHistory||'');if(!id||deleting.has(id)||!window.confirm(t('memberDeleteSearchConfirm')))return;deleting.add(id);const card=b.closest('article'),parent=card?.parentNode,next=card?.nextSibling,old=b.textContent;b.disabled=true;b.textContent=t('memberDeleting');if(card){card.style.opacity='.45';card.style.pointerEvents='none';requestAnimationFrame(()=>card.remove())}db.from('search_history').delete().eq('id',id).eq('user_id',u.id).then(({error})=>{if(error)throw error;if(!list.querySelector('[data-history-id]'))empty(list)}).catch(err=>{console.error('delete search history failed',err);if(card&&parent){card.style.opacity='';card.style.pointerEvents='';if(next&&next.parentNode===parent)parent.insertBefore(card,next);else parent.appendChild(card);b.disabled=false;b.textContent=old}}).finally(()=>deleting.delete(id))},false);window.addEventListener('gyx:languagechange',load);load()}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init()})();
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id),
+    I = window.GYXI18N,
+    t = (k, v) => I.t(k, v);
+  const SEARCH_PRODUCTS = {
+    essential: "answer-essential",
+    standard: "answer-standard",
+    professional: "answer-professional",
+    custom: "answer-custom",
+  };
+  let deleting = new Set();
+  const toast = (text, error = false) => {
+    const element = $("toast");
+    if (!element) return;
+    element.textContent = text;
+    element.className = `toast show${error ? " error" : ""}`;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(() => (element.className = "toast"), 2200);
+  };
+  const esc = (v) =>
+    String(v || "").replace(
+      /[&<>"']/g,
+      (c) =>
+        ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;",
+        })[c],
+    );
+  function empty(list, key = "memberNoSearchHistory") {
+    list.replaceChildren();
+    const d = document.createElement("div");
+    d.className = "empty-state";
+    d.textContent = t(key);
+    list.appendChild(d);
+  }
+  function tierKey(r) {
+    if (SEARCH_PRODUCTS[r?.tier]) return r.tier;
+    const c = Number(r?.confidence || 0);
+    return c >= 93
+      ? "custom"
+      : c >= 85
+        ? "professional"
+        : c >= 75
+          ? "standard"
+          : "essential";
+  }
+  function pick(answer, base) {
+    const l = I.locale;
+    if (l === "en") return answer?.[base + "_en"] || answer?.[base] || "";
+    if (l === "km") return answer?.[base + "_km"] || answer?.[base] || "";
+    return answer?.[base] || "";
+  }
+  async function init() {
+    const list = $("searchHistoryList");
+    if (!list || list.dataset.gyxHistoryReady === "1") return;
+    list.dataset.gyxHistoryReady = "1";
+    const db = window.gyxSupabase;
+    if (!db) {
+      empty(list, "memberSearchUnavailable");
+      return;
+    }
+    let u;
+    try {
+      u = await window.gyxGetVerifiedUser?.();
+    } catch {}
+    if (!u) {
+      empty(list, "memberSearchLogin");
+      return;
+    }
+    async function load() {
+      const { data, error } = await db
+        .from("search_history")
+        .select(
+          "id,question,selections,matched_answer_id,matched_title,matched_summary,tier,confidence,created_at",
+        )
+        .eq("user_id", u.id)
+        .order("created_at", { ascending: false })
+        .limit(100);
+      if (error) {
+        empty(list, "memberSearchLoadFailed");
+        return;
+      }
+      if (!data?.length) {
+        empty(list, "memberSearchEmptyLead");
+        return;
+      }
+      const ids = [
+        ...new Set(
+          data.map((r) => Number(r.matched_answer_id)).filter(Number.isFinite),
+        ),
+      ];
+      const answerMap = new Map();
+      if (ids.length) {
+        const ar = await db
+          .from("product_answer_options")
+          .select(
+            "id,title,title_en,title_km,answer_summary,answer_summary_en,answer_summary_km",
+          )
+          .in("id", ids);
+        for (const a of ar.data || []) answerMap.set(Number(a.id), a);
+      }
+      list.replaceChildren();
+      for (const r of data) {
+        const card = document.createElement("article");
+        card.className = "favorite-card search-history-card";
+        card.dataset.historyId = String(r.id);
+        const loc =
+          I.locale === "km" ? "km-KH" : I.locale === "en" ? "en-US" : "zh-CN";
+        const time = new Date(r.created_at).toLocaleString(loc);
+        const sels = Array.isArray(r.selections)
+          ? r.selections.filter(Boolean)
+          : [];
+        const answer = answerMap.get(Number(r.matched_answer_id)) || null;
+        const matched = String(
+          pick(answer, "title") || r.matched_title || t("memberPrivatePlan"),
+        ).trim();
+        const summary = String(
+          pick(answer, "answer_summary") || r.matched_summary || "",
+        ).trim();
+        const path = sels.length
+          ? `<details class="search-path"><summary>${esc(t("memberViewFiveRounds"))}</summary><ol>${sels.map((x) => `<li>${esc(x)}</li>`).join("")}</ol></details>`
+          : "";
+        const canOrder = Number.isFinite(Number(r.matched_answer_id));
+        const controls = `<div class="search-history-controls">${canOrder ? `<button type="button" class="history-order-btn" data-order-history="${esc(r.id)}">${esc(t("orderFavorite"))}</button>` : ""}<button type="button" class="history-delete-btn" data-del-history="${esc(r.id)}">${esc(t("delete"))}</button></div>`;
+        card.innerHTML = `<div class="favorite-card-head search-history-head"><div><strong>${esc(r.question)}</strong><p class="muted">${esc(time)} · ${esc(t("memberMatchRate", { value: Number(r.confidence || 0) }))}</p></div>${controls}</div><div class="search-final"><span class="muted">${esc(t("memberMatchedPlan"))}</span><h3>${esc(matched)}</h3>${summary ? `<p class="muted">${esc(summary)}</p>` : ""}</div>${path}`;
+        card._history = { ...r, answer, matched };
+        list.appendChild(card);
+      }
+    }
+    list.addEventListener(
+      "click",
+      (e) => {
+        const orderBtn = e.target.closest?.("[data-order-history]");
+        if (orderBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          const card = orderBtn.closest("article");
+          const h = card?._history;
+          if (!h || !Number.isFinite(Number(h.matched_answer_id))) return;
+          const tier = tierKey(h),
+            productId = SEARCH_PRODUCTS[tier];
+          const match = {
+            question: h.question || "",
+            selections: Array.isArray(h.selections) ? h.selections : [],
+            tier,
+            confidence: Number(h.confidence || 0),
+            answer: {
+              id: Number(h.matched_answer_id),
+              title: h.matched,
+              answer_summary:
+                pick(h.answer, "answer_summary") || h.matched_summary || "",
+              keywords: [],
+            },
+          };
+          window.GYX_MEMBER_CHECKOUT?.open(productId, match);
+          return;
+        }
+        const b = e.target.closest?.("[data-del-history]");
+        if (!b) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const id = String(b.dataset.delHistory || "");
+        if (
+          !id ||
+          deleting.has(id) ||
+          !window.confirm(t("memberDeleteSearchConfirm"))
+        )
+          return;
+        deleting.add(id);
+        const card = b.closest("article"),
+          old = b.textContent;
+        b.disabled = true;
+        b.textContent = t("memberDeleting");
+        db.from("search_history")
+          .delete()
+          .eq("id", id)
+          .eq("user_id", u.id)
+          .select("id")
+          .maybeSingle()
+          .then(({ data, error }) => {
+            if (error) throw error;
+            if (!data?.id) throw new Error("SEARCH_RECORD_NOT_DELETED");
+            card?.remove();
+            toast(t("memberSearchDeleted"));
+            if (!list.querySelector("[data-history-id]")) empty(list);
+          })
+          .catch((err) => {
+            console.error("delete search history failed", err);
+            b.disabled = false;
+            b.textContent = old;
+            toast(t("memberSearchDeleteFailed"), true);
+          })
+          .finally(() => deleting.delete(id));
+      },
+      false,
+    );
+    window.addEventListener("gyx:languagechange", load);
+    load();
+  }
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", init, { once: true });
+  else init();
+})();
