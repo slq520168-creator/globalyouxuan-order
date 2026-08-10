@@ -36,6 +36,7 @@
     "member-search-history.js?v=20260811-member-security-3",
     "member-profile-resume.js?v=20260811-member-security-3",
     "member-account-controls.js?v=20260811-member-security-3",
+    "member-dashboard-v2.js?v=20260811-member-dashboard-1",
   ];
   if (hasSavedSession() && document.readyState === "loading") {
     for (const f of files) document.write(`<script src="${f}"><\/script>`);
