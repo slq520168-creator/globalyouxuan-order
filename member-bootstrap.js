@@ -20,7 +20,9 @@
     const box = document.createElement("main");
     box.className = "auth-main";
     box.innerHTML = `<div class="shell" style="min-height:68vh;display:grid;place-items:center"><section class="auth-card" style="width:min(92vw,520px);text-align:center"><p class="eyebrow">GlobalYouXuan</p><h1>${t("navMember")}</h1><p class="muted">${t("guestMemberLead")}</p><div class="modal-actions" style="margin-top:22px;justify-content:center"><a class="btn" href="login.html?mode=register&next=${encodeURIComponent("member.html")}">${t("register")}</a><a class="btn btn-secondary" href="login.html?next=${encodeURIComponent("member.html")}">${t("login")}</a></div></section></div>`;
-    document.querySelector(".site-header")?.insertAdjacentElement("afterend", box);
+    document
+      .querySelector(".site-header")
+      ?.insertAdjacentElement("afterend", box);
   }
   const files = [
     "member.js?v=20260811-member-security-3",
@@ -34,7 +36,7 @@
     "member-search-history.js?v=20260811-member-security-3",
     "member-profile-resume.js?v=20260811-member-security-3",
     "member-account-controls.js?v=20260811-member-security-3",
-    "member-dashboard-v2.js?v=20260811-member-dashboard-3",
+    "member-dashboard-v2.js?v=20260811-member-security-4",
   ];
   if (hasSavedSession() && document.readyState === "loading") {
     for (const f of files) document.write(`<script src="${f}"><\/script>`);
@@ -42,8 +44,13 @@
   }
   async function late() {
     let u = null;
-    try { u = await window.gyxGetVerifiedUser?.(); } catch {}
-    if (!u) { guest(); return; }
+    try {
+      u = await window.gyxGetVerifiedUser?.();
+    } catch {}
+    if (!u) {
+      guest();
+      return;
+    }
     for (const f of files) {
       const s = document.createElement("script");
       s.src = f;
@@ -51,6 +58,7 @@
       document.body.appendChild(s);
     }
   }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", late, { once: true });
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", late, { once: true });
   else late();
 })();
