@@ -1,10 +1,10 @@
 (()=>{
 'use strict';
-const KEY='gyx_locale',VALID=new Set(['zh-CN','en','km']),P='gyx_tr_v8:';
+const KEY='gyx_locale',VALID=new Set(['zh-CN','en','km']),P='gyx_tr_v9:';
 let current='zh-CN',timer=0,bundleLoading=new Map();
 const sourceText=new WeakMap(),sourceAttr=new WeakMap(),renderedText=new WeakMap(),renderedAttr=new WeakMap();
 const nativeFetch=window.fetch.bind(window);
-const SKIP='[translate="no"],[data-no-i18n],script,style,code,pre,.brand,[data-language-select],[data-set-lang],[data-lang],#problemInput,#originalQuestion,.profile-email,#profileUserId,#profileJoinedAt';
+const SKIP='[translate="no"],[data-no-i18n],script,style,code,pre,.brand,[data-language-select],[data-set-lang],[data-lang],#originalQuestion,.profile-email,#profileUserId,#profileJoinedAt,#themeToggle,#startMatchButton,.module-icon,.module-card i,.mobile-bottom-nav span,.support-fab span,.support-link>span,.brand-mark';
 const BOOT={
  en:{
   '连接全球智慧':'Connect with Global Intelligence','驱动数字':'Powering Digital','未来':'Future','助力企业与个人实现数字化升级':'Helping businesses and individuals move forward digitally','说出你想解决的问题，马上找到可执行方案':'Tell us what you want to solve and get an actionable plan','网站建设':'Website Building','智控未来':'Smart Future','量化感知':'Growth Intelligence','数字学院':'Digital Academy','智能搜索':'Smart Search','收藏':'Saved','首页':'Home','订单':'Orders','会员':'Member','播放音乐':'Play Music','在线客服':'Support','一个账号 · 全程同步':'One account · Sync everywhere','把每一次搜索\n都变成你的数字资产':'Turn every search\ninto your digital asset','创建账号后，你的方案、收藏、订单和交付内容会持续保存。换页面、重新登录，也能继续使用自己的资料。':'Create an account to keep your plans, saved results, orders and deliveries. Sign in again or switch pages without losing your data.','保存智能方案':'Save smart plans','有价值的搜索结果长期保留':'Keep valuable search results','订单自动归档':'Archive orders','付款状态与历史统一管理':'Manage payment status and history','交付随时查看':'Access deliveries','已购买内容集中在会员中心':'View purchased content anytime','资料自动同步':'Sync your profile','登录后跨页面同步会员资料':'Keep member data across pages','免费创建账号':'Create free account','约30秒完成 · 注册成功后自动回到首页':'About 30 seconds · Return to Home after signup','是会员？登录':'Member? Sign in','游客进入首页 →':'Continue as guest →'
@@ -18,7 +18,7 @@ function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i)
 function key(l,s){return P+l+':'+hash(s)}
 function read(l,s){const b=BOOT[l]?.[s];if(b)return b;try{return localStorage.getItem(key(l,s))||''}catch{return''}}
 function write(l,s,v){try{localStorage.setItem(key(l,s),v)}catch{}}
-function meaningful(s){const x=String(s||'').trim();if(!x)return false;if(/^[-–—_•·|/\\+*=<>~`'".,:;!?()（）【】\[\]{}￥$€£¥%#@^&\s0-9]+$/.test(x))return false;if(/^https?:\/\//i.test(x)||/^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(x))return false;return true}
+function meaningful(s){const x=String(s||'').trim();if(!x)return false;if(!/[A-Za-z\u3400-\u9FFF\u1780-\u17FF]/.test(x))return false;if(/^[-–—_•·|/\\+*=<>~`'".,:;!?()（）【】\[\]{}￥$€£¥%#@^&\s0-9]+$/.test(x))return false;if(/^https?:\/\//i.test(x)||/^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(x))return false;return true}
 function skipped(el){return !!el?.closest?.(SKIP)}
 function attrMap(store,el){let m=store.get(el);if(!m){m={};store.set(el,m)}return m}
 function collect(root=document.body){const texts=[],attrs=[];if(!root)return{texts,attrs};const w=document.createTreeWalker(root,NodeFilter.SHOW_TEXT,{acceptNode(n){const p=n.parentElement;return(!p||skipped(p)||!meaningful(n.nodeValue))?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}});let n;while((n=w.nextNode())){if(!sourceText.has(n))sourceText.set(n,String(n.nodeValue||''));texts.push({n,s:sourceText.get(n)})}root.querySelectorAll?.('[placeholder],[title],[aria-label]').forEach(el=>{if(skipped(el))return;for(const a of ['placeholder','title','aria-label']){const v=el.getAttribute(a);if(!meaningful(v))continue;const m=attrMap(sourceAttr,el);if(!(a in m))m[a]=v;attrs.push({el,a,s:m[a]})}});return{texts,attrs}}
