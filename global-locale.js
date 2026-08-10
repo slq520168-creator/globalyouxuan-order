@@ -2,103 +2,43 @@
 'use strict';
 const KEY='gyx_locale';
 const VALID=new Set(['zh-CN','en','km']);
-const MAP={
-'账号ID / 名称':{en:'Account ID / Name',km:'លេខសម្គាល់គណនី / ឈ្មោះ'},
-'请输入账号ID或名称':{en:'Enter account ID or name',km:'បញ្ចូលលេខសម្គាល់គណនី ឬឈ្មោះ'},
-'收藏的方案，可继续查看或取消收藏':{en:'Saved plans can be viewed again or removed anytime.',km:'ផែនការដែលបានរក្សាទុក អាចមើលឡើងវិញ ឬលុបចេញបានគ្រប់ពេល។'},
-'智能匹配':{en:'Smart Match',km:'ផ្គូផ្គងឆ្លាតវៃ'},
-'我的搜索':{en:'My Searches',km:'ការស្វែងរករបស់ខ្ញុំ'},
-'继续搜索':{en:'Continue Search',km:'បន្តស្វែងរក'},
-'刷新':{en:'Refresh',km:'ផ្ទុកឡើងវិញ'},
-'全部':{en:'All',km:'ទាំងអស់'},
-'待付款':{en:'Pending',km:'រង់ចាំបង់ប្រាក់'},
-'核验中':{en:'Verifying',km:'កំពុងផ្ទៀងផ្ទាត់'},
-'已付款':{en:'Paid',km:'បានបង់ប្រាក់'},
-'已完成':{en:'Completed',km:'បានបញ្ចប់'},
-'已失效':{en:'Expired',km:'ផុតកំណត់'},
-'我的下载':{en:'My Downloads',km:'ការទាញយករបស់ខ្ញុំ'},
-'已付款 / 已完成订单的交付内容':{en:'Delivery content for paid / completed orders',km:'មាតិកាប្រគល់សម្រាប់ការបញ្ជាទិញដែលបានបង់ / បានបញ្ចប់'},
-'暂无可下载内容':{en:'No downloadable content yet',km:'មិនទាន់មានមាតិកាសម្រាប់ទាញយក'},
-'我的资料':{en:'My Materials',km:'ឯកសាររបស់ខ្ញុំ'},
-'个人保存的资料与长文本':{en:'Your saved materials and long-form notes',km:'ឯកសារ និងអត្ថបទវែងដែលអ្នកបានរក្សាទុក'},
-'新增资料':{en:'Add Material',km:'បន្ថែមឯកសារ'},
-'资料标题':{en:'Material Title',km:'ចំណងជើងឯកសារ'},
-'来源/文件名（选填）':{en:'Source / filename (optional)',km:'ប្រភព / ឈ្មោះឯកសារ (ស្រេចចិត្ត)'},
-'分类':{en:'Category',km:'ប្រភេទ'},
-'资料语言':{en:'Material Language',km:'ភាសាឯកសារ'},
-'资料正文':{en:'Content',km:'មាតិកា'},
-'保存到数据库':{en:'Save',km:'រក្សាទុក'},
-'搜索资料':{en:'Search materials',km:'ស្វែងរកឯកសារ'},
-'智能客服':{en:'Smart Support',km:'ជំនួយឆ្លាតវៃ'},
-'需要进一步协助时，通过Telegram客服继续处理':{en:'Need more help? Continue with Telegram support.',km:'ត្រូវការជំនួយបន្ថែម? បន្តជាមួយជំនួយ Telegram។'},
-'打开客服':{en:'Open Support',km:'បើកជំនួយ'},
-'登录':{en:'Sign in',km:'ចូល'},
-'注册':{en:'Register',km:'ចុះឈ្មោះ'},
-'会员账号':{en:'Member Account',km:'គណនីសមាជិក'},
-'一个账号同步你的资料、收藏与订单。':{en:'One account keeps your profile, saved items and orders in sync.',km:'គណនីមួយធ្វើសមកាលកម្មព័ត៌មាន ចំណូលចិត្ត និងការបញ្ជាទិញរបស់អ្នក។'},
-'账号ID':{en:'Account ID',km:'លេខសម្គាល់គណនី'},
-'设置账号ID':{en:'Set account ID',km:'កំណត់លេខសម្គាល់គណនី'},
-'邮箱':{en:'Email',km:'អ៊ីមែល'},
-'请输入邮箱':{en:'Enter email',km:'បញ្ចូលអ៊ីមែល'},
-'密码':{en:'Password',km:'ពាក្យសម្ងាត់'},
-'8～20位密码':{en:'8–20 character password',km:'ពាក្យសម្ងាត់ 8–20 តួ'},
-'确认密码':{en:'Confirm password',km:'បញ្ជាក់ពាក្យសម្ងាត់'},
-'再次输入密码':{en:'Enter password again',km:'បញ្ចូលពាក្យសម្ងាត់ម្តងទៀត'},
-'显示':{en:'Show',km:'បង្ហាញ'},
-'隐藏':{en:'Hide',km:'លាក់'},
-'忘记密码？':{en:'Forgot password?',km:'ភ្លេចពាក្យសម្ងាត់?'},
-'返回登录':{en:'Back to sign in',km:'ត្រឡប់ទៅចូល'},
-'这个浏览器已经登录。':{en:'This browser is already signed in.',km:'កម្មវិធីរុករកនេះបានចូលគណនីរួចហើយ។'},
-'切换账号':{en:'Switch account',km:'ប្តូរគណនី'},
-'进入会员中心':{en:'Open Member Center',km:'ចូលមជ្ឈមណ្ឌលសមាជិក'},
-'创建会员账号':{en:'Create account',km:'បង្កើតគណនី'},
-'发送重置链接':{en:'Send reset link',km:'ផ្ញើតំណកំណត់ឡើងវិញ'},
-'请输入至少2个字':{en:'Enter at least 2 characters',km:'សូមបញ្ចូលយ៉ាងហោចណាស់ 2 តួ'},
-'请选择1个或多个关联问题':{en:'Choose one or more related questions',km:'ជ្រើសរើសសំណួរពាក់ព័ន្ធមួយ ឬច្រើន'},
-'重新开始':{en:'Start over',km:'ចាប់ផ្តើមឡើងវិញ'},
-'返回':{en:'Back',km:'ត្រឡប់'},
-'最匹配方案':{en:'Best Match',km:'ផែនការផ្គូផ្គងល្អបំផុត'},
-'方案深度':{en:'Plan Depth',km:'កម្រិតផែនការ'},
-'本方案包含':{en:'This plan includes',km:'ផែនការនេះរួមមាន'},
-'收藏答案':{en:'Save Answer',km:'រក្សាទុកចម្លើយ'},
-'直接下单':{en:'Order Now',km:'បញ្ជាទិញឥឡូវ'},
-'换一个问题':{en:'Ask Another Question',km:'សួរសំណួរផ្សេង'},
-'确认订单':{en:'Confirm Order',km:'បញ្ជាក់ការបញ្ជាទិញ'},
-'订单将保存到你的会员账号':{en:'This order will be saved to your member account',km:'ការបញ្ជាទិញនេះនឹងរក្សាទុកក្នុងគណនីសមាជិករបស់អ្នក'},
-'姓名':{en:'Name',km:'ឈ្មោះ'},
-'电话（选填）':{en:'Phone (optional)',km:'ទូរស័ព្ទ (ស្រេចចិត្ត)'},
-'取消':{en:'Cancel',km:'បោះបង់'},
-'创建真实订单':{en:'Create Order',km:'បង្កើតការបញ្ជាទិញ'},
-'支付与核验':{en:'Payment & Verification',km:'ការបង់ប្រាក់ និងផ្ទៀងផ្ទាត់'},
-'订单号':{en:'Order No.',km:'លេខការបញ្ជាទិញ'},
-'应付金额':{en:'Amount Due',km:'ចំនួនត្រូវបង់'},
-'网络':{en:'Network',km:'បណ្តាញ'},
-'收款地址':{en:'Payment Address',km:'អាសយដ្ឋានទទួលប្រាក់'},
-'复制':{en:'Copy',km:'ចម្លង'},
-'交易哈希 TXID':{en:'Transaction Hash TXID',km:'ហាសប្រតិបត្តិការ TXID'},
-'提交并核验付款':{en:'Submit & Verify Payment',km:'បញ្ជូន និងផ្ទៀងផ្ទាត់ការបង់ប្រាក់'},
-'付款已确认':{en:'Payment Confirmed',km:'ការបង់ប្រាក់បានបញ្ជាក់'},
-'查看我的订单':{en:'View My Orders',km:'មើលការបញ្ជាទិញរបស់ខ្ញុំ'},
-'关闭':{en:'Close',km:'បិទ'},
-'技术指导':{en:'Guidance',km:'ការណែនាំ'},
-'留言邮箱':{en:'Email',km:'អ៊ីមែល'},
-'首页':{en:'Home',km:'ទំព័រដើម'},
-'我的订单':{en:'Orders',km:'ការបញ្ជាទិញ'},
-'会员中心':{en:'Member',km:'សមាជិក'},
-'播放音乐':{en:'Play Music',km:'ចាក់តន្ត្រី'},
-'在线客服':{en:'Support',km:'ជំនួយ'}
-};
-const reverse=new Map();
-Object.entries(MAP).forEach(([zh,v])=>{reverse.set(zh,zh);reverse.set(v.en,zh);reverse.set(v.km,zh)});
-function locale(){const q=new URLSearchParams(location.search).get('lang');if(VALID.has(q))return q;try{const v=localStorage.getItem(KEY);if(VALID.has(v))return v}catch{}return'zh-CN'}
-function target(zh,l){if(l==='zh-CN')return zh;return MAP[zh]?.[l]||zh}
-function translateText(el,l){if(!el||el.closest?.('[translate="no"],[data-no-i18n]'))return;const raw=(el.textContent||'').trim();const zh=el.dataset?.gyxZh||reverse.get(raw);if(!zh)return;if(el.dataset)el.dataset.gyxZh=zh;el.textContent=target(zh,l)}
-function translateNode(root,l){if(!root)return;if(root.nodeType===1){const el=root;translateText(el,l);['placeholder','title','aria-label'].forEach(attr=>{const raw=el.getAttribute?.(attr);if(!raw)return;const key='gyx'+attr.replace(/(^|-)([a-z])/g,(_,a,b)=>b.toUpperCase());const zh=el.dataset?.[key]||reverse.get(raw);if(!zh)return;el.dataset[key]=zh;el.setAttribute(attr,target(zh,l))});if(el.matches?.('[data-i18n],[data-i18n-placeholder],[data-i18n-aria]'))window.GYXI18N?.apply?.(el.parentElement||document);el.querySelectorAll?.('*').forEach(x=>translateText(x,l))}else if(root.nodeType===3){const p=root.parentElement;if(p&&p.childNodes.length===1)translateText(p,l)}}
-let raf=0;function applyAll(){const l=locale();document.documentElement.lang=l;try{localStorage.setItem(KEY,l)}catch{}window.GYXI18N?.setLanguage?.(l,false);document.querySelectorAll('[data-language-select]').forEach(s=>s.value=l);translateNode(document.body,l)}
-async function syncProfile(l){try{const db=window.gyxSupabase,u=await window.gyxGetVerifiedUser?.();if(!db||!u)return;await db.from('profiles').update({locale:l}).eq('user_id',u.id);try{await db.auth.updateUser({data:{locale:l}})}catch{}}catch{}}
-function set(l,{sync=true}={}){if(!VALID.has(l))return;try{localStorage.setItem(KEY,l);localStorage.setItem('gyx_entry_lang',l)}catch{}window.GYXI18N?.setLanguage?.(l,false);document.documentElement.lang=l;applyAll();window.dispatchEvent(new CustomEvent('gyx:global-languagechange',{detail:{locale:l}}));if(sync)syncProfile(l)}
-function bind(){document.addEventListener('change',e=>{const s=e.target.closest?.('[data-language-select]');if(s&&VALID.has(s.value))set(s.value)});document.addEventListener('click',e=>{const b=e.target.closest?.('[data-set-lang],[data-lang]');const l=b?.dataset?.setLang||b?.dataset?.lang;if(VALID.has(l))set(l)});window.addEventListener('gyx:languagechange',e=>{const l=e.detail?.locale;if(VALID.has(l)&&l!==locale())set(l)});window.addEventListener('storage',e=>{if(e.key===KEY&&VALID.has(e.newValue)){window.GYXI18N?.setLanguage?.(e.newValue,false);applyAll()}});const mo=new MutationObserver(ms=>{if(raf)return;raf=requestAnimationFrame(()=>{raf=0;const l=locale();for(const m of ms)for(const n of m.addedNodes)translateNode(n,l)})});mo.observe(document.documentElement,{childList:true,subtree:true});}
-function init(){const q=new URLSearchParams(location.search).get('lang');if(VALID.has(q)){try{localStorage.setItem(KEY,q);localStorage.setItem('gyx_entry_lang',q)}catch{}const u=new URL(location.href);u.searchParams.delete('lang');history.replaceState(history.state,'',u.pathname+(u.searchParams.toString()?'?'+u.searchParams.toString():'')+u.hash)}applyAll();bind()}
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-window.GYXLocale={get:locale,set,apply:applyAll};
+const I=()=>window.GYXI18N;
+const COPY={
+'zh-CN':{
+hero1:'连接全球智慧',hero2:'驱动数字',hero3:'未来',lead:'助力企业与个人实现数字化升级',search:'说出你想解决的问题，马上找到可执行方案',
+web:'网站建设',automation:'智控未来',growth:'量化感知',academy:'数字学院',fixed:'固定方案',restart:'重新开始',choose:'请选择最接近的一项',back:'返回',best:'最匹配方案',depth:'方案深度',includes:'本方案包含',detail:'查看匹配说明',save:'收藏答案',order:'直接下单',another:'换一个问题',
+confirmOrder:'确认订单',orderAccount:'订单将保存到你的会员账号',name:'姓名',phoneOptional:'电话（选填）',email:'邮箱',cancel:'取消',createOrder:'创建真实订单',orderNo:'订单号',amount:'应付金额',network:'网络',wallet:'收款地址',copy:'复制',txid:'交易哈希 TXID',submitPay:'提交并核验付款',paid:'付款已确认',close:'关闭',myOrders:'查看我的订单',music:'♫ 播放音乐',support:'在线客服',supportTitle:'联系客服',supportLead:'需要帮助？直接联系我们',telegram:'Telegram客服',emailSupport:'邮箱客服',
+navSearch:'智能搜索',navSaved:'收藏',navHome:'首页',navOrders:'订单',navMember:'会员',
+authTitle:'会员账号',authLead:'一个账号同步你的资料、收藏与订单。',signIn:'登录',register:'注册',accountId:'账号ID',setAccount:'设置账号ID',password:'密码',pwdHint:'8～20位密码',confirmPwd:'确认密码',again:'再次输入密码',show:'显示',forgot:'忘记密码？',backLogin:'返回登录',session:'这个浏览器已经登录。',switchAccount:'切换账号',continueHome:'进入首页'
+},
+en:{
+hero1:'Connect Global Intelligence',hero2:'Drive the Digital',hero3:'Future',lead:'Helping people and businesses move forward digitally',search:'Tell us what you want to solve and get an actionable plan',
+web:'Website Building',automation:'Smart Future',growth:'Growth Intelligence',academy:'Digital Academy',fixed:'Fixed Plans',restart:'Start Over',choose:'Choose the closest option',back:'Back',best:'Best Match',depth:'Plan Depth',includes:'This plan includes',detail:'View match details',save:'Save Answer',order:'Order Now',another:'Ask Another Question',
+confirmOrder:'Confirm Order',orderAccount:'This order will be saved to your member account',name:'Name',phoneOptional:'Phone (optional)',email:'Email',cancel:'Cancel',createOrder:'Create Order',orderNo:'Order No.',amount:'Amount Due',network:'Network',wallet:'Payment Address',copy:'Copy',txid:'Transaction Hash TXID',submitPay:'Submit & Verify Payment',paid:'Payment Confirmed',close:'Close',myOrders:'View My Orders',music:'♫ Play Music',support:'Support',supportTitle:'Contact Support',supportLead:'Need help? Contact us directly',telegram:'Telegram Support',emailSupport:'Email Support',
+navSearch:'Smart Search',navSaved:'Saved',navHome:'Home',navOrders:'Orders',navMember:'Member',
+authTitle:'Member Account',authLead:'One account keeps your profile, saved items and orders in sync.',signIn:'Sign in',register:'Register',accountId:'Account ID',setAccount:'Set account ID',password:'Password',pwdHint:'8–20 character password',confirmPwd:'Confirm password',again:'Enter password again',show:'Show',forgot:'Forgot password?',backLogin:'Back to sign in',session:'This browser is already signed in.',switchAccount:'Switch account',continueHome:'Return Home'
+},
+km:{
+hero1:'ភ្ជាប់បញ្ញាសកល',hero2:'ជំរុញអនាគត',hero3:'ឌីជីថល',lead:'ជួយអាជីវកម្ម និងបុគ្គលរីកចម្រើនតាមឌីជីថល',search:'ប្រាប់បញ្ហាដែលអ្នកចង់ដោះស្រាយ ដើម្បីទទួលផែនការអនុវត្ត',
+web:'បង្កើតវេបសាយ',automation:'អនាគតឆ្លាតវៃ',growth:'ទិន្នន័យកំណើន',academy:'សាលាឌីជីថល',fixed:'គម្រោងថេរ',restart:'ចាប់ផ្តើមឡើងវិញ',choose:'ជ្រើសរើសជម្រើសដែលសមបំផុត',back:'ត្រឡប់',best:'ផែនការសមបំផុត',depth:'ជម្រៅផែនការ',includes:'ផែនការនេះរួមមាន',detail:'មើលព័ត៌មានផ្គូផ្គង',save:'រក្សាទុកចម្លើយ',order:'បញ្ជាទិញឥឡូវ',another:'សួរសំណួរផ្សេង',
+confirmOrder:'បញ្ជាក់ការបញ្ជាទិញ',orderAccount:'ការបញ្ជាទិញនឹងរក្សាទុកក្នុងគណនីសមាជិករបស់អ្នក',name:'ឈ្មោះ',phoneOptional:'ទូរស័ព្ទ (ស្រេចចិត្ត)',email:'អ៊ីមែល',cancel:'បោះបង់',createOrder:'បង្កើតការបញ្ជាទិញ',orderNo:'លេខបញ្ជាទិញ',amount:'ចំនួនត្រូវបង់',network:'បណ្តាញ',wallet:'អាសយដ្ឋានទទួលប្រាក់',copy:'ចម្លង',txid:'ហាសប្រតិបត្តិការ TXID',submitPay:'បញ្ជូន និងផ្ទៀងផ្ទាត់ការបង់ប្រាក់',paid:'ការបង់ប្រាក់បានបញ្ជាក់',close:'បិទ',myOrders:'មើលការបញ្ជាទិញរបស់ខ្ញុំ',music:'♫ ចាក់តន្ត្រី',support:'ជំនួយ',supportTitle:'ទាក់ទងជំនួយ',supportLead:'ត្រូវការជំនួយ? ទាក់ទងយើងដោយផ្ទាល់',telegram:'ជំនួយ Telegram',emailSupport:'ជំនួយអ៊ីមែល',
+navSearch:'ស្វែងរកឆ្លាតវៃ',navSaved:'រក្សាទុក',navHome:'ទំព័រដើម',navOrders:'ការបញ្ជាទិញ',navMember:'សមាជិក',
+authTitle:'គណនីសមាជិក',authLead:'គណនីមួយធ្វើសមកាលកម្មព័ត៌មាន ចំណូលចិត្ត និងការបញ្ជាទិញរបស់អ្នក។',signIn:'ចូល',register:'ចុះឈ្មោះ',accountId:'លេខសម្គាល់គណនី',setAccount:'កំណត់លេខសម្គាល់គណនី',password:'ពាក្យសម្ងាត់',pwdHint:'ពាក្យសម្ងាត់ 8–20 តួ',confirmPwd:'បញ្ជាក់ពាក្យសម្ងាត់',again:'បញ្ចូលពាក្យសម្ងាត់ម្តងទៀត',show:'បង្ហាញ',forgot:'ភ្លេចពាក្យសម្ងាត់?',backLogin:'ត្រឡប់ទៅចូល',session:'កម្មវិធីរុករកនេះបានចូលគណនីរួចហើយ។',switchAccount:'ប្តូរគណនី',continueHome:'ត្រឡប់ទៅទំព័រដើម'
+}};
+function getLocale(){try{const q=new URLSearchParams(location.search).get('lang');if(VALID.has(q)){localStorage.setItem(KEY,q);return q}const v=localStorage.getItem(KEY);if(VALID.has(v))return v}catch{}return'zh-CN'}
+function text(sel,val){const e=document.querySelector(sel);if(e&&val!=null)e.textContent=val}
+function placeholder(sel,val){const e=document.querySelector(sel);if(e&&val!=null)e.setAttribute('placeholder',val)}
+function applyHome(c){
+const h=document.querySelector('.home-copy h1');if(h){const s=h.querySelectorAll(':scope > span');if(s[0])s[0].textContent=c.hero1;if(s[1]){s[1].textContent=c.hero2;const em=document.createElement('em');em.textContent=c.hero3;s[1].appendChild(em)}}text('.home-copy p',c.lead);placeholder('#problemInput',c.search);
+text('[data-fixed-module="web"] strong',c.web);text('[data-fixed-module="automation"] strong',c.automation);text('[data-fixed-module="ai"] strong',c.growth);text('[data-fixed-module="digital"] strong',c.academy);text('.fixed-plans-head span',c.fixed);text('#restartMatchButton',c.restart);text('#quizQuestion',c.choose);text('#quizBackButton',c.back);text('.result-label',c.best);text('.result-price-row > div:first-child > span',c.depth);text('.delivery-box h3',c.includes);text('.match-details summary',c.detail);text('#favoriteButton',c.save);text('#orderAnswerButton',c.order);text('#newQuestionButton',c.another);
+text('#orderModalTitle',c.confirmOrder);text('#orderModalTitle + p',c.orderAccount);text('label[for="orderName"]',c.name);text('label[for="orderPhone"]',c.phoneOptional);text('label[for="orderEmail"]',c.email);text('#cancelOrderButton',c.cancel);text('#createOrderButton',c.createOrder);const rows=document.querySelectorAll('.order-summary .summary-row > span');if(rows[0])rows[0].textContent=c.orderNo;if(rows[1])rows[1].textContent=c.amount;if(rows[2])rows[2].textContent=c.network;text('.wallet-box')&&0;text('.form-group > label:not([for])',null);const labels=[...document.querySelectorAll('#orderStepPayment .form-group > label')];if(labels[0])labels[0].textContent=c.wallet;text('#copyWalletButton',c.copy);text('label[for="paymentTxid"]',c.txid);text('#paymentBackButton',c.back);text('#submitPaymentButton',c.submitPay);text('#orderStepSuccess h3',c.paid);text('#successCloseButton',c.close);text('#orderStepSuccess a.btn',c.myOrders);text('#musicToggle',c.music);text('.support-fab b',c.support);text('#supportPanel .eyebrow',c.supportTitle);text('#supportTitle',c.supportLead);const sb=document.querySelectorAll('#supportPanel .support-link b');if(sb[0])sb[0].textContent=c.telegram;if(sb[1])sb[1].textContent=c.emailSupport;
+const nav=document.querySelectorAll('.mobile-bottom-nav a b');if(nav.length>=5){nav[0].textContent=c.navSearch;nav[1].textContent=c.navSaved;nav[2].textContent=c.navHome;nav[3].textContent=c.navOrders;nav[4].textContent=c.navMember}
+}
+function applyAuth(c){text('.auth-copy h1',c.authTitle);text('.auth-copy > p:last-child',c.authLead);text('#loginTab',c.signIn);text('#registerTab',c.register);text('label[for="displayName"]',c.accountId);placeholder('#displayName',c.setAccount);text('label[for="authEmail"]',c.email);placeholder('#authEmail',c.email);text('label[for="authPassword"]',c.password);placeholder('#authPassword',c.pwdHint);text('label[for="confirmPassword"]',c.confirmPwd);placeholder('#confirmPassword',c.again);document.querySelectorAll('.password-toggle').forEach(b=>{if((b.textContent||'').trim()!=='隐藏'&&(b.textContent||'').trim()!=='Hide'&&(b.textContent||'').trim()!=='លាក់')b.textContent=c.show});text('#forgotPasswordButton',c.forgot);text('#backToLoginButton',c.backLogin);text('#activeSession > div:first-child',c.session);text('#switchAccountButton',c.switchAccount);text('#continueButton',c.continueHome)}
+function apply(locale){if(!VALID.has(locale))return;try{localStorage.setItem(KEY,locale)}catch{}document.documentElement.lang=locale;const i=I();if(i?.setLanguage&&i.locale!==locale)i.setLanguage(locale,true);const c=COPY[locale];if(document.body?.classList.contains('home-page'))applyHome(c);if(document.querySelector('.auth-main'))applyAuth(c);document.querySelectorAll('[data-language-select]').forEach(s=>s.value=locale);document.querySelectorAll('[data-set-lang]').forEach(b=>b.classList.toggle('active',b.dataset.setLang===locale));const compact=document.querySelector('[data-lang-toggle]');if(compact)compact.textContent=locale==='zh-CN'?'中':locale==='en'?'EN':'ខ្មែរ';window.dispatchEvent(new CustomEvent('gyx:locale-applied',{detail:{locale}}))}
+function set(locale){if(!VALID.has(locale))return;apply(locale);syncProfile(locale)}
+async function syncProfile(locale){try{const db=window.gyxSupabase;if(!db)return;const {data:{session}}=await db.auth.getSession();if(!session?.user)return;await db.from('profiles').update({locale,updated_at:new Date().toISOString()}).eq('user_id',session.user.id)}catch{}}
+function bind(){document.querySelectorAll('[data-set-lang]').forEach(b=>b.addEventListener('click',()=>set(b.dataset.setLang)));document.querySelectorAll('[data-language-select]').forEach(s=>s.addEventListener('change',()=>set(s.value)));window.addEventListener('storage',e=>{if(e.key===KEY&&VALID.has(e.newValue))apply(e.newValue)});window.addEventListener('gyx:languagechange',e=>{const l=e.detail?.locale;if(VALID.has(l)&&l!==getLocale())apply(l)});setTimeout(()=>apply(getLocale()),0);requestAnimationFrame(()=>apply(getLocale()))}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind,{once:true});else bind();
+window.GYX_LOCALE={get:getLocale,set,apply};
 })();
