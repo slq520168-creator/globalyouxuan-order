@@ -5,11 +5,11 @@ let current=getStored(),applyTimer=0,flushTimer=0,inFlight=false;
 const sourceText=new WeakMap(),renderedText=new WeakMap(),sourceAttrs=new WeakMap(),renderedAttrs=new WeakMap();
 const memory=new Map(),queue=new Set(),sending=new Set();
 const nativeFetch=window.fetch.bind(window);
-const SKIP='script,style,code,pre,noscript,svg,[translate="no"],[data-no-i18n],[data-user-content],.brand,.brand-mark,[data-language-select],[data-set-lang],[data-lang],#themeToggle,#problemInput,#originalQuestion,.profile-email,#profileUserId,#profileJoinedAt,#paymentWallet,#paymentTxid,#paymentOrderNo,[data-preserve-language]';
+const SKIP='script,style,code,pre,noscript,svg,[translate="no"],[data-no-i18n],[data-user-content],.brand,.brand-mark,[data-language-select],[data-set-lang],[data-lang],#themeToggle,#problemInput,#originalQuestion,.profile-email,#profileHeading,#profileUserId,#profileJoinedAt,#paymentWallet,#paymentTxid,#paymentOrderNo,[data-preserve-language]';
 function getStored(){try{const x=localStorage.getItem(STORAGE);return VALID.has(x)?x:'zh-CN'}catch{return'zh-CN'}}
 function localeKey(l,s){return CACHE+l+':'+hash(s)}
 function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)}
-function cacheGet(l,s){const k=l+'\u0000'+s;if(memory.has(k))return memory.get(k);try{const v=localStorage.getItem(localeKey(l,s))||'';if(v){memory.set(k,v);return v}}catch{}return''}
+function cacheGet(l,s){const k=l+'\u0000'+s;if(memory.has(k))return memory.get(k);try{const h=hash(s),v=localStorage.getItem(localeKey(l,s))||localStorage.getItem(`gyx_tr_v10:${l}:${h}`)||localStorage.getItem(`gyx_tr_v9:${l}:${h}`)||'';if(v){memory.set(k,v);return v}}catch{}return''}
 function cacheSet(l,s,v){if(!s||!v)return;const k=l+'\u0000'+s;memory.set(k,v);try{localStorage.setItem(localeKey(l,s),v)}catch{}}
 function meaningful(v){const s=String(v??'').trim();if(!s||s.length>6000)return false;if(!/[A-Za-z\u3400-\u9fff\u1780-\u17ff]/.test(s))return false;if(/^https?:\/\//i.test(s)||/^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/.test(s))return false;if(/^(GYX[A-Z0-9]{8,}|[0-9A-F]{64}|T[A-Za-z0-9]{30,}|\$?\d+(?:\.\d+)?(?:\s*(?:USDT|USD))?)$/.test(s))return false;if(/^[-–—_•·|/\\+*=<>~`'".,:;!?()（）【】\[\]{}￥$€£¥%#@^&\s0-9]+$/.test(s))return false;return true}
 function skipped(el){return !el||!!el.closest?.(SKIP)}
