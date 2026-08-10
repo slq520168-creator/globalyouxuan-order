@@ -6,6 +6,9 @@
   const button = document.getElementById('startMatchButton');
   const result = document.getElementById('resultPanel');
   const actions = document.querySelector('#resultPanel .result-actions');
+  const I=window.GYXI18N;
+  const S={zh:{eyebrow:'在线客服',title:'有什么问题直接告诉我',agent:'在线客服',hello:'你好，请描述你遇到的问题。',placeholder:'例如：付款后找不到资料、链接打不开、不会操作…',send:'发送'},en:{eyebrow:'Online support',title:'Tell us what you need help with',agent:'Support',hello:'Hello. Describe the problem you are having.',placeholder:'For example: cannot find files after payment, link will not open, or need help using the site…',send:'Send'},km:{eyebrow:'ជំនួយអនឡាញ',title:'ប្រាប់យើងពីបញ្ហាដែលអ្នកត្រូវការជំនួយ',agent:'ជំនួយអនឡាញ',hello:'សួស្តី។ សូមពិពណ៌នាបញ្ហាដែលអ្នកកំពុងជួប។',placeholder:'ឧទាហរណ៍៖ រកឯកសារមិនឃើញបន្ទាប់ពីបង់ប្រាក់ តំណបើកមិនបាន ឬមិនដឹងរបៀបប្រើ…',send:'ផ្ញើ'}};
+  const st=()=>S[I?.locale]||S.zh;
 
   if (!document.getElementById('gyx-support-ai-style')) {
     const s=document.createElement('style');s.id='gyx-support-ai-style';s.textContent=`
@@ -23,8 +26,9 @@
   const supportPanel=document.getElementById('supportPanel');
   if(supportPanel&&!supportPanel.dataset.aiReady){
     supportPanel.dataset.aiReady='1';
-    supportPanel.innerHTML='<button class="support-close" type="button" data-support-close>×</button><p class="eyebrow">在线客服</p><h2>有什么问题直接告诉我</h2><div id="supportAiList" class="support-ai-list"><div class="support-ai-msg assistant"><b>在线客服</b><div>你好，请描述你遇到的问题。</div></div></div><form id="supportAiForm" class="support-ai-form"><textarea id="supportAiInput" class="support-ai-input" rows="2" placeholder="例如：付款后找不到资料、链接打不开、不会操作…"></textarea><button id="supportAiSend" class="support-ai-send" type="submit">发送</button></form>';
-    const script=document.createElement('script');script.src='support-ai.js?v=20260809-1';script.defer=true;document.body.appendChild(script);
+    const x=st();
+    supportPanel.innerHTML=`<button class="support-close" type="button" data-support-close>×</button><p class="eyebrow">${x.eyebrow}</p><h2>${x.title}</h2><div id="supportAiList" class="support-ai-list"><div class="support-ai-msg assistant"><b>${x.agent}</b><div>${x.hello}</div></div></div><form id="supportAiForm" class="support-ai-form"><textarea id="supportAiInput" class="support-ai-input" rows="2" placeholder="${x.placeholder}"></textarea><button id="supportAiSend" class="support-ai-send" type="submit">${x.send}</button></form>`;
+    const script=document.createElement('script');script.src='support-ai.js?v=20260811-i18n-2';script.defer=true;document.body.appendChild(script);
     supportPanel.querySelector('[data-support-close]')?.addEventListener('click',()=>{supportPanel.classList.remove('open');supportPanel.setAttribute('aria-hidden','true')});
   }
 
