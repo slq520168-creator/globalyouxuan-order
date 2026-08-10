@@ -1,0 +1,4 @@
+(()=>{
+'use strict';
+const p=new URLSearchParams(location.search);if(p.get('resume')!=='checkout')return;const form=document.getElementById('profileForm'),m=document.getElementById('profileMessage');if(!form||!m)return;const note=document.createElement('div');note.className='form-message show success';note.textContent='请完善并保存会员资料，保存成功后自动返回下单。';form.insertBefore(note,form.firstChild);let done=false;new MutationObserver(()=>{if(done)return;const ok=m.classList.contains('success')&&/已保存|保存成功/.test(m.textContent||'');if(ok){done=true;window.dispatchEvent(new CustomEvent('gyx:profile-updated'));setTimeout(()=>location.href='shop.html?resume=profile-checkout',350)}}).observe(m,{childList:true,characterData:true,subtree:true,attributes:true,attributeFilter:['class']});document.getElementById('profile')?.scrollIntoView({block:'start'});
+})();
