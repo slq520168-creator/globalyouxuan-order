@@ -1,1 +1,0 @@
-(()=>{'use strict';const s=document.createElement('script');s.src='knowledge-decision.js?v=20260810-prd-1';s.defer=true;document.head.appendChild(s)})();
