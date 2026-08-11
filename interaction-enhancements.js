@@ -1,6 +1,8 @@
 (() => {
   'use strict';
 
+  try{localStorage.removeItem('gyx_kd_active')}catch{}
+
   const form = document.getElementById('problemForm');
   const input = document.getElementById('problemInput');
   const button = document.getElementById('startMatchButton');
