@@ -11,12 +11,14 @@
 #supportPanel .support-avatar{position:absolute!important;top:9px!important;left:8px!important;width:26px!important;height:26px!important;border-radius:50%!important;overflow:hidden!important;display:grid!important;place-items:center!important;font-size:10px!important;z-index:1!important}
 #supportPanel .support-ai-msg.user .support-avatar{left:auto!important;right:8px!important}
 #supportPanel .support-avatar img{width:100%!important;height:100%!important;object-fit:cover!important;display:block!important}
-#supportPanel .support-time{position:absolute!important;left:42px!important;bottom:5px!important;font-size:10px!important;line-height:1!important;opacity:.52!important;white-space:nowrap!important}
-#supportPanel .support-ai-msg.user .support-time{left:auto!important;right:42px!important}
+#supportPanel .support-time{display:none!important}
+#supportPanel .support-msg-time{display:block!important;position:absolute!important;left:42px!important;bottom:5px!important;margin:0!important;font-size:10px!important;line-height:1!important;opacity:.52!important;white-space:nowrap!important}
+#supportPanel .support-ai-msg.user .support-msg-time{left:auto!important;right:42px!important;text-align:right!important}
 #supportPanel .support-ai-form{flex:0 0 auto!important;display:flex!important;gap:8px!important;align-items:flex-end!important;margin:0!important;padding-top:8px!important;background:inherit!important}
 #supportPanel .support-ai-input{min-height:52px!important;max-height:82px!important;font-size:14px!important;line-height:1.4!important;padding:10px 12px!important;resize:none!important}
 #supportPanel .support-ai-send{height:44px!important;min-width:70px!important;font-size:14px!important}
 @media(max-width:430px){#supportPanel.support-panel{height:80dvh!important;max-height:calc(100dvh - 120px)!important;left:14px!important;right:14px!important;width:auto!important}#supportPanel .support-ai-msg{max-width:90%!important;font-size:13.5px!important}}
 `;document.head.appendChild(s)}
-const list=document.getElementById('supportAiList');if(list){const fix=()=>{list.querySelectorAll('.support-ai-msg').forEach(m=>{m.style.height='auto';m.style.minHeight='44px';m.style.overflow='visible'});list.scrollTop=list.scrollHeight};fix();new MutationObserver(()=>requestAnimationFrame(fix)).observe(list,{childList:true,subtree:true,characterData:true})}}
+const list=document.getElementById('supportAiList');if(list){const fix=()=>{list.querySelectorAll('.support-ai-msg').forEach(m=>{m.style.height='auto';m.style.minHeight='44px';m.style.overflow='visible';const old=[...m.querySelectorAll('.support-time')];old.forEach(x=>x.remove());const keep=[...m.querySelectorAll('.support-msg-time')];if(keep.length>1)keep.slice(1).forEach(x=>x.remove())});list.scrollTop=list.scrollHeight};fix();new MutationObserver(()=>requestAnimationFrame(fix)).observe(list,{childList:true,subtree:true,characterData:true})}
+if(!window.__gyxProfileFinalLoaded){window.__gyxProfileFinalLoaded=true;const sc=document.createElement('script');sc.src='support-profile-final.js?v=20260811-final-1';sc.async=false;document.body.appendChild(sc)}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();})();
