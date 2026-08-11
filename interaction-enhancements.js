@@ -32,7 +32,7 @@
     supportPanel.dataset.explicitClose='0';
     const x=st();
     supportPanel.innerHTML=`<button class="support-close" type="button" data-support-close>×</button><p class="eyebrow">${x.eyebrow}</p><h2>${x.title}</h2><div id="supportAiList" class="support-ai-list"><div class="support-ai-msg assistant"><b>${x.agent}</b><div>${x.hello}</div></div></div><form id="supportAiForm" class="support-ai-form"><textarea id="supportAiInput" class="support-ai-input" rows="2" placeholder="${x.placeholder}"></textarea><button id="supportAiSend" class="support-ai-send" type="submit">${x.send}</button></form>`;
-    const script=document.createElement('script');script.src='support-ai.js?v=20260811-i18n-2';script.defer=true;document.body.appendChild(script);
+    const script=document.createElement('script');script.src='support-ai.js?v=20260811-i18n-3';script.defer=true;script.onload=()=>{if(document.querySelector('script[data-gyx-support-flow]'))return;const h=document.createElement('script');h.src='support-flow-hotfix.js?v=20260811-flow-1';h.dataset.gyxSupportFlow='1';document.body.appendChild(h)};document.body.appendChild(script);
 
     const openSession=()=>{supportPanel.dataset.sessionActive='1';supportPanel.dataset.explicitClose='0';supportPanel.classList.add('show');supportPanel.setAttribute('aria-hidden','false')};
     const closeSession=()=>{supportPanel.dataset.explicitClose='1';supportPanel.dataset.sessionActive='0';supportPanel.classList.remove('show');supportPanel.classList.remove('open');supportPanel.setAttribute('aria-hidden','true')};
