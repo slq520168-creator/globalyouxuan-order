@@ -1,1 +1,18 @@
-(()=>{'use strict';window.GYX_SUPPORT_MASTER_ACTIVE=true;if(!window.__gyxSupportMasterV4){window.__gyxSupportMasterV4=true;const s=document.createElement('script');s.src='support-master-v4.js?v=20260812-id-router-2';s.async=false;s.onerror=()=>console.error('support-master-v4 load failed');document.body.appendChild(s)}if(!window.__gyxProfileStatusWatchLoader){window.__gyxProfileStatusWatchLoader=true;const w=document.createElement('script');w.src='support-profile-status-watch.js?v=20260812-review-reply-1';w.async=false;w.onerror=()=>console.error('support-profile-status-watch load failed');document.body.appendChild(w)}})();
+(()=>{'use strict';
+if(window.__gyxSupportBootstrapLoaded)return;
+window.__gyxSupportBootstrapLoaded=true;
+window.GYX_SUPPORT_MASTER_ACTIVE=true;
+
+function loadOnce(id,src){
+  if(document.getElementById(id))return;
+  const s=document.createElement('script');
+  s.id=id;
+  s.src=src;
+  s.async=false;
+  s.onerror=()=>console.error(id+' load failed');
+  document.body.appendChild(s);
+}
+
+loadOnce('gyx-support-master-v4-script','support-master-v4.js?v=20260812-single-controller-1');
+// 审核结果监听由 shop.html 唯一加载；这里不再重复加载。
+})();
