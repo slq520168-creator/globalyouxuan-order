@@ -28,10 +28,27 @@
   const supportPanel=document.getElementById('supportPanel');
   if(supportPanel&&!supportPanel.dataset.aiReady){
     supportPanel.dataset.aiReady='1';
+    supportPanel.dataset.sessionActive='0';
+    supportPanel.dataset.explicitClose='0';
     const x=st();
     supportPanel.innerHTML=`<button class="support-close" type="button" data-support-close>×</button><p class="eyebrow">${x.eyebrow}</p><h2>${x.title}</h2><div id="supportAiList" class="support-ai-list"><div class="support-ai-msg assistant"><b>${x.agent}</b><div>${x.hello}</div></div></div><form id="supportAiForm" class="support-ai-form"><textarea id="supportAiInput" class="support-ai-input" rows="2" placeholder="${x.placeholder}"></textarea><button id="supportAiSend" class="support-ai-send" type="submit">${x.send}</button></form>`;
     const script=document.createElement('script');script.src='support-ai.js?v=20260811-i18n-2';script.defer=true;document.body.appendChild(script);
-    supportPanel.querySelector('[data-support-close]')?.addEventListener('click',()=>{supportPanel.classList.remove('open');supportPanel.setAttribute('aria-hidden','true')});
+
+    const openSession=()=>{supportPanel.dataset.sessionActive='1';supportPanel.dataset.explicitClose='0';supportPanel.classList.add('show');supportPanel.setAttribute('aria-hidden','false')};
+    const closeSession=()=>{supportPanel.dataset.explicitClose='1';supportPanel.dataset.sessionActive='0';supportPanel.classList.remove('show');supportPanel.classList.remove('open');supportPanel.setAttribute('aria-hidden','true')};
+
+    document.querySelectorAll('[data-support-open]').forEach(b=>b.addEventListener('click',openSession,true));
+    supportPanel.querySelector('[data-support-close]')?.addEventListener('click',e=>{e.stopPropagation();closeSession()},true);
+
+    const keepVisible=new MutationObserver(()=>{
+      if(supportPanel.dataset.sessionActive==='1'&&supportPanel.dataset.explicitClose!=='1'&&!supportPanel.classList.contains('show')){
+        queueMicrotask(()=>{if(supportPanel.dataset.sessionActive==='1'&&supportPanel.dataset.explicitClose!=='1'){supportPanel.classList.add('show');supportPanel.setAttribute('aria-hidden','false')}})
+      }
+    });
+    keepVisible.observe(supportPanel,{attributes:true,attributeFilter:['class','aria-hidden']});
+
+    window.GYX_CLOSE_SUPPORT_SESSION=(reason='customer')=>{supportPanel.dataset.closeReason=String(reason);closeSession()};
+    window.GYX_KEEP_SUPPORT_SESSION_OPEN=()=>openSession();
   }
 
   if (!form || !input || !button) return;
