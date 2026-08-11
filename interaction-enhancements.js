@@ -1,65 +1,14 @@
 (() => {
   'use strict';
-
   try{localStorage.removeItem('gyx_kd_active')}catch{}
-
-  const form = document.getElementById('problemForm');
-  const input = document.getElementById('problemInput');
-  const button = document.getElementById('startMatchButton');
-  const result = document.getElementById('resultPanel');
-  const actions = document.querySelector('#resultPanel .result-actions');
-  const I=window.GYXI18N;
+  const form=document.getElementById('problemForm'),input=document.getElementById('problemInput'),button=document.getElementById('startMatchButton'),result=document.getElementById('resultPanel'),actions=document.querySelector('#resultPanel .result-actions'),I=window.GYXI18N;
   const S={zh:{eyebrow:'在线客服',title:'有什么问题直接告诉我',agent:'在线客服',hello:'你好，请描述你遇到的问题。',placeholder:'例如：付款后找不到资料、链接打不开、不会操作…',send:'发送'},en:{eyebrow:'Online support',title:'Tell us what you need help with',agent:'Support',hello:'Hello. Describe the problem you are having.',placeholder:'For example: cannot find files after payment, link will not open, or need help using the site…',send:'Send'},km:{eyebrow:'ជំនួយអនឡាញ',title:'ប្រាប់យើងពីបញ្ហាដែលអ្នកត្រូវការជំនួយ',agent:'ជំនួយអនឡាញ',hello:'សួស្តី។ សូមពិពណ៌នាបញ្ហាដែលអ្នកកំពុងជួប។',placeholder:'ឧទាហរណ៍៖ រកឯកសារមិនឃើញបន្ទាប់ពីបង់ប្រាក់ តំណបើកមិនបាន ឬមិនដឹងរបៀបប្រើ…',send:'ផ្ញើ'}};
   const st=()=>S[I?.locale]||S.zh;
-
-  if (!document.getElementById('gyx-support-ai-style')) {
-    const s=document.createElement('style');s.id='gyx-support-ai-style';s.textContent=`
-      #supportPanel .support-ai-list{display:flex;flex-direction:column;gap:12px;max-height:52vh;overflow:auto;padding:8px 0 12px}
-      #supportPanel .support-ai-msg{padding:10px 12px;border-radius:14px;background:rgba(30,120,255,.08);line-height:1.55}
-      #supportPanel .support-ai-msg.user{margin-left:34px;background:rgba(30,120,255,.15)}
-      #supportPanel .support-ai-msg.assistant{margin-right:20px}
-      #supportPanel .support-ai-msg b{display:block;font-size:12px;margin-bottom:4px;opacity:.65}
-      #supportPanel .support-ai-form{display:flex;gap:8px;align-items:flex-end;margin-top:10px}
-      #supportPanel .support-ai-input{flex:1;min-height:72px;max-height:140px;resize:vertical;border:1px solid rgba(110,150,210,.32);border-radius:14px;padding:12px;background:transparent;color:inherit;font:inherit}
-      #supportPanel .support-ai-send{min-width:72px;height:44px;border:0;border-radius:12px;background:#2878f0;color:#fff;font-weight:700}
-    `;document.head.appendChild(s);
-  }
-
+  if(!document.getElementById('gyx-support-ai-style')){const s=document.createElement('style');s.id='gyx-support-ai-style';s.textContent='#supportPanel .support-ai-list{display:flex;flex-direction:column;gap:12px;max-height:52vh;overflow:auto;padding:8px 0 12px}#supportPanel .support-ai-msg{padding:10px 12px;border-radius:14px;background:rgba(30,120,255,.08);line-height:1.55}#supportPanel .support-ai-msg.user{margin-left:34px;background:rgba(30,120,255,.15)}#supportPanel .support-ai-msg.assistant{margin-right:20px}#supportPanel .support-ai-msg b{display:block;font-size:12px;margin-bottom:4px;opacity:.65}#supportPanel .support-ai-form{display:flex;gap:8px;align-items:flex-end;margin-top:10px}#supportPanel .support-ai-input{flex:1;min-height:72px;max-height:140px;resize:vertical;border:1px solid rgba(110,150,210,.32);border-radius:14px;padding:12px;background:transparent;color:inherit;font:inherit}#supportPanel .support-ai-send{min-width:72px;height:44px;border:0;border-radius:12px;background:#2878f0;color:#fff;font-weight:700}';document.head.appendChild(s)}
   const supportPanel=document.getElementById('supportPanel');
-  if(supportPanel&&!supportPanel.dataset.aiReady){
-    supportPanel.dataset.aiReady='1';
-    supportPanel.dataset.sessionActive='0';
-    supportPanel.dataset.explicitClose='0';
-    const x=st();
-    supportPanel.innerHTML=`<button class="support-close" type="button" data-support-close>×</button><p class="eyebrow">${x.eyebrow}</p><h2>${x.title}</h2><div id="supportAiList" class="support-ai-list"><div class="support-ai-msg assistant"><b>${x.agent}</b><div>${x.hello}</div></div></div><form id="supportAiForm" class="support-ai-form"><textarea id="supportAiInput" class="support-ai-input" rows="2" placeholder="${x.placeholder}"></textarea><button id="supportAiSend" class="support-ai-send" type="submit">${x.send}</button></form>`;
-    const script=document.createElement('script');script.src='support-ai.js?v=20260811-i18n-3';script.defer=true;script.onload=()=>{if(document.querySelector('script[data-gyx-support-flow]'))return;const h=document.createElement('script');h.src='support-flow-hotfix.js?v=20260811-flow-1';h.dataset.gyxSupportFlow='1';document.body.appendChild(h)};document.body.appendChild(script);
-
-    const openSession=()=>{supportPanel.dataset.sessionActive='1';supportPanel.dataset.explicitClose='0';supportPanel.classList.add('show');supportPanel.setAttribute('aria-hidden','false')};
-    const closeSession=()=>{supportPanel.dataset.explicitClose='1';supportPanel.dataset.sessionActive='0';supportPanel.classList.remove('show');supportPanel.classList.remove('open');supportPanel.setAttribute('aria-hidden','true')};
-
-    document.querySelectorAll('[data-support-open]').forEach(b=>b.addEventListener('click',openSession,true));
-    supportPanel.querySelector('[data-support-close]')?.addEventListener('click',e=>{e.stopPropagation();closeSession()},true);
-
-    const keepVisible=new MutationObserver(()=>{
-      if(supportPanel.dataset.sessionActive==='1'&&supportPanel.dataset.explicitClose!=='1'&&!supportPanel.classList.contains('show')){
-        queueMicrotask(()=>{if(supportPanel.dataset.sessionActive==='1'&&supportPanel.dataset.explicitClose!=='1'){supportPanel.classList.add('show');supportPanel.setAttribute('aria-hidden','false')}})
-      }
-    });
-    keepVisible.observe(supportPanel,{attributes:true,attributeFilter:['class','aria-hidden']});
-
-    window.GYX_CLOSE_SUPPORT_SESSION=(reason='customer')=>{supportPanel.dataset.closeReason=String(reason);closeSession()};
-    window.GYX_KEEP_SUPPORT_SESSION_OPEN=()=>openSession();
-  }
-
-  if (!form || !input || !button) return;
-  if (!document.getElementById('gyx-search-full-visibility')) {
-    const style = document.createElement('style');style.id='gyx-search-full-visibility';style.textContent=`.home-page #quizPanel.search-popover,.home-page #resultPanel.search-popover{max-height:none!important;height:auto!important;overflow:visible!important;overscroll-behavior:auto!important}.home-page #quizOptions,.home-page .quiz-options{max-height:none!important;height:auto!important;overflow:visible!important}`;document.head.appendChild(style);
-  }
-  let autoTimer=null,autoSubmitting=false;
-  function cancelAuto(){if(autoTimer)clearTimeout(autoTimer);autoTimer=null}
-  function submitNow(){const value=String(input.value||'').trim();if(value.length<2)return;cancelAuto();autoSubmitting=true;try{form.requestSubmit(button)}finally{setTimeout(()=>{autoSubmitting=false},0)}}
-  input.addEventListener('input',()=>{cancelAuto();const value=String(input.value||'').trim();if(value.length<2)return;autoTimer=setTimeout(submitNow,4000)});
-  button.addEventListener('click',()=>cancelAuto(),true);form.addEventListener('submit',()=>cancelAuto(),true);
-  if(!window.__gyxTypingEffectLoader){window.__gyxTypingEffectLoader=true;const script=document.createElement('script');script.src='typing-effect.js?v=20260811-i18n-restore-1';script.async=false;script.onerror=()=>console.error('Typing effect failed to load');document.body.appendChild(script)}
-  if(result){let cleared=false;const clearOnce=()=>{if(result.classList.contains('hidden')){cleared=false;return}if(cleared)return;const ready=actions&&actions.offsetParent!==null;if(!ready)return;input.value='';cleared=true};const observer=new MutationObserver(()=>requestAnimationFrame(clearOnce));observer.observe(result,{attributes:true,attributeFilter:['class'],subtree:true,childList:true});if(actions)observer.observe(actions,{attributes:true,subtree:true,childList:true});clearOnce()}
+  if(supportPanel&&!supportPanel.dataset.aiReady){supportPanel.dataset.aiReady='1';supportPanel.dataset.sessionActive='0';supportPanel.dataset.explicitClose='0';const x=st();supportPanel.innerHTML=`<button class="support-close" type="button" data-support-close>×</button><p class="eyebrow">${x.eyebrow}</p><h2>${x.title}</h2><div id="supportAiList" class="support-ai-list"><div class="support-ai-msg assistant"><b>${x.agent}</b><div>${x.hello}</div></div></div><form id="supportAiForm" class="support-ai-form"><textarea id="supportAiInput" class="support-ai-input" rows="2" placeholder="${x.placeholder}"></textarea><button id="supportAiSend" class="support-ai-send" type="submit">${x.send}</button></form>`;const script=document.createElement('script');script.src='support-ai.js?v=20260811-i18n-3';script.defer=true;document.body.appendChild(script);const openSession=()=>{supportPanel.dataset.sessionActive='1';supportPanel.dataset.explicitClose='0';supportPanel.classList.add('show');supportPanel.setAttribute('aria-hidden','false')},closeSession=()=>{supportPanel.dataset.explicitClose='1';supportPanel.dataset.sessionActive='0';supportPanel.classList.remove('show','open');supportPanel.setAttribute('aria-hidden','true')};document.querySelectorAll('[data-support-open]').forEach(b=>b.addEventListener('click',openSession,true));supportPanel.querySelector('[data-support-close]')?.addEventListener('click',e=>{e.stopPropagation();closeSession()},true);const keepVisible=new MutationObserver(()=>{if(supportPanel.dataset.sessionActive==='1'&&supportPanel.dataset.explicitClose!=='1'&&!supportPanel.classList.contains('show'))queueMicrotask(()=>{if(supportPanel.dataset.sessionActive==='1'&&supportPanel.dataset.explicitClose!=='1'){supportPanel.classList.add('show');supportPanel.setAttribute('aria-hidden','false')}})});keepVisible.observe(supportPanel,{attributes:true,attributeFilter:['class','aria-hidden']});window.GYX_CLOSE_SUPPORT_SESSION=(reason='customer')=>{supportPanel.dataset.closeReason=String(reason);closeSession()};window.GYX_KEEP_SUPPORT_SESSION_OPEN=openSession}
+  if(!form||!input||!button)return;
+  if(!document.getElementById('gyx-search-full-visibility')){const style=document.createElement('style');style.id='gyx-search-full-visibility';style.textContent='.home-page #quizPanel.search-popover,.home-page #resultPanel.search-popover{max-height:none!important;height:auto!important;overflow:visible!important;overscroll-behavior:auto!important}.home-page #quizOptions,.home-page .quiz-options{max-height:none!important;height:auto!important;overflow:visible!important}';document.head.appendChild(style)}
+  let autoTimer=null;const cancelAuto=()=>{if(autoTimer)clearTimeout(autoTimer);autoTimer=null};input.addEventListener('input',()=>{cancelAuto();if(String(input.value||'').trim().length<2)return;autoTimer=setTimeout(()=>form.requestSubmit(button),4000)});button.addEventListener('click',cancelAuto,true);form.addEventListener('submit',cancelAuto,true);
+  if(result){let cleared=false;const clearOnce=()=>{if(result.classList.contains('hidden')){cleared=false;return}if(cleared||!(actions&&actions.offsetParent!==null))return;input.value='';cleared=true};const observer=new MutationObserver(()=>requestAnimationFrame(clearOnce));observer.observe(result,{attributes:true,attributeFilter:['class'],subtree:true,childList:true});if(actions)observer.observe(actions,{attributes:true,subtree:true,childList:true});clearOnce()}
 })();
