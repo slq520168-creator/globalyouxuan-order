@@ -24,6 +24,7 @@
     load("admin-member-level.js?v=20260811-levels-1", "gyx-memberlevel");
     load("admin-member-profile.js?v=20260811-profile-2", "gyx-memberprofile");
     load("admin-profile-requests.js?v=20260811-profile-review-1", "gyx-profilerequests");
+    load("admin-member-security.js?v=20260812-member-security-1", "gyx-membersecurity");
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", go, { once: true }); else go();
 })();
