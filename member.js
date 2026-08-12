@@ -6,7 +6,6 @@
   const $ = (id) => document.getElementById(id),
     t = (k, v) => I.t(k, v);
   let user = null,
-    profile = null,
     favorites = [],
     favoriteAnswers = new Map(),
     orders = [],
@@ -57,10 +56,6 @@
     const n = Number(value);
     return Number.isFinite(n) ? n.toFixed(2) : String(value || "0.00");
   }
-  function initials(value) {
-    const clean = String(value || "GY").trim();
-    return (clean.slice(0, 2) || "GY").toUpperCase();
-  }
   function errorText(error) {
     const code = String(error?.code || error?.message || "").toUpperCase();
     if (
@@ -85,43 +80,6 @@
       return false;
     }
     return true;
-  }
-  async function loadProfile() {
-    const { data, error } = await db
-      .from("profiles")
-      .select("user_id,display_name,phone,locale,created_at,updated_at")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (error) {
-      showMessage("profileMessage", errorText(error));
-      return;
-    }
-    profile = data || {
-      user_id: user.id,
-      display_name: "",
-      phone: "",
-      locale: localeDb(),
-      created_at: user.created_at,
-    };
-    renderProfile();
-  }
-  function renderProfile() {
-    const name =
-      profile?.display_name ||
-      user?.user_metadata?.display_name ||
-      user?.email?.split("@")[0] ||
-      "GY";
-    $("profileAvatar").textContent = initials(name);
-    $("profileHeading").textContent = name;
-    $("profileEmail").textContent = user?.email || "—";
-    $("profileUserId").textContent = user?.id || "—";
-    $("profileJoinedAt").textContent = formatDate(
-      profile?.created_at || user?.created_at,
-    );
-    $("profileName").value = profile?.display_name || "";
-    $("profilePhone").value = profile?.phone || "";
-    $("profileLocale").value =
-      profile?.locale === "zh" ? "zh-CN" : profile?.locale || localeDb();
   }
   async function loadFavorites() {
     clearMessage("favoritesMessage");
@@ -248,40 +206,6 @@
     }
     favorites = favorites.filter((x) => x.id !== id);
     renderFavorites();
-  }
-  async function saveProfile(event) {
-    event.preventDefault();
-    clearMessage("profileMessage");
-    const displayName = $("profileName").value.trim(),
-      phone = $("profilePhone").value.trim(),
-      locale = $("profileLocale").value;
-    if (!displayName) {
-      showMessage("profileMessage", t("errorName"));
-      return;
-    }
-    if (phone && phone.length < 6) {
-      showMessage("profileMessage", t("errorPhone"));
-      return;
-    }
-    const button = $("saveProfileButton");
-    button.disabled = true;
-    button.textContent = t("saving");
-    const { data, error } = await db
-      .from("profiles")
-      .update({ display_name: displayName, phone: phone || null, locale })
-      .eq("user_id", user.id)
-      .select("user_id,display_name,phone,locale,created_at,updated_at")
-      .single();
-    button.disabled = false;
-    button.textContent = t("saveProfile");
-    if (error) {
-      showMessage("profileMessage", errorText(error));
-      return;
-    }
-    profile = data;
-    showMessage("profileMessage", t("saved"), "success");
-    if ((locale === "zh-CN" ? "zh" : locale) !== I.locale)
-      I.changeLanguage(locale);
   }
   async function loadOrders() {
     clearMessage("ordersMessage");
@@ -740,7 +664,6 @@
     location.replace("login.html");
   }
   function bindEvents() {
-    $("profileForm").addEventListener("submit", saveProfile);
     document.querySelectorAll("[data-order-filter]").forEach((btn) =>
       btn.addEventListener("click", () => {
         orderFilter = btn.dataset.orderFilter || "all";
@@ -766,7 +689,6 @@
   document.addEventListener("DOMContentLoaded", async () => {
     bindEvents();
     if (!(await requireUser())) return;
-    await loadProfile();
     $("materialLanguage").value = localeDb();
     await Promise.all([loadFavorites(), loadOrders(), loadMaterials()]);
   });
