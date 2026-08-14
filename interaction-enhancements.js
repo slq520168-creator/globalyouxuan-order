@@ -14,8 +14,7 @@
     let cleared=false;
     const clearOnce=()=>{if(result.classList.contains('hidden')){cleared=false;return}if(cleared||!(actions&&actions.offsetParent!==null))return;input.value='';cleared=true};
     const observer=new MutationObserver(()=>requestAnimationFrame(clearOnce));
-    observer.observe(result,{attributes:true,attributeFilter:['class'],subtree:true,childList:true});
-    if(actions)observer.observe(actions,{attributes:true,subtree:true,childList:true});
+    observer.observe(result,{attributes:true,attributeFilter:['class']});
     clearOnce();
   }
 })();
