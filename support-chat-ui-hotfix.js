@@ -22,3 +22,47 @@
 const list=document.getElementById('supportAiList');if(list){const fix=()=>{list.querySelectorAll('.support-ai-msg').forEach(m=>{m.style.height='auto';m.style.minHeight='44px';m.style.overflow='visible';const old=[...m.querySelectorAll('.support-time')];old.forEach(x=>x.remove());const keep=[...m.querySelectorAll('.support-msg-time')];if(keep.length>1)keep.slice(1).forEach(x=>x.remove())});list.scrollTop=list.scrollHeight};fix();new MutationObserver(()=>requestAnimationFrame(fix)).observe(list,{childList:true,subtree:true,characterData:true})}
 if(!window.__gyxProfileFinalLoaded){window.__gyxProfileFinalLoaded=true;const sc=document.createElement('script');sc.src='support-profile-final.js?v=20260811-final-1';sc.async=false;document.body.appendChild(sc)}}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});else apply();})();
+
+(()=>{
+  if(window.__GYX_SUPPORT_VISUAL_VIEWPORT_FIX__||!window.visualViewport)return;
+  window.__GYX_SUPPORT_VISUAL_VIEWPORT_FIX__=true;
+  const panel=document.getElementById('supportPanel');
+  if(!panel)return;
+  const props=['height','max-height','top','bottom'];
+  const original={};
+  props.forEach(name=>{original[name]={value:panel.style.getPropertyValue(name),priority:panel.style.getPropertyPriority(name)}});
+  const isInputFocused=()=>document.activeElement?.matches?.('#homeRegisterSupportInput, .support-ai-input');
+  const isPanelOpen=()=>panel.classList.contains('show')||panel.classList.contains('open');
+  const restore=()=>{
+    props.forEach(name=>{
+      const x=original[name];
+      if(x.value)panel.style.setProperty(name,x.value,x.priority||'');
+      else panel.style.removeProperty(name);
+    });
+  };
+  const adjust=()=>{
+    if(!isPanelOpen()||!isInputFocused()){restore();return;}
+    const vv=window.visualViewport;
+    const h=Math.max(280,vv.height-20);
+    panel.style.setProperty('height',h+'px','important');
+    panel.style.setProperty('max-height',h+'px','important');
+    panel.style.setProperty('top',(vv.offsetTop+10)+'px','important');
+    panel.style.setProperty('bottom','auto','important');
+    const list=document.getElementById('supportAiList');
+    if(list)list.scrollTop=list.scrollHeight;
+  };
+  window.visualViewport.addEventListener('resize',adjust,{passive:true});
+  window.visualViewport.addEventListener('scroll',adjust,{passive:true});
+  document.addEventListener('focusin',e=>{
+    if(e.target?.matches?.('#homeRegisterSupportInput, .support-ai-input')){
+      setTimeout(adjust,50);
+      setTimeout(adjust,300);
+    }
+  },true);
+  document.addEventListener('focusout',e=>{
+    if(e.target?.matches?.('#homeRegisterSupportInput, .support-ai-input'))setTimeout(restore,80);
+  },true);
+  document.addEventListener('click',e=>{
+    if(e.target.closest?.('[data-support-close]'))setTimeout(restore,0);
+  },true);
+})();
