@@ -2,7 +2,7 @@
 html body.home-page {
   min-height: 100vh;
   color: #f5f8ff;
-  background: #071424;
+  background: #020817;
 }
 
 .home-page .site-header {
@@ -37,11 +37,13 @@ html body.home-page {
   min-height: calc(100vh - 70px);
   overflow: hidden;
   padding: clamp(72px, 8vw, 100px) 0 92px;
-  background-color: #071424;
-  background-image: none;
+  background-color: #020817;
+  background-image:
+    linear-gradient(180deg, rgba(2, 8, 23, .08) 0%, rgba(2, 8, 23, .02) 43%, rgba(2, 8, 23, .34) 72%, #020817 100%),
+    url("assets/hero-space-earth.webp");
   background-position: center top;
   background-repeat: no-repeat;
-  background-size: max(100vw, 1080px) auto;
+  background-size: cover;
 }
 .cosmic-home::before {
   content: "";
@@ -49,7 +51,9 @@ html body.home-page {
   z-index: -1;
   inset: 0;
   pointer-events: none;
-  background: none;
+  background:
+    radial-gradient(circle at 50% 17%, rgba(22, 99, 255, .1), transparent 32%),
+    linear-gradient(90deg, rgba(1, 6, 19, .32), transparent 22% 78%, rgba(1, 6, 19, .32));
 }
 
 .home-stage {
@@ -376,7 +380,7 @@ html body.home-page {
 }
 
 @media (max-width: 960px) {
-  .cosmic-home { padding-top: 48px; background-size: 1120px auto; }
+  .cosmic-home { padding-top: 48px; background-size: cover; }
   .home-page .module-grid { grid-template-columns: repeat(2, 1fr); }
   .fixed-module-section { margin-top: 12px; }
   .fixed-plan-list { grid-template-columns: repeat(2, 1fr); }
@@ -393,7 +397,7 @@ html body.home-page {
   .cosmic-home {
     min-height: 0;
     padding: calc(72px + env(safe-area-inset-top, 0px)) 0 72px;
-    background-size: 960px auto;
+    background-size: cover;
     background-position: 50% 0;
   }
   .home-copy {
