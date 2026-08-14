@@ -1,6 +1,7 @@
 (() => {
   'use strict';
   const currentPath=(window.location.pathname||'').toLowerCase(),search=window.location.search||'',hash=window.location.hash||'',recoveryLink=/(?:[?&#])(type=recovery|token_hash=|access_token=|refresh_token=|code=)/i.test(search+hash);
+  if(currentPath.endsWith('/member.html')&&new URLSearchParams(search).get('pay')){document.documentElement.classList.add('payment-entry');const s=document.createElement('style');s.id='payment-entry-guard';s.textContent='html.payment-entry,html.payment-entry body{background:var(--bg,#f4f8ff)!important}html.payment-entry .site-header,html.payment-entry main,html.payment-entry .mobile-bottom-nav,html.payment-entry #supportPanel{display:none!important}';document.head.appendChild(s)}
   if(!currentPath.includes('reset-password')&&recoveryLink){const target=new URL('reset-password.html',window.location.href);target.search=search;target.hash=hash;window.location.replace(target.toString());return}
   const config=Object.freeze({url:'https://afzcohtnljnmucrkgcaz.supabase.co',publishableKey:'sb_publishable_EqF-kTNRsSZWhUE8LWB8DQ_UNkTjImv',wallet:'TKfQoN7kZirALGYxMkxU4SoqMWJRqXsh7k',network:'USDT-TRC20',support:'@qqyousubot'});window.GYX_CONFIG=config;
   if(!window.supabase||typeof window.supabase.createClient!=='function'){console.error('Supabase client library failed to load. Search configuration remains available.');return}
