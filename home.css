@@ -1,5 +1,5 @@
 /* GlobalYouXuan cinematic home — isolated from login/member pages. */
-.home-page {
+html body.home-page {
   min-height: 100vh;
   color: #f5f8ff;
   background: #071424;
