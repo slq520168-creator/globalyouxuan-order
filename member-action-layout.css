@@ -13,6 +13,16 @@
 .member-page #orders button{vertical-align:middle}
 .member-page #favorites .btn,
 .member-page #searches .btn{border-radius:14px}
+.member-page #searchHistoryList .search-history-card{position:relative!important;padding-top:54px!important}
+.member-page #searchHistoryList .search-history-head{display:grid!important;grid-template-columns:1fr!important;gap:5px!important;position:static!important}
+.member-page #searchHistoryList .search-history-controls{display:contents!important}
+.member-page #searchHistoryList .history-order-btn{position:absolute!important;left:11px!important;top:11px!important;margin:0!important;z-index:2!important}
+.member-page #searchHistoryList .history-delete-btn{position:absolute!important;right:11px!important;top:11px!important;margin:0!important;z-index:2!important}
+.member-page #searchHistoryList .member-search-pick{order:2!important;margin:1px 0 0!important}
+.member-page #searchHistoryList .search-history-head>div:not(.search-history-controls){order:1!important;min-width:0!important;text-align:left!important}
+.member-page #searchHistoryList .search-history-head>div:not(.search-history-controls)>strong{display:block!important;margin:0!important;line-height:1.35!important}
+.member-page #searchHistoryList .search-history-head>div:not(.search-history-controls)>.muted{margin:5px 0 0!important;line-height:1.35!important}
+.member-page #searchHistoryList .search-final{margin-top:7px!important}
 @media(max-width:560px){
  .member-page .panel[data-fold-ready="1"] .panel-head{display:flex;align-items:center}
  .member-page .panel[data-fold-ready="1"] .panel-head>.btn,
@@ -21,4 +31,8 @@
  .member-page #orders #orderFilters .order-filter{width:100%;min-width:0;min-height:46px;margin:0}
  .member-page #orders #refreshOrdersButton{min-width:78px;min-height:44px}
  .member-page #favorites input[type="checkbox"],.member-page #searches input[type="checkbox"]{width:22px;height:22px}
+}
+@media(max-width:430px){
+ .member-page #searchHistoryList .search-history-card{padding-top:51px!important}
+ .member-page #searchHistoryList .history-order-btn,.member-page #searchHistoryList .history-delete-btn{top:10px!important}
 }
