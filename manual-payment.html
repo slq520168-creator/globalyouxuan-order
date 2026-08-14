@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#f4f8ff">
+<meta name="robots" content="noindex">
+<title>GlobalYouXuan · 其他付款</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{}</script>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<div id="manualPaymentBoot" style="min-height:100dvh;display:grid;place-items:center;padding:20px;font-weight:800">正在打开付款页面…</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
+<script src="supabase-client.js?v=20260811-auth-cache-1"></script>
+<script src="i18n.js?v=20260811-i18next-1"></script>
+<script src="i18n-member.js?v=20260811-member-security-4"></script>
+<script>
+(function(){
+  var p=new URLSearchParams(location.search);
+  var order=p.get('order')||p.get('manualpay')||'';
+  var via=p.get('via')||'';
+  if(!order){location.replace('member.html#orders');return;}
+  var q=new URLSearchParams();q.set('manualpay',order);if(via)q.set('via',via);
+  history.replaceState(null,'','manual-payment.html?'+q.toString());
+  var s=document.createElement('script');s.src='member-manual-payment-v2.js?v=20260814-standalone-1';document.body.appendChild(s);
+  var f=document.createElement('script');f.src='member-manual-payment-fx.js?v=20260814-standalone-1';document.body.appendChild(f);
+  var n=0,t=setInterval(function(){n++;if(document.getElementById('manualPaymentScreen')){var b=document.getElementById('manualPaymentBoot');if(b)b.remove();clearInterval(t)}else if(n>80){clearInterval(t)}},100);
+})();
+</script>
+</body>
+</html>
