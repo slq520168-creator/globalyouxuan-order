@@ -2,7 +2,7 @@
 .home-page {
   min-height: 100vh;
   color: #f5f8ff;
-  background: #020817;
+  background: #071424;
 }
 
 .home-page .site-header {
@@ -37,10 +37,8 @@
   min-height: calc(100vh - 70px);
   overflow: hidden;
   padding: clamp(72px, 8vw, 100px) 0 92px;
-  background-color: #020817;
-  background-image:
-    linear-gradient(180deg, rgba(2, 8, 23, .08) 0%, rgba(2, 8, 23, .02) 43%, rgba(2, 8, 23, .34) 72%, #020817 100%),
-    url("assets/hero-space-earth.webp");
+  background-color: #071424;
+  background-image: none;
   background-position: center top;
   background-repeat: no-repeat;
   background-size: max(100vw, 1080px) auto;
@@ -51,9 +49,7 @@
   z-index: -1;
   inset: 0;
   pointer-events: none;
-  background:
-    radial-gradient(circle at 50% 17%, rgba(22, 99, 255, .1), transparent 32%),
-    linear-gradient(90deg, rgba(1, 6, 19, .32), transparent 22% 78%, rgba(1, 6, 19, .32));
+  background: none;
 }
 
 .home-stage {
@@ -337,7 +333,7 @@
 }
 .fixed-plan h3 { margin: 0; color: #fff; font-size: 15px; line-height: 1.35; }
 .fixed-plan-price { color: #72eaff; font-size: 23px; font-weight: 900; }
-.fixed-plan-price small { margin-left: 4px; color: #9fadc2; font-size: 10px; }
+.fixed-plan-price small { margin-left: 4px; color: #9fadc2; font-size: 10px; font-weight: 700; }
 .fixed-plan .btn { min-height: 39px; padding: 0 10px; font-size: 12px; }
 
 .home-page .site-footer {
@@ -476,16 +472,12 @@ html[data-theme="light"] .home-page .header-actions .btn-secondary {
 }
 html[data-theme="light"] .cosmic-home {
   color: #102941;
-  background-color: #eaf5ff;
-  background-image:
-    linear-gradient(180deg, rgba(248, 252, 255, .48) 0%, rgba(237, 247, 255, .6) 50%, rgba(238, 248, 255, .9) 100%),
-    url("assets/hero-space-earth.webp");
-  background-blend-mode: screen, screen;
+  background-color: #edf6ff;
+  background-image: none;
+  background-blend-mode: normal;
 }
 html[data-theme="light"] .cosmic-home::before {
-  background:
-    radial-gradient(circle at 50% 18%, rgba(69, 151, 255, .13), transparent 34%),
-    linear-gradient(90deg, rgba(236, 247, 255, .38), transparent 24% 76%, rgba(236, 247, 255, .38));
+  background: none;
 }
 html[data-theme="light"] .home-copy h1 {
   color: #102c4d;
