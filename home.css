@@ -142,7 +142,7 @@ html body.home-page {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  font-size: 16px; /* 保持16px，防止iOS点击放大 */
+  font-size: 16px;
   line-height: 1.35;
   -webkit-appearance: none;
   appearance: none;
@@ -218,74 +218,8 @@ html body.home-page {
 .home-page .delivery-box,
 .home-page .match-details { background: rgba(255, 255, 255, .045); }
 
+/* Card visuals live only in shop.html. Keep section structure here. */
 .fixed-module-section { display: grid; gap: 12px; margin-top: 36px; }
-.home-page .module-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin: 0;
-}
-.home-page .module-card {
-  min-height: 140px;
-  position: relative;
-  display: grid;
-  align-content: center;
-  justify-items: center;
-  gap: 6px;
-  padding: 14px 10px;
-  overflow: hidden;
-  color: #fff;
-  border: 1px solid color-mix(in srgb, var(--module-color) 58%, rgba(255,255,255,.12));
-  border-radius: 18px;
-  background: linear-gradient(145deg, rgba(8, 21, 50, .88), rgba(3, 10, 28, .84));
-  box-shadow: inset 0 0 30px color-mix(in srgb, var(--module-color) 7%, transparent), 0 14px 36px rgba(0,0,0,.28);
-  backdrop-filter: blur(14px);
-}
-.home-page .module-card::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--module-color) 13%, transparent), transparent 58%);
-}
-.home-page .module-card:hover,
-.home-page .module-card:focus-visible,
-.home-page .module-card.active {
-  transform: translateY(-4px);
-  border-color: var(--module-color);
-  box-shadow: 0 20px 54px color-mix(in srgb, var(--module-color) 16%, rgba(0,0,0,.35));
-}
-.home-page .module-card.active i {
-  transform: rotate(180deg);
-  transition: transform .25s ease;
-}
-.home-page .module-card i {
-  transition: transform .25s ease;
-}
-.home-page .module-icon {
-  width: 52px;
-  height: 52px;
-  display: grid;
-  place-items: center;
-  color: var(--module-color);
-  border: 1px solid color-mix(in srgb, var(--module-color) 64%, transparent);
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--module-color) 10%, rgba(2,8,23,.5));
-  box-shadow: 0 0 22px color-mix(in srgb, var(--module-color) 22%, transparent);
-  font-size: 28px;
-}
-.home-page .module-card strong { font-size: 15px; letter-spacing: .03em; }
-.home-page .module-card small { color: #aebbd1; font-size: 11px; }
-.home-page .module-card i {
-  width: 31px;
-  height: 31px;
-  display: grid;
-  place-items: center;
-  color: var(--module-color);
-  border: 1px solid color-mix(in srgb, var(--module-color) 62%, transparent);
-  border-radius: 50%;
-  font-style: normal;
-}
 
 .fixed-plans-panel {
   margin-top: 10px;
@@ -309,9 +243,7 @@ html body.home-page {
   padding: 14px;
   transform: none;
 }
-.fixed-plans-panel.hidden {
-  display: none !important;
-}
+.fixed-plans-panel.hidden { display: none !important; }
 .fixed-plans-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
 .fixed-plans-head span { color: #77b8ff; font-size: 11px; font-weight: 850; letter-spacing: .16em; }
 .fixed-plans-head h2 { margin: 4px 0 0; color: #fff; font-size: 25px; }
@@ -381,7 +313,6 @@ html body.home-page {
 
 @media (max-width: 960px) {
   .cosmic-home { padding-top: 48px; background-size: cover; }
-  .home-page .module-grid { grid-template-columns: repeat(2, 1fr); }
   .fixed-module-section { margin-top: 12px; }
   .fixed-plan-list { grid-template-columns: repeat(2, 1fr); }
 }
@@ -400,9 +331,7 @@ html body.home-page {
     background-size: cover;
     background-position: 50% 0;
   }
-  .home-copy {
-    padding-top: 8px;
-  }
+  .home-copy { padding-top: 8px; }
   .home-stage { width: calc(100% - 20px); gap: 14px; }
   .home-copy h1 { font-size: clamp(32px, 9.5vw, 44px); line-height: 1.1; }
   .home-copy p { margin-top: 10px; font-size: 13px; letter-spacing: .03em; }
@@ -432,13 +361,6 @@ html body.home-page {
   .search-popover { padding: 12px; border-radius: 16px; max-height: min(42vh, 300px); }
   .home-page .quiz-option { min-height: 48px; padding: 8px 10px; }
   .fixed-module-section { margin-top: 28px; }
-  .home-page .module-grid { gap: 8px; }
-  .home-page .module-card { min-height: 118px; padding: 10px 5px; border-radius: 14px; }
-  .home-page .module-icon { width: 46px; height: 46px; font-size: 24px; border-radius: 12px; }
-  .home-page .module-card strong { font-size: 13px; }
-  .home-page .module-card { min-height: 165px; padding: 15px 7px; border-radius: 18px; }
-  .home-page .module-icon { width: 49px; height: 49px; font-size: 25px; }
-  .home-page .module-card strong { font-size: 16px; }
   .fixed-plans-panel { padding: 16px; }
   .fixed-plan-list { grid-template-columns: 1fr 1fr; gap: 8px; }
   .fixed-plan { padding: 13px 10px; }
@@ -451,7 +373,6 @@ html body.home-page {
   .fixed-plan-list { grid-template-columns: 1fr; }
 }
 
-/* The homepage opens in a bright theme; dark mode remains available from the header. */
 html[data-theme="light"] .home-page {
   color: #102941;
   background: #edf6ff;
@@ -480,17 +401,12 @@ html[data-theme="light"] .cosmic-home {
   background-image: none;
   background-blend-mode: normal;
 }
-html[data-theme="light"] .cosmic-home::before {
-  background: none;
-}
+html[data-theme="light"] .cosmic-home::before { background: none; }
 html[data-theme="light"] .home-copy h1 {
   color: #102c4d;
   text-shadow: 0 8px 32px rgba(58, 104, 151, .12);
 }
-html[data-theme="light"] .home-copy p {
-  color: #466581;
-  text-shadow: none;
-}
+html[data-theme="light"] .home-copy p { color: #466581; text-shadow: none; }
 html[data-theme="light"] .compact-search {
   border-color: rgba(20, 120, 255, .52);
   background: rgba(255, 255, 255, .86);
@@ -521,13 +437,6 @@ html[data-theme="light"] .home-page .quiz-option small,
 html[data-theme="light"] .home-page .result-summary,
 html[data-theme="light"] .home-page .delivery-box ul,
 html[data-theme="light"] .home-page .match-details { color: #58718a; }
-html[data-theme="light"] .home-page .module-card {
-  color: #15334e;
-  border-color: color-mix(in srgb, var(--module-color) 38%, rgba(31,103,180,.12));
-  background: linear-gradient(145deg, rgba(255, 255, 255, .94), rgba(239, 247, 255, .9));
-  box-shadow: inset 0 0 28px color-mix(in srgb, var(--module-color) 5%, transparent), 0 18px 42px rgba(45, 89, 130, .12);
-}
-html[data-theme="light"] .home-page .module-card strong { color: #15334e; }
 html[data-theme="light"] .home-page .site-footer {
   color: #637b93;
   border-top-color: rgba(31, 103, 180, .13);
@@ -541,7 +450,6 @@ html[data-theme="light"] .home-page .music-toggle {
 }
 html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
 
-/* ========== 横屏 / 宽屏优化 ========== */
 @media (orientation: landscape) and (max-height: 520px) {
   .home-page .site-header { min-height: 48px; }
   .cosmic-home {
@@ -572,14 +480,6 @@ html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
   }
   .search-submit { width: 40px; height: 40px; font-size: 20px; }
   .fixed-module-section { margin-top: 8px; }
-  .home-page .module-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    max-width: 100%;
-  }
-  .home-page .module-card { min-height: 72px; padding: 6px 4px; }
-  .home-page .module-icon { width: 32px; height: 32px; font-size: 16px; }
-  .home-page .module-card strong { font-size: 11px; }
   .search-popover { max-height: min(50vh, 200px); padding: 8px; }
   .fixed-plans-panel.is-open { max-height: min(48vh, 260px); }
   .fixed-plan-list { grid-template-columns: repeat(4, 1fr); gap: 6px; }
@@ -595,18 +495,7 @@ html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
     margin-right: auto;
   }
   .search-stage { width: min(100%, 560px); }
-  .home-page .module-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 14px;
-    max-width: 720px;
-    margin: 0 auto;
-  }
-  .home-page .module-card {
-    min-height: 148px;
-  }
-  .fixed-plan-list {
-    grid-template-columns: repeat(4, 1fr);
-  }
+  .fixed-plan-list { grid-template-columns: repeat(4, 1fr); }
   .search-popover,
   .fixed-plans-panel {
     max-width: 640px;
@@ -620,8 +509,6 @@ html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
   .cosmic-home { padding-top: clamp(48px, 6vw, 80px); }
 }
 
-
-/* 候选问题依次淡入 */
 @keyframes quizOptionIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
@@ -631,8 +518,6 @@ html[data-theme="light"] .home-page .music-toggle.playing { color: #fff; }
   animation: quizOptionIn 0.28s ease forwards;
 }
 
-
-/* 卡片方案完整介绍 */
 .fixed-plan-list { grid-template-columns: 1fr; gap: 12px; }
 .fixed-plan {
   text-align: left;
@@ -674,10 +559,7 @@ html[data-theme="light"] .fixed-plan-audience { color: #5a718c; }
   .fixed-plan-list { grid-template-columns: 1fr 1fr; }
 }
 
-
-.home-page .lang-flag-btn {
-  width: 34px; height: 34px; font-size: 12px;
-}
+.home-page .lang-flag-btn { width: 34px; height: 34px; font-size: 12px; }
 .home-page .music-toggle {
   color: #f5f9ff !important;
   background: #0b1a2e !important;
@@ -697,7 +579,6 @@ html[data-theme="light"] .home-page .music-toggle.playing {
   background: #2ee6a0 !important;
 }
 
-/* 候选逐条出现 */
 .quiz-option-enter {
   opacity: 0;
   transform: translateY(6px);
