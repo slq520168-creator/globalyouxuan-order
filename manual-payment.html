@@ -8,33 +8,41 @@
 <title>GlobalYouXuan · 其他付款</title>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{}</script>
 <link rel="stylesheet" href="site.css">
+<style>
+html,body{min-height:100%;margin:0;background:var(--bg,#f4f8ff);color:var(--text,#152238)}
+.mp{width:min(100% - 22px,680px);margin:auto;padding:18px 0 42px}.mp-card{margin-top:14px;padding:16px;border:1px solid var(--line,#d9e2ef);border-radius:18px;background:var(--panel,#fff)}.mp-title{display:flex;align-items:center;justify-content:space-between;gap:10px}.mp-back{font-weight:850;color:inherit;text-decoration:none}.mp-amount{font-size:38px;font-weight:950;margin:8px 0}.mp-original{font-size:12px;opacity:.68;font-weight:700}.mp-methods{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}.mp-method{padding:13px;border:2px solid var(--line,#d9e2ef);border-radius:16px;text-align:center}.mp-method b{display:block}.mp-account{margin-top:8px;padding:10px;border-radius:10px;background:rgba(20,120,255,.07);font-weight:900;word-break:break-all}.mp-copy,.mp-submit{width:100%;min-height:48px;border:0;border-radius:11px;background:#1478ff;color:#fff;font-weight:900}.mp-copy{margin-top:8px}.mp-form{display:grid;gap:10px}.mp-form select,.mp-form input{box-sizing:border-box;width:100%;min-height:50px;border:1px solid var(--line,#d9e2ef);border-radius:12px;padding:0 12px;background:var(--panel,#fff);color:inherit;font:inherit}.mp-note{font-size:13px;line-height:1.55;opacity:.76}.mp-status{font-weight:850;line-height:1.5}.mp-error{color:#c62828;font-weight:850}.mp-loading{min-height:100dvh;display:grid;place-items:center;padding:20px;font-weight:850}@media(max-width:430px){.mp-methods{grid-template-columns:1fr}.mp-amount{font-size:34px}}
+</style>
 </head>
 <body>
-<div id="manualPaymentBoot" style="min-height:100dvh;display:grid;place-items:center;padding:20px;font-weight:800">正在打开付款页面…</div>
+<div id="app" class="mp-loading">正在打开付款页面…</div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
-<script src="supabase-client.js?v=20260814-manual-pay-ready-1"></script>
-<script src="i18n.js?v=20260811-i18next-1"></script>
-<script src="i18n-member.js?v=20260811-member-security-4"></script>
+<script src="supabase-client.js?v=20260814-manual-standalone-2"></script>
 <script>
-(function(){
-  var p=new URLSearchParams(location.search);
-  var order=p.get('order')||p.get('manualpay')||'';
-  var via=p.get('via')||'';
-  if(!order){location.replace('member.html#orders');return;}
-  var q=new URLSearchParams();q.set('manualpay',order);if(via)q.set('via',via);
-  history.replaceState(null,'','manual-payment.html?'+q.toString());
-  function add(src){return new Promise(function(resolve,reject){var s=document.createElement('script');s.src=src;s.async=false;s.onload=resolve;s.onerror=reject;document.body.appendChild(s)})}
-  async function boot(){
-    var n=0;
-    while((!window.gyxSupabase||!window.gyxGetVerifiedUser)&&n<100){await new Promise(function(r){setTimeout(r,50)});n++}
-    if(!window.gyxSupabase){document.getElementById('manualPaymentBoot').textContent='付款页面加载失败，请刷新重试';return}
-    try{
-      await add('member-manual-payment-v2.js?v=20260814-standalone-ready-2');
-      await add('member-manual-payment-fx.js?v=20260814-standalone-ready-2');
-    }catch(e){document.getElementById('manualPaymentBoot').textContent='付款页面加载失败，请刷新重试';return}
-    var c=0,t=setInterval(function(){c++;if(document.getElementById('manualPaymentScreen')){var b=document.getElementById('manualPaymentBoot');if(b)b.remove();clearInterval(t)}else if(c>100){clearInterval(t);document.getElementById('manualPaymentBoot').textContent='付款页面加载失败，请刷新重试'}},100);
-  }
-  boot();
+(async function(){
+'use strict';
+const app=document.getElementById('app'),p=new URLSearchParams(location.search),ref=p.get('order')||p.get('manualpay')||'',via=p.get('via')||'';
+const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+const raw=String(localStorage.getItem('lang')||document.documentElement.lang||'zh').toLowerCase(),lang=raw.startsWith('en')?'en':raw.startsWith('km')?'km':'zh';
+const L=(zh,en,km)=>lang==='en'?en:lang==='km'?km:zh;
+function fail(msg){app.className='mp';app.innerHTML='<div class="mp-card mp-error">'+esc(msg)+'</div><div class="mp-card"><a class="mp-back" href="member.html#orders">← '+L('返回订单','Back to orders','ត្រឡប់')+'</a></div>'}
+if(!ref){location.replace('member.html#orders');return}
+for(let i=0;i<100&&!window.gyxSupabase;i++)await new Promise(r=>setTimeout(r,50));
+const db=window.gyxSupabase;if(!db){fail(L('付款系统加载失败，请刷新重试','Payment system failed to load. Refresh and retry.','ប្រព័ន្ធបង់ប្រាក់ផ្ទុកបរាជ័យ'));return}
+const user=await window.gyxGetVerifiedUser?.();if(!user){location.replace('login.html?next='+encodeURIComponent(location.pathname+location.search));return}
+let q=db.from('orders').select('id,order_no,user_id,product_name,matched_answer_title,payable_amount,currency,status').eq('user_id',user.id);
+q=/^\d+$/.test(ref)?q.eq('id',Number(ref)):q.eq('order_no',ref);
+const {data:o,error:oe}=await q.maybeSingle();if(oe||!o){fail(L('没有找到这笔订单','Order not found','រកមិនឃើញការបញ្ជាទិញ'));return}
+if(['paid','delivered'].includes(o.status)){app.className='mp';app.innerHTML='<a class="mp-back" href="member.html#orders">← '+L('返回订单','Back to orders','ត្រឡប់')+'</a><div class="mp-card"><h2>'+L('付款已完成','Payment completed','បានបង់រួច')+'</h2><p>'+esc(o.order_no)+'</p></div>';return}
+const {data:ss}=await db.from('manual_payment_settings').select('method,account_value,qr_url,is_active').eq('is_active',true).order('method');
+let quote=null;try{quote=await window.gyxInvokeFunction('manual-payment-quote',{order_id:o.id})}catch(e){}
+if(!quote?.ok||!Number.isFinite(Number(quote.quote_amount))){fail(L('人民币金额获取失败，为避免付错金额，当前不能付款。请稍后刷新重试。','Unable to load CNY amount. Payment is disabled to prevent an incorrect amount.','មិនអាចទាញចំនួន CNY បាន។'));return}
+const name=m=>m==='wechat'?L('微信','WeChat','WeChat'):m==='alipay'?L('支付宝','Alipay','Alipay'):L('银行卡','Bank card','កាតធនាគារ');
+const cards=(ss||[]).map(x=>'<div class="mp-method"><b>'+esc(name(x.method))+'</b>'+(x.qr_url?'<img src="'+esc(x.qr_url)+'" alt="'+esc(name(x.method))+'" style="display:block;width:150px;max-width:100%;margin:10px auto;border-radius:12px">':'')+'<div class="mp-account">'+esc(x.account_value)+'</div><button class="mp-copy" type="button" data-copy="'+esc(x.account_value)+'">'+L('复制','Copy','ចម្លង')+'</button></div>').join('');
+app.className='mp';app.innerHTML='<div class="mp-title"><a class="mp-back" href="member.html?pay='+encodeURIComponent(o.order_no)+'">← '+L('返回USDT付款','Back to USDT','ត្រឡប់ USDT')+'</a></div><div class="mp-card"><div>'+L('本次交付','Delivery','ការប្រគល់')+'</div><h3>'+esc(o.matched_answer_title||o.product_name||'')+'</h3><div>'+L('人民币应付金额','Amount due in CNY','ចំនួន CNY ត្រូវបង់')+'</div><div class="mp-amount">¥'+Number(quote.quote_amount).toFixed(2)+' CNY</div><div class="mp-original">'+L('原订单','Original order','ការបញ្ជាទិញដើម')+' '+Number(quote.base_amount||o.payable_amount||0).toFixed(2)+' USDT · 1 USDT ≈ ¥'+Number(quote.rate||0).toFixed(4)+'</div><p class="mp-note">'+L('微信、支付宝、银行卡任选一种，按上方人民币金额付款。测试阶段三种方式暂时使用测试收款信息。','Choose WeChat, Alipay, or bank transfer and pay the CNY amount shown above.','ជ្រើសវិធីណាមួយ ហើយបង់ចំនួន CNY ខាងលើ។')+'</p></div><div class="mp-card"><div class="mp-methods">'+cards+'</div></div><div class="mp-card"><form id="form" class="mp-form"><label>'+L('付款方式','Payment method','វិធីបង់')+'</label><select id="method"><option value="wechat">'+L('微信','WeChat','WeChat')+'</option><option value="alipay">'+L('支付宝','Alipay','Alipay')+'</option><option value="bank">'+L('银行卡','Bank card','កាតធនាគារ')+'</option></select><label>'+L('付款单号 / 流水号','Payment reference','លេខយោង')+'</label><input id="reference" maxlength="120" placeholder="'+L('输入付款后的单号即可','Enter payment reference','បញ្ចូលលេខយោង')+'" required><button id="submit" class="mp-submit" type="submit">'+L('提交付款核验','Submit for verification','ដាក់ស្នើ')+'</button><div id="msg" class="mp-status"></div></form></div>';
+if(['wechat','alipay','bank'].includes(via))document.getElementById('method').value=via;
+app.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.copy||'');b.textContent=L('已复制','Copied','បានចម្លង')}catch{b.textContent=L('长按复制','Hold to copy','ចុចឲ្យជាប់')}});
+if(['wechat','alipay','bank'].includes(via)){try{await db.rpc('record_manual_payment_interest',{p_order_id:o.id,p_method:via})}catch(e){}}
+document.getElementById('form').onsubmit=async e=>{e.preventDefault();const method=document.getElementById('method').value,reference=String(document.getElementById('reference').value||'').trim(),msg=document.getElementById('msg'),btn=document.getElementById('submit');if(reference.length<3){msg.textContent=L('请输入付款单号或流水号','Enter payment reference','សូមបញ្ចូលលេខយោង');return}btn.disabled=true;msg.textContent=L('正在提交…','Submitting…','កំពុងដាក់ស្នើ…');const {error}=await db.rpc('submit_manual_payment',{p_order_id:o.id,p_method:method,p_reference:reference});if(error){msg.textContent=L('提交失败，请重试','Submission failed. Retry.','ដាក់ស្នើបរាជ័យ');btn.disabled=false;return}msg.textContent=L('已提交，等待管理员核验','Submitted, waiting for verification','បានដាក់ស្នើ');setTimeout(()=>location.replace('member.html#orders'),900)};
 })();
 </script>
 </body>
