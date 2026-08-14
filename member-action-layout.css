@@ -1,0 +1,24 @@
+/* Member-center action layout polish. Visual-only: no behavior or data logic. */
+.member-page .panel[data-fold-ready="1"] .panel-head{align-items:center;gap:12px}
+.member-page .panel[data-fold-ready="1"] .panel-head>.btn,
+.member-page .panel[data-fold-ready="1"] .panel-head>a.btn{min-width:112px;min-height:48px;display:inline-flex;align-items:center;justify-content:center;margin-left:auto;border-radius:14px;white-space:nowrap}
+.member-page #favorites .favorite-bulk-actions,
+.member-page #searches .search-bulk-actions,
+.member-page #orders #orderFilters{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.member-page #orders #refreshOrdersButton{min-width:76px;min-height:44px;border-radius:13px}
+.member-page #orders #orderFilters{margin-top:12px}
+.member-page #orders #orderFilters .order-filter{min-width:112px;min-height:46px;padding:10px 18px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;font-weight:800;line-height:1.2;white-space:nowrap}
+.member-page #favorites button,
+.member-page #searches button,
+.member-page #orders button{vertical-align:middle}
+.member-page #favorites .btn,
+.member-page #searches .btn{border-radius:14px}
+@media(max-width:560px){
+ .member-page .panel[data-fold-ready="1"] .panel-head{display:flex;align-items:center}
+ .member-page .panel[data-fold-ready="1"] .panel-head>.btn,
+ .member-page .panel[data-fold-ready="1"] .panel-head>a.btn{min-width:104px;min-height:46px;padding:10px 14px}
+ .member-page #orders #orderFilters{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+ .member-page #orders #orderFilters .order-filter{width:100%;min-width:0;min-height:46px;margin:0}
+ .member-page #orders #refreshOrdersButton{min-width:78px;min-height:44px}
+ .member-page #favorites input[type="checkbox"],.member-page #searches input[type="checkbox"]{width:22px;height:22px}
+}
