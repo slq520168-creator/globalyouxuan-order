@@ -172,7 +172,6 @@ html body.home-page {
 }
 .search-submit:active { transform: scale(.96); }
 
-/* Final result card only. Search rounds use the fixed workspace below. */
 #resultPanel.search-popover {
   margin-top: 10px;
   padding: 14px 16px;
@@ -200,7 +199,6 @@ html body.home-page {
 .home-page .delivery-box,
 .home-page .match-details { background: rgba(255, 255, 255, .045); }
 
-/* Single owner for the five-round search workspace. */
 .home-page #quizPanel {
   height: clamp(370px, 56svh, 430px);
   min-height: clamp(370px, 56svh, 430px);
@@ -216,12 +214,6 @@ html body.home-page {
   backdrop-filter: none;
   animation: none;
 }
-.home-page #quizPanel .quiz-progress-head,
-.home-page #quizPanel .progress-track,
-.home-page #quizPanel .question-quote,
-.home-page #quizPanel #quizHelp,
-.home-page #quizPanel .kd-history,
-.home-page #quizPanel #quizBackButton { display: none !important; }
 .home-page #quizPanel .quiz-options {
   display: grid;
   gap: 6px;
@@ -380,9 +372,7 @@ html body.home-page {
   color: #fff;
   border-color: #e53935;
 }
-#newQuestionButton { display: none !important; }
 
-/* Card visuals live only in shop.html. Keep section structure here. */
 .fixed-module-section { display: grid; gap: 12px; margin-top: 36px; }
 
 .fixed-plans-panel {
