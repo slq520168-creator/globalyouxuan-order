@@ -540,3 +540,40 @@ html[data-theme="light"] .home-page .site-footer { color: #73869a; border-top-co
 html[data-theme="light"] .home-page .footer-icon-link { border-color: rgba(74, 137, 203, .2); background: rgba(255,255,255,.82); box-shadow: 0 8px 24px rgba(68,115,160,.1); }
 html[data-theme="light"] .home-page .music-toggle { color: #16334f !important; border-color: rgba(60, 125, 194, .28); background: rgba(255,255,255,.94); }
 html[data-theme="light"] .home-page .music-toggle.playing { color: #fff !important; background: #2087e8; border-color: #2087e8; }
+
+/* Search readability adjustment only. */
+.home-page #quizPanel .kd-round-prefix { font-size:16px!important; }
+.home-page #quizPanel .kd-round-number { font-size:20px!important; }
+.home-page #quizPanel .kd-round-text { font-size:16px!important; line-height:1.35!important; }
+.home-page #quizPanel .kd-mode-row button { font-size:14px!important; }
+.home-page #quizPanel .kd-net { font-size:13px!important; }
+.home-page #quizPanel .quiz-option.kd-option {
+  height:56px!important;
+  min-height:56px!important;
+  max-height:56px!important;
+}
+.home-page #quizPanel .quiz-option.kd-option > input {
+  width:20px!important;
+  height:20px!important;
+  min-width:20px!important;
+}
+.home-page #quizPanel .quiz-option.kd-option > span:not(:last-child) { font-size:14px!important; }
+.home-page #quizPanel .quiz-option.kd-option strong {
+  font-size:15px!important;
+  line-height:1.35!important;
+  min-height:2.7em!important;
+  max-height:2.7em!important;
+}
+.home-page #quizPanel .kd-actions .kd-action { font-size:13px!important; min-height:36px!important; }
+@media (max-width:640px) {
+  .home-page #quizPanel .kd-round-text { font-size:15px!important; }
+  .home-page #quizPanel .quiz-option.kd-option {
+    height:54px!important;
+    min-height:54px!important;
+    max-height:54px!important;
+  }
+  .home-page #quizPanel .quiz-option.kd-option strong { font-size:14px!important; }
+  html[lang="en"] .home-page #quizPanel .quiz-option.kd-option strong { font-size:13.5px!important; }
+  html[lang="km"] .home-page #quizPanel .quiz-option.kd-option strong { font-size:13px!important; }
+  .home-page #quizPanel .kd-actions .kd-action { font-size:12px!important; min-height:34px!important; }
+}
