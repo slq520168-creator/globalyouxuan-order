@@ -7,15 +7,18 @@
   if(!window.supabase||typeof window.supabase.createClient!=='function'){console.error('Supabase client library failed to load. Search configuration remains available.');return}
   const client=window.supabase.createClient(config.url,config.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,flowType:'implicit'}});
   let verifiedUser=null,verifiedAt=0,verifiedPromise=null;
+  function markKnownMember(){try{localStorage.setItem('gyx_known_member','1')}catch{}}
+  function isKnownMember(){try{return localStorage.getItem('gyx_known_member')==='1'}catch{return false}}
+  function safeNext(value,fallback='member.html'){if(!value)return fallback;try{const decoded=decodeURIComponent(String(value)),target=new URL(decoded,window.location.href);if(target.origin!==window.location.origin)return fallback;const filename=target.pathname.split('/').pop()||'',allowed=new Set(['shop.html','member.html','index.html','community.html']);if(!allowed.has(filename))return fallback;return filename+target.search+target.hash}catch{return fallback}}
+  function authEntryUrl(next='shop.html'){const target=safeNext(next,'shop.html'),mode=isKnownMember()?'login':'register';return `login.html?mode=${mode}&next=${encodeURIComponent(target)}`}
   async function getVerifiedUser(force=false){
     const now=Date.now();
     if(!force&&verifiedUser&&now-verifiedAt<60000)return verifiedUser;
     if(!force&&verifiedPromise)return verifiedPromise;
-    verifiedPromise=(async()=>{try{const {data:sessionData}=await client.auth.getSession(),sessionUser=sessionData?.session?.user||null;if(!sessionUser){verifiedUser=null;verifiedAt=Date.now();return null}verifiedUser=sessionUser;verifiedAt=Date.now();if(!force){client.auth.getUser().then(({data,error})=>{if(!error&&data?.user){verifiedUser=data.user;verifiedAt=Date.now()}}).catch(()=>{});return verifiedUser}try{const {data,error}=await client.auth.getUser();if(!error&&data?.user){verifiedUser=data.user;verifiedAt=Date.now();return verifiedUser}}catch{}return verifiedUser}catch{verifiedUser=null;verifiedAt=Date.now();return null}})();
+    verifiedPromise=(async()=>{try{const {data:sessionData}=await client.auth.getSession(),sessionUser=sessionData?.session?.user||null;if(!sessionUser){verifiedUser=null;verifiedAt=Date.now();return null}markKnownMember();verifiedUser=sessionUser;verifiedAt=Date.now();if(!force){client.auth.getUser().then(({data,error})=>{if(!error&&data?.user){markKnownMember();verifiedUser=data.user;verifiedAt=Date.now()}}).catch(()=>{});return verifiedUser}try{const {data,error}=await client.auth.getUser();if(!error&&data?.user){markKnownMember();verifiedUser=data.user;verifiedAt=Date.now();return verifiedUser}}catch{}return verifiedUser}catch{verifiedUser=null;verifiedAt=Date.now();return null}})();
     try{return await verifiedPromise}finally{verifiedPromise=null}
   }
-  client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){verifiedUser=null;verifiedAt=0;verifiedPromise=null;return}if(session?.user){verifiedUser=session.user;verifiedAt=Date.now()}});
-  function safeNext(value,fallback='member.html'){if(!value)return fallback;try{const decoded=decodeURIComponent(String(value)),target=new URL(decoded,window.location.href);if(target.origin!==window.location.origin)return fallback;const filename=target.pathname.split('/').pop()||'',allowed=new Set(['shop.html','member.html','knowledge.html','index.html']);if(!allowed.has(filename))return fallback;return filename+target.search+target.hash}catch{return fallback}}
+  client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){verifiedUser=null;verifiedAt=0;verifiedPromise=null;return}if(session?.user){markKnownMember();verifiedUser=session.user;verifiedAt=Date.now()}});
   async function invokeFunction(name,body){const {data,error}=await client.functions.invoke(name,{body});if(!error)return data;let code='';try{const payload=await error.context?.clone?.().json();code=payload?.error||payload?.message||''}catch{}const wrapped=new Error(code||error.message||'FUNCTION_REQUEST_FAILED');wrapped.code=code||'FUNCTION_REQUEST_FAILED';throw wrapped}
-  window.gyxSupabase=client;window.gyxGetVerifiedUser=getVerifiedUser;window.gyxSafeNext=safeNext;window.gyxInvokeFunction=invokeFunction;
+  window.gyxSupabase=client;window.gyxGetVerifiedUser=getVerifiedUser;window.gyxSafeNext=safeNext;window.gyxInvokeFunction=invokeFunction;window.gyxIsKnownMember=isKnownMember;window.gyxAuthEntryUrl=authEntryUrl;
 })();
