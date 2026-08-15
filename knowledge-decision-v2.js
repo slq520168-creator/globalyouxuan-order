@@ -1,7 +1,7 @@
 (()=>{'use strict';
 const $=id=>document.getElementById(id),I=window.GYXI18N,t=(k,v)=>{try{const x=I?.t?.(k,typeof v==='object'?v:undefined);if(x&&x!==k)return x}catch{}return typeof v==='string'?v:k},DB='KnowledgeDecisionDB',VER=2,SS='sessions',MS='materials';
 let dbp=null,state=null,materials=[],busy=false,autoBusy=false,reqs=new Map(),idleTimer=null,composing=false,typeRun=0,productCache=null,productPromise=null;
-const uid=()=>crypto.randomUUID?.()||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2)),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m])),lang=()=>I?.locale||'zh';
+const uid=()=>crypto.randomUUID?.()||('s-'+Date.now()+'-'+Math.random().toString(36).slice(2)),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])),lang=()=>I?.locale||'zh';
 function openDB(){if(dbp)return dbp;dbp=new Promise((res,rej)=>{const r=indexedDB.open(DB,VER);r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains(SS))d.createObjectStore(SS,{keyPath:'sessionId'});if(!d.objectStoreNames.contains(MS))d.createObjectStore(MS,{keyPath:'id'})};r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return dbp}
 async function all(store){const d=await openDB();return new Promise((res,rej)=>{const q=d.transaction(store).objectStore(store).getAll();q.onsuccess=()=>res(q.result||[]);q.onerror=()=>rej(q.error)})}
 async function put(store,val){const d=await openDB();return new Promise((res,rej)=>{const q=d.transaction(store,'readwrite').objectStore(store).put(val);q.onsuccess=()=>res(true);q.onerror=()=>rej(q.error)})}
