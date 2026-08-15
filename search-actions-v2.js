@@ -36,7 +36,7 @@ function syncOrder(){
   const m=window.GYX_CURRENT_AI_MATCH;if(!order)return;
   const ready=!!m?.product?.id&&!!m?.delivery_package?.order_ready;
   order.disabled=!ready;order.setAttribute('aria-disabled',ready?'false':'true');
-  order.textContent=ready?L('创建订单','Create order','បង្កើតការបញ្ជាទិញ'):L('创建订单','Create order','បង្កើតការបញ្ជាទិញ');
+  order.textContent=L('创建订单','Create order','បង្កើតការបញ្ជាទិញ');
   labels();
 }
 window.addEventListener('gyx:raw-result-ready',()=>{renderFinal()});
@@ -51,5 +51,6 @@ favorite?.addEventListener('click',async e=>{e.preventDefault();e.stopImmediateP
 order?.addEventListener('click',async e=>{e.preventDefault();e.stopImmediatePropagation();clearCleanup();const m=window.GYX_CURRENT_AI_MATCH;if(!m?.product?.id||!m?.delivery_package?.order_ready){armCleanup();return toast(L('当前方案暂不可下单','This plan cannot be ordered yet','ផែនការនេះមិនទាន់អាចបញ្ជាទិញបាន'))}const u=await needUser();if(!u){armCleanup();return}if(!window.GYX_MEMBER_CHECKOUT?.open){armCleanup();return toast(L('下单系统正在加载，请稍后再试','Order system is loading. Try again shortly.','ប្រព័ន្ធបញ្ជាទិញកំពុងផ្ទុក សូមសាកល្បងបន្តិចទៀត'))}window.GYX_MEMBER_CHECKOUT.open(m.product.id,m);clearSearch()},true);
 close?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();clearSearch()},true);
 document.querySelector('#resultPanel')?.addEventListener('pointerdown',()=>{if(window.GYX_CURRENT_AI_MATCH)armCleanup()},{passive:true});
-setPlaceholder();labels();syncOrder();
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setPlaceholder,{once:true});else setPlaceholder();
+labels();syncOrder();
 })();
