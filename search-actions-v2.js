@@ -21,8 +21,8 @@ function labels(){
 function renderFinal(){
   const m=window.GYX_CURRENT_AI_MATCH;if(!m)return;
   const p=m.delivery_package||{},a=m.answer||{},product=m.product||{};
-  const confidence=Math.max(0,Math.min(100,Number(m.confidence||p.quality?.score||85)));
-  if($('resultConfidence'))$('resultConfidence').textContent=`${Math.round(confidence)}%`;
+  const raw=Number(m.confidence??p.quality?.score),confidence=Number.isFinite(raw)?Math.max(0,Math.min(100,raw)):null;
+  if($('resultConfidence'))$('resultConfidence').textContent=confidence===null?'—':`${Math.round(confidence)}%`;
   if($('resultTitle'))$('resultTitle').textContent=a.title||p.title||m.question||L('匹配方案','Matched plan','ផែនការផ្គូផ្គង');
   if($('resultSummary'))$('resultSummary').textContent=a.answer_summary||p.summary||'';
   if($('resultTier'))$('resultTier').textContent=m.tier_label||L('完整方案','Full plan','ផែនការពេញលេញ');
