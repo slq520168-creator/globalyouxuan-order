@@ -21,4 +21,5 @@
   client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){verifiedUser=null;verifiedAt=0;verifiedPromise=null;return}if(session?.user){markKnownMember();verifiedUser=session.user;verifiedAt=Date.now()}});
   async function invokeFunction(name,body){const {data,error}=await client.functions.invoke(name,{body});if(!error)return data;let code='';try{const payload=await error.context?.clone?.().json();code=payload?.error||payload?.message||''}catch{}const wrapped=new Error(code||error.message||'FUNCTION_REQUEST_FAILED');wrapped.code=code||'FUNCTION_REQUEST_FAILED';throw wrapped}
   window.gyxSupabase=client;window.gyxGetVerifiedUser=getVerifiedUser;window.gyxSafeNext=safeNext;window.gyxInvokeFunction=invokeFunction;window.gyxIsKnownMember=isKnownMember;window.gyxAuthEntryUrl=authEntryUrl;
+  if(currentPath.endsWith('/community.html'))setTimeout(()=>{getVerifiedUser().then(u=>{if(!u)location.replace(authEntryUrl('community.html'))}).catch(()=>location.replace(authEntryUrl('community.html')))},0);
 })();
