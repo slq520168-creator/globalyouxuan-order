@@ -1,4 +1,5 @@
 (()=>{'use strict';
+if(!Array.isArray(window.__GYX_MATERIALS))window.__GYX_MATERIALS=[];
 const $=id=>document.getElementById(id),I=window.GYXI18N,L=(zh,en,km)=>I?.locale==='en'?en:I?.locale==='km'?km:zh;
 const actions=document.querySelector('#resultPanel .result-actions');
 let saveSearch=$('saveSearchButton'),order=$('orderAnswerButton'),close=$('closeSearchResultButton');
