@@ -17,6 +17,14 @@
     if(o.delivery_locale==='km') return o.delivery_title||'ការប្រគល់';
     return o.matched_answer_title||o.product_name||o.product_id||'交付内容';
   }
+  function syncTranslatedTitle(o,translatedTitle,source){
+    const t=String(translatedTitle||'').trim();
+    if(!t) return;
+    o.delivery_title=t;
+    const card=source?.closest?.('.order-card');
+    const h=card?.querySelector?.('.order-title');
+    if(h) h.textContent=t;
+  }
   function toast(text,error=false){const t=document.getElementById('toast');if(!t)return;t.textContent=text;t.className=`toast show${error?' error':''}`;clearTimeout(toast.timer);toast.timer=setTimeout(()=>t.className='toast',3200)}
   function preparingText(){return L('正在按订单语言生成完整交付…','Preparing the complete delivery in your order language…','កំពុងរៀបចំការប្រគល់ពេញលេញតាមភាសានៃការបញ្ជាទិញ…')}
   function setCount(n){const sec=document.getElementById('downloads'),badge=sec?.querySelector(':scope>.member-fold-head .member-count-badge'),brief=sec?.querySelector(':scope>.member-fold-head .member-fold-brief');if(badge)badge.textContent=String(n);if(brief)brief.textContent=I?.locale==='en'?`${n} records`:I?.locale==='km'?`${n} កំណត់ត្រា`:`共 ${n} 条`}
@@ -41,6 +49,7 @@
     try{
       const r=await invokeUntilReady('claim-answer-download',o,btn);
       if(!r?.content) throw new Error(r?.error||'NO_CONTENT');
+      syncTranslatedTitle(o,r.title,btn);
       const bom=new Uint8Array([0xEF,0xBB,0xBF]),body=new TextEncoder().encode(String(r.content).replace(/\r?\n/g,'\r\n')),blob=new Blob([bom,body],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
       a.href=url;a.download=safeName(r.title||title(o))+'-'+o.order_no+'.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
       toast(L('已下载，请到手机“文件/下载”中查看；也可在这里点击“查看内容”','Downloaded. Check Files/Downloads, or tap View content here.','បានទាញយក។ សូមពិនិត្យ Files/Downloads ឬមើលមាតិកានៅទីនេះ'));
@@ -54,6 +63,7 @@
     try{
       const r=await invokeUntilReady('get-purchased-answer',o,btn);
       if(!r?.answer?.content) throw new Error(r?.error||'NO_CONTENT');
+      syncTranslatedTitle(o,r.answer.title,btn);
       pre.textContent=r.answer.content;btn.dataset.loaded='1';box.style.display='block';btn.textContent=L('收起内容','Hide content','លាក់មាតិកា');btn.setAttribute('aria-expanded','true');
     }catch(e){console.error('view purchased answer',e);btn.textContent=old;toast(L('内容准备失败，请重试','Could not prepare the delivery. Retry.','មិនអាចរៀបចំមាតិកាបាន សូមព្យាយាមម្តងទៀត'),true)}finally{btn.disabled=false}
   }
