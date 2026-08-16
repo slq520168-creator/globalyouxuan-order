@@ -8,24 +8,28 @@ if(!panel||!title||!list||!section||!grid)return;
 const style=document.createElement('style');
 style.textContent=`
 .fixed-module-section{position:relative}
-.fixed-module-section.module-options-open>.module-grid{visibility:hidden!important;pointer-events:none!important}
-.fixed-module-section.module-options-open>.fixed-plans-panel{position:absolute!important;inset:0!important;z-index:12!important;margin:0!important;display:flex!important;flex-direction:column!important;height:100%!important;min-height:0!important;max-height:none!important;padding:12px!important;box-sizing:border-box!important;border-radius:20px!important;overflow:hidden!important}
+.fixed-module-section>.module-grid{transition:opacity .18s ease,transform .18s ease}
+.fixed-module-section.module-options-open>.module-grid{opacity:0!important;transform:scale(.985)!important;pointer-events:none!important}
+.fixed-module-section.module-options-open>.fixed-plans-panel{position:relative!important;z-index:12!important;margin:0!important;display:flex!important;flex-direction:column!important;padding:12px!important;box-sizing:border-box!important;border-radius:20px!important;overflow:hidden!important;animation:gyxPanelIn .22s ease both}
 .fixed-module-section .fixed-plans-head{flex:0 0 auto;margin:0 0 8px!important;min-height:34px!important}
 .fixed-module-section .fixed-plans-head>div>span{display:none!important}
 .fixed-module-section .fixed-plans-head h2{margin:0!important;font-size:17px!important;line-height:34px!important}
 .fixed-module-section .fixed-plans-head button{width:34px!important;height:34px!important;min-height:34px!important}
-.fixed-module-section .fixed-plan-list{flex:1;min-height:0!important;display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;gap:10px!important;align-content:stretch!important}
-.fixed-module-section .fixed-plan{min-height:0!important;height:100%!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
-.fixed-module-section .fixed-plan-option{width:100%;height:100%;min-height:0!important;padding:10px 8px;border:1px solid rgba(20,120,255,.18);border-radius:16px;background:rgba(255,255,255,.9);color:var(--text,#172033);font:inherit;font-size:15px;font-weight:850;line-height:1.35;text-align:center;display:flex;align-items:center;justify-content:center;box-sizing:border-box;box-shadow:0 8px 20px rgba(44,75,120,.06)}
-.fixed-module-section .fixed-plan-option:active{transform:scale(.98)}
+.fixed-module-section .fixed-plan-list{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+.fixed-module-section .fixed-plan{min-height:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;opacity:0;transform:translateY(10px) scale(.985);animation:gyxOptionIn .24s ease forwards}
+.fixed-module-section .fixed-plan:nth-child(1){animation-delay:.02s}.fixed-module-section .fixed-plan:nth-child(2){animation-delay:.07s}.fixed-module-section .fixed-plan:nth-child(3){animation-delay:.12s}.fixed-module-section .fixed-plan:nth-child(4){animation-delay:.17s}
+.fixed-module-section .fixed-plan-option{width:100%;min-height:92px;padding:12px 10px;border:1px solid rgba(20,120,255,.18);border-radius:16px;background:rgba(255,255,255,.9);color:var(--text,#172033);font:inherit;font-size:15px;font-weight:850;line-height:1.35;text-align:center;display:flex;align-items:center;justify-content:center;box-sizing:border-box;box-shadow:0 8px 20px rgba(44,75,120,.06);transition:transform .14s ease,box-shadow .14s ease}
+.fixed-module-section .fixed-plan-option:active{transform:scale(.97)}
 html[data-theme="dark"] .fixed-module-section .fixed-plan-option{background:rgba(10,24,43,.94);border-color:rgba(100,160,255,.24);color:#f4f8ff}
+@keyframes gyxPanelIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes gyxOptionIn{to{opacity:1;transform:none}}
 @media(max-width:640px){
 .fixed-module-section.module-options-open>.fixed-plans-panel{padding:10px!important}
 .fixed-module-section .fixed-plans-head{margin-bottom:7px!important;min-height:30px!important}
 .fixed-module-section .fixed-plans-head h2{font-size:16px!important;line-height:30px!important}
 .fixed-module-section .fixed-plans-head button{width:30px!important;height:30px!important;min-height:30px!important}
 .fixed-module-section .fixed-plan-list{gap:8px!important}
-.fixed-module-section .fixed-plan-option{font-size:13px!important;padding:7px 6px!important}
+.fixed-module-section .fixed-plan-option{min-height:86px!important;font-size:13px!important;padding:9px 7px!important}
 }
 @media(orientation:landscape) and (max-height:520px){
 .fixed-module-section .module-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
@@ -34,8 +38,8 @@ html[data-theme="dark"] .fixed-module-section .fixed-plan-option{background:rgba
 .fixed-module-section .module-card .module-subtitle{max-width:72px!important;margin-top:5px!important;font-size:8.5px!important;line-height:1.22!important}
 .fixed-module-section.module-options-open>.fixed-plans-panel{padding:6px!important}
 .fixed-module-section .fixed-plans-head{display:none!important}
-.fixed-module-section .fixed-plan-list{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:1fr!important;gap:8px!important}
-.fixed-module-section .fixed-plan-option{font-size:11px!important;border-radius:12px!important}
+.fixed-module-section .fixed-plan-list{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important}
+.fixed-module-section .fixed-plan-option{min-height:66px!important;font-size:11px!important;border-radius:12px!important}
 }
 .fixed-detail-modal{position:fixed;inset:0;z-index:100500;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(5,15,30,.56);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
 .fixed-detail-modal.show{display:flex!important}
@@ -70,7 +74,7 @@ function ensureDetail(){let m=document.getElementById('fixedDetailModal');if(m)r
 function showDetail(p){const d=data(p.id),m=ensureDetail();m.dataset.productId=p.id;document.getElementById('fixedDetailTitle').textContent=d.name;document.getElementById('fixedDetailLead').textContent=d.lead;const ul=document.getElementById('fixedDetailList');ul.replaceChildren();(Array.isArray(d.bullets)?d.bullets:[]).forEach(x=>{const li=document.createElement('li');li.textContent=x;ul.appendChild(li)});document.getElementById('fixedDetailAudience').textContent=d.audience||'';document.getElementById('fixedDetailPrice').innerHTML=`${Number(p.product_price).toFixed(Number(p.product_price)%1?2:0)} <small>USDT</small>`;const fav=document.getElementById('fixedDetailFavorite');fav.disabled=false;fav.textContent=L('收藏方案','Save plan','រក្សាទុកផែនការ');const order=document.getElementById('fixedDetailOrder');order.disabled=false;order.textContent=L('创建订单','Create order','បង្កើតការបញ្ជាទិញ');document.body.classList.add('fixed-detail-active');document.body.style.overflow='hidden';m.classList.add('show')}
 async function favoriteCurrent(){const m=document.getElementById('fixedDetailModal'),p=cache?.get(m?.dataset.productId);if(!p)return;const u=await user();if(!u)return;const btn=document.getElementById('fixedDetailFavorite'),d=data(p.id);if(btn.disabled)return;btn.disabled=true;btn.textContent=L('收藏中…','Saving…','កំពុងរក្សាទុក…');const payload={user_id:u.id,answer_id:null,question:d.name,selections:[],tier:'fixed',product_id:p.id,quoted_price:Number(p.product_price||0),matched_title:d.name,matched_summary:d.lead,updated_at:new Date().toISOString()};let timer;try{const timeout=new Promise(resolve=>{timer=setTimeout(()=>resolve({error:{message:'timeout'}}),3500)});const r=await Promise.race([db.from('answer_favorites').insert(payload),timeout]);clearTimeout(timer);if(r?.error){const msg=String(r.error.message||'');if(/duplicate|unique|already exists/i.test(msg)){btn.textContent=L('已收藏','Saved','បានរក្សាទុក');btn.disabled=true;return}btn.disabled=false;btn.textContent=L('收藏方案','Save plan','រក្សាទុកផែនការ');if(msg!=='timeout')alert(L('收藏失败，请稍后再试。','Save failed. Try again later.','រក្សាទុកបរាជ័យ សូមសាកល្បងម្តងទៀត។'));return}btn.textContent=L('已收藏','Saved','បានរក្សាទុក');btn.disabled=true}catch(e){clearTimeout(timer);btn.disabled=false;btn.textContent=L('收藏方案','Save plan','រក្សាទុកផែនការ')}}
 async function openCheckout(){const m=document.getElementById('fixedDetailModal'),p=cache?.get(m?.dataset.productId);if(!p)return;const u=await user();if(!u)return;if(!window.GYX_MEMBER_CHECKOUT?.open){alert(L('下单系统正在加载，请稍后再试。','Order system is loading. Try again shortly.','ប្រព័ន្ធបញ្ជាទិញកំពុងផ្ទុក សូមសាកល្បងបន្តិចទៀត។'));return}const d=data(p.id);m.classList.remove('show');document.body.classList.remove('fixed-detail-active');document.body.style.overflow='';window.GYX_MEMBER_CHECKOUT.open(p.id,{question:d.name,selections:[],tier:'fixed',answer:{title:d.name,answer_summary:d.lead}})}
-function openModule(key,btn){if(!defs[key])return;if(opened===key&&!panel.classList.contains('hidden')){resetModule();return}opened=key;document.body.classList.add('fixed-plans-active');document.querySelectorAll('[data-fixed-module]').forEach(x=>{x.setAttribute('aria-expanded','false');x.classList.remove('active')});btn?.setAttribute('aria-expanded','true');btn?.classList.add('active');title.textContent=t(defs[key].title);list.innerHTML=defs[key].ids.map(optionCard).join('');panel.classList.remove('hidden');panel.classList.add('is-open');section.classList.add('module-options-open');load().catch(()=>{})}
+function openModule(key,btn){if(!defs[key])return;if(opened===key&&!panel.classList.contains('hidden')){resetModule();return}opened=key;document.body.classList.add('fixed-plans-active');document.querySelectorAll('[data-fixed-module]').forEach(x=>{x.setAttribute('aria-expanded','false');x.classList.remove('active')});btn?.setAttribute('aria-expanded','true');btn?.classList.add('active');title.textContent=t(defs[key].title);list.innerHTML=defs[key].ids.map(optionCard).join('');panel.classList.remove('hidden');panel.classList.add('is-open');requestAnimationFrame(()=>section.classList.add('module-options-open'));load().catch(()=>{})}
 async function openOption(id){let p=cache?.get(id);if(!p){try{const mm=await load();p=mm.get(id)}catch{return}}if(p)showDetail(p)}
 document.addEventListener('click',e=>{const b=e.target.closest('[data-fixed-module]');if(b){e.preventDefault();openModule(b.dataset.fixedModule,b);return}const view=e.target.closest('.fixed-plan-option');if(view){e.preventDefault();e.stopPropagation();openOption(view.dataset.productId)}},true);
 close?.addEventListener('click',e=>{e.preventDefault();resetModule()});
