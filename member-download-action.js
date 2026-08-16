@@ -44,6 +44,7 @@
       a.href=url;a.download=safeName(r.title||title(o))+'-'+o.order_no+'.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
       toast(L('已下载，请到手机“文件/下载”中查看；也可在这里点击“查看内容”','Downloaded. Check Files/Downloads, or tap View content here.','បានទាញយក។ សូមពិនិត្យ Files/Downloads ឬមើលមាតិកានៅទីនេះ'));
       await refresh();
+      window.dispatchEvent(new CustomEvent('gyx:orders-changed',{detail:{source:'download-complete',order_id:o.id}}));
     }catch(e){console.error('download answer',e);btn.disabled=false;btn.textContent=old;toast(L('内容暂时无法打开，请重试','Could not open the delivery. Please retry.','មិនអាចបើកមាតិកាបាន សូមព្យាយាមម្តងទៀត'),true)}
   }
 
