@@ -77,9 +77,10 @@
 
   async function toggleContent(o,btn,box,pre){
     if(btn.dataset.loaded==='1'){
-      const willOpen=box.hidden;
-      box.hidden=!willOpen;
-      btn.textContent=willOpen?L('收起内容','Hide content','លាក់មាតិកា'):L('查看内容','View content','មើលមាតិកា');
+      const isOpen=box.style.display!=='none';
+      box.style.display=isOpen?'none':'block';
+      btn.textContent=isOpen?L('查看内容','View content','មើលមាតិកា'):L('收起内容','Hide content','លាក់មាតិកា');
+      btn.setAttribute('aria-expanded',String(!isOpen));
       return;
     }
     const old=btn.textContent;
@@ -90,8 +91,9 @@
       if(!r?.answer?.content) throw new Error(r?.error||'NO_CONTENT');
       pre.textContent=r.answer.content;
       btn.dataset.loaded='1';
-      box.hidden=false;
+      box.style.display='block';
       btn.textContent=L('收起内容','Hide content','លាក់មាតិកា');
+      btn.setAttribute('aria-expanded','true');
     }catch(e){
       console.error('view purchased answer',e);
       btn.textContent=old;
@@ -134,8 +136,9 @@
       b.className='btn';
       b.type='button';
       b.textContent=L('查看内容','View content','មើលមាតិកា');
+      b.setAttribute('aria-expanded','false');
       box.className='purchased-answer';
-      box.hidden=true;
+      box.style.display='none';
       pre.style.whiteSpace='pre-wrap';
       pre.style.wordBreak='break-word';
       box.append(pre);
