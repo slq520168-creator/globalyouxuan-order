@@ -60,7 +60,7 @@ favorite?.addEventListener('click',async e=>{
     if(productId.startsWith('answer-')&&Number(write.data.answer_id)!==answerId)throw new Error('FAVORITE_ANSWER_ID_MISMATCH');
     favorite.textContent=L('已收藏','Saved','បានរក្សាទុក');
     toast(L('已加入我的收藏','Added to Favorites','បានបន្ថែមទៅចំណូលចិត្ត'));
-    clearSearch();
+    clearCleanup();
   }catch(err){
     clearTimeout(timer);favorite.disabled=false;favorite.textContent=L('收藏','Favorite','ចំណូលចិត្ត');toast(L('收藏失败，结果已保留','Save failed. Result kept.','រក្សាទុកបរាជ័យ លទ្ធផលត្រូវបានរក្សាទុក'));armCleanup();
   }
