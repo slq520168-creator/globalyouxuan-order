@@ -1,0 +1,6 @@
+name = "globalyouxuan-embedding"
+main = "hybrid-embedding-worker.ts"
+compatibility_date = "2026-08-17"
+
+[ai]
+binding = "AI"
