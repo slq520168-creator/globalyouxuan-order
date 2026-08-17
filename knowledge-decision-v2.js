@@ -1,1 +1,1 @@
-(()=>{'use strict';document.write('<script src="knowledge-decision-v5.js?v=20260817-local-hybrid-1"><\/script>')})();
+(()=>{'use strict';document.write('<script src="knowledge-decision-v6.js?v=20260817-hybrid-strict-1"><\/script>')})();
