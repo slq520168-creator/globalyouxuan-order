@@ -43,15 +43,26 @@ favorite?.addEventListener('click',async e=>{
   const rawAnswerId=Number(m.answer?.id),answerId=Number.isSafeInteger(rawAnswerId)&&rawAnswerId>0?rawAnswerId:null;
   if(productId.startsWith('answer-')&&!answerId){armCleanup();return toast(L('答案ID无效，无法收藏','Invalid answer ID. Cannot save.','លេខសម្គាល់ចម្លើយមិនត្រឹមត្រូវ មិនអាចរក្សាទុកបាន'))}
   favorite.disabled=true;favorite.textContent=L('收藏中…','Saving…','កំពុងរក្សាទុក…');
-  const payload={user_id:u.id,answer_id:answerId,question:m.question||'',selections:Array.isArray(m.selections)?m.selections:[],tier:m.tier||'standard',product_id:productId,quoted_price:Number(m.product?.product_price||0),matched_title:m.delivery_package?.title||m.answer?.title||m.question||'',matched_summary:m.delivery_package?.summary||m.answer?.answer_summary||m.question||'',updated_at:new Date().toISOString()};
+  const payload={answer_id:answerId,question:m.question||'',selections:Array.isArray(m.selections)?m.selections:[],tier:m.tier||'standard',product_id:productId,quoted_price:Number(m.product?.product_price||0),matched_title:m.delivery_package?.title||m.answer?.title||m.question||'',matched_summary:m.delivery_package?.summary||m.answer?.answer_summary||m.question||'',updated_at:new Date().toISOString()};
   let timer;
   try{
-    const timeout=new Promise(resolve=>{timer=setTimeout(()=>resolve({error:{message:'timeout'}}),3500)}),r=await Promise.race([db.from('answer_favorites').insert(payload),timeout]);
+    const timeout=new Promise(resolve=>{timer=setTimeout(()=>resolve({error:{message:'timeout'}}),5000)});
+    let write;
+    const existing=await db.from('answer_favorites').select('id').eq('user_id',u.id).eq('product_id',productId).maybeSingle();
+    if(existing.error)throw existing.error;
+    if(existing.data?.id){
+      write=await Promise.race([db.from('answer_favorites').update(payload).eq('id',existing.data.id).eq('user_id',u.id).select('id,user_id,product_id,answer_id').single(),timeout]);
+    }else{
+      write=await Promise.race([db.from('answer_favorites').insert({...payload,user_id:u.id}).select('id,user_id,product_id,answer_id').single(),timeout]);
+    }
     clearTimeout(timer);
-    if(r?.error&&!/duplicate|unique|already exists/i.test(String(r.error.message||'')))throw r.error;
-    favorite.textContent=L('已收藏','Saved','បានរក្សាទុក');clearSearch();
-  }catch{
-    clearTimeout(timer);favorite.disabled=false;favorite.textContent=L('收藏','Favorite','ចំណូលចិត្ត');toast(L('收藏失败，请稍后再试','Save failed. Try again later.','រក្សាទុកបរាជ័យ សូមសាកល្បងម្តងទៀត'));armCleanup();
+    if(write?.error||!write?.data?.id||String(write.data.user_id)!==String(u.id)||String(write.data.product_id)!==productId)throw write?.error||new Error('FAVORITE_WRITE_NOT_CONFIRMED');
+    if(productId.startsWith('answer-')&&Number(write.data.answer_id)!==answerId)throw new Error('FAVORITE_ANSWER_ID_MISMATCH');
+    favorite.textContent=L('已收藏','Saved','បានរក្សាទុក');
+    toast(L('已加入我的收藏','Added to Favorites','បានបន្ថែមទៅចំណូលចិត្ត'));
+    clearSearch();
+  }catch(err){
+    clearTimeout(timer);favorite.disabled=false;favorite.textContent=L('收藏','Favorite','ចំណូលចិត្ត');toast(L('收藏失败，结果已保留','Save failed. Result kept.','រក្សាទុកបរាជ័យ លទ្ធផលត្រូវបានរក្សាទុក'));armCleanup();
   }
 },true);
 order?.addEventListener('click',async e=>{e.preventDefault();e.stopImmediatePropagation();clearCleanup();const m=window.GYX_CURRENT_AI_MATCH;if(!m?.product?.id){armCleanup();return toast(L('当前方案暂不可下单','This plan cannot be ordered yet','ផែនការនេះមិនទាន់អាចបញ្ជាទិញបាន'))}const u=await needUser();if(!u){armCleanup();return}if(!window.GYX_MEMBER_CHECKOUT?.open){armCleanup();return toast(L('下单系统正在加载，请稍后再试','Order system is loading. Try again shortly.','ប្រព័ន្ធបញ្ជាទិញកំពុងផ្ទុក សូមសាកល្បងបន្តិចទៀត'))}window.GYX_MEMBER_CHECKOUT.open(m.product.id,m);clearSearch()},true);
