@@ -14,7 +14,7 @@ function intent(q){const x=N(q),core=[],exp=[];const maps=[
 [['副业','赚钱','收入','变现','兼职'],['副业','兼职'],['赚钱','接单','变现','客户','平台','服务']],
 [['编程','代码','程序','开发'],['开发','编程'],['网站','自动化','脚本','API','接单']],
 [['翻译','英语','英文','柬语'],['翻译','本地化'],['字幕','文案','接单']],
-[['姜子牙','历史人物'],['姜子牙','历史人物','人物IP'],['人物故事','故事','漫画','短视频','内容创作','文创','数字产品']]
+[['姜子牙','历史人物'],['姜子牙','历史人物','人物IP','人物故事','明星','漫画'],['故事','短视频','内容创作','文创','数字产品']]
 ];for(const [keys,c,e] of maps)if(keys.some(k=>x.includes(N(k)))){core.push(...c);exp.push(...e)}if(/赚钱|收入|变现|副业|兼职/.test(x))exp.push('赚钱','变现','接单','客户','平台');if(/客流|获客|生意|没客人|拉新/.test(x))exp.push('客流','获客','到店','复购','本地获客');return{core:[...new Set(core)],exp:[...new Set(exp)]}}
 function pathTerms(round){const o=[];for(const h of st.history.filter(x=>x.round<round)){for(const y of h.selected||[]){o.push(y.text,...(Array.isArray(y.keywords)?y.keywords:[]));const n=N(y.text);if(/写真|头像|人像/.test(n))o.push('写真','头像','人像');if(/电商|商品主图|商品图/.test(n))o.push('电商图','商品图','主图');if(/餐馆|餐饮|客流|到店/.test(n))o.push('餐饮','客流','到店','复购');if(/汽修|维修|修车|保养/.test(n))o.push('维修','汽修','保养');if(/人物|故事|漫画|ip|明星|手办/.test(n))o.push('人物IP','人物故事','故事','漫画','明星','手办','概念设计')}}return[...new Set(o.map(x=>String(x||'').trim()).filter(x=>x.length>=2))]}
 async function search(round){if(!window.gyxSupabase)return[];const i=intent(st.originalQuestion);try{const{data,error}=await window.gyxSupabase.rpc('search_product_answers_hybrid_v2',{query_text:[st.originalQuestion,...hist(round)].join(' '),core_terms:i.core,expansion_terms:i.exp,history_terms:pathTerms(round),match_count:100});if(error)throw error;return data||[]}catch{return[]}}
