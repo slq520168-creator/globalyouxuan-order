@@ -1,1 +1,1 @@
-(()=>{'use strict';document.write('<script src="knowledge-decision-v13.js?v=20260817-no-cross-domain-fallback-1"><\/script>')})();
+(()=>{'use strict';document.write('<script src="knowledge-decision-v14.js?v=20260818-cloud-round-fallback-1"><\/script>')})();
