@@ -9,7 +9,7 @@ if(orphanSave)orphanSave.remove();
 if(actions&&!order){order=document.createElement('button');order.id='orderAnswerButton';order.className='btn btn-secondary';order.type='button';actions.appendChild(order)}
 if(actions&&!close){close=document.createElement('button');close.id='closeSearchResultButton';close.className='btn btn-secondary';close.type='button';actions.appendChild(close)}
 if(actions){actions.style.gridTemplateColumns='repeat(3,minmax(0,1fr))';actions.style.gap='8px'}
-let cleanupTimer=null;
+let cleanupTimer=null,closeTimer=null;
 const toast=t=>{const e=$('toast');if(!e)return;e.textContent=t;e.classList.add('show');clearTimeout(window.__gyxToastTimer);window.__gyxToastTimer=setTimeout(()=>e.classList.remove('show'),1800)};
 const clearCleanup=()=>{if(cleanupTimer)clearTimeout(cleanupTimer);cleanupTimer=null};
 const clearSearch=()=>{clearCleanup();window.GYX_KNOWLEDGE_DECISION?.clear?.()};
@@ -66,7 +66,9 @@ favorite?.addEventListener('click',async e=>{
   }
 },true);
 order?.addEventListener('click',async e=>{e.preventDefault();e.stopImmediatePropagation();clearCleanup();const m=window.GYX_CURRENT_AI_MATCH;if(!m?.product?.id){armCleanup();return toast(L('当前方案暂不可下单','This plan cannot be ordered yet','ផែនការនេះមិនទាន់អាចបញ្ជាទិញបាន'))}const u=await needUser();if(!u){armCleanup();return}if(!window.GYX_MEMBER_CHECKOUT?.open){armCleanup();return toast(L('下单系统正在加载，请稍后再试','Order system is loading. Try again shortly.','ប្រព័ន្ធបញ្ជាទិញកំពុងផ្ទុក សូមសាកល្បងបន្តិចទៀត'))}window.GYX_MEMBER_CHECKOUT.open(m.product.id,m);clearSearch()},true);
-close?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();clearSearch()},true);
+close?.addEventListener('pointerdown',e=>{e.stopImmediatePropagation()},true);
+close?.addEventListener('pointerup',e=>{e.stopImmediatePropagation()},true);
+close?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();clearCleanup();clearTimeout(closeTimer);close.disabled=true;closeTimer=setTimeout(()=>{clearSearch();close.disabled=false},420)},true);
 document.querySelector('#resultPanel')?.addEventListener('pointerdown',()=>{if(window.GYX_CURRENT_AI_MATCH)armCleanup()},{passive:true});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setPlaceholder,{once:true});else setPlaceholder();
 labels();syncOrder();
