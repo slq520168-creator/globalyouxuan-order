@@ -21,5 +21,10 @@
   client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){verifiedUser=null;verifiedAt=0;verifiedPromise=null;return}if(session?.user){markKnownMember();verifiedUser=session.user;verifiedAt=Date.now()}});
   async function invokeFunction(name,body){const {data,error}=await client.functions.invoke(name,{body});if(!error)return data;let code='';try{const payload=await error.context?.clone?.().json();code=payload?.error||payload?.message||''}catch{}const wrapped=new Error(code||error.message||'FUNCTION_REQUEST_FAILED');wrapped.code=code||'FUNCTION_REQUEST_FAILED';throw wrapped}
   window.gyxSupabase=client;window.gyxGetVerifiedUser=getVerifiedUser;window.gyxSafeNext=safeNext;window.gyxInvokeFunction=invokeFunction;window.gyxIsKnownMember=isKnownMember;window.gyxAuthEntryUrl=authEntryUrl;
-  if(currentPath.endsWith('/community.html')){setTimeout(()=>{getVerifiedUser().then(u=>{if(!u)location.replace(authEntryUrl('community.html'))}).catch(()=>location.replace(authEntryUrl('community.html')))},0);const s=document.createElement('script');s.src='community-download-claim.js?v=20260817-single-claim-1';s.defer=true;document.head.appendChild(s)}
+  if(currentPath.endsWith('/community.html')){
+    setTimeout(()=>{getVerifiedUser().then(u=>{if(!u)location.replace(authEntryUrl('community.html'))}).catch(()=>location.replace(authEntryUrl('community.html')))},0);
+    let secureReadyResolve;const secureReady=new Promise(r=>secureReadyResolve=r);
+    document.addEventListener('click',e=>{const b=e.target.closest?.('.download[data-download],.download[data-claim-id]');if(!b||b.disabled)return;e.preventDefault();e.stopImmediatePropagation();const id=b.dataset.claimId||b.dataset.download||'';secureReady.then(()=>window.gyxCommunitySecureClaim?.(b,id)).catch(()=>{})},true);
+    const s=document.createElement('script');s.src='community-download-claim.js?v=20260817-single-claim-3';s.async=true;s.onload=()=>secureReadyResolve();document.head.appendChild(s)
+  }
 })();
