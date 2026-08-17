@@ -39,8 +39,9 @@ favorite?.addEventListener('click',async e=>{
   e.preventDefault();e.stopImmediatePropagation();clearCleanup();
   const m=window.GYX_CURRENT_AI_MATCH;if(!m)return toast(L('请先完成一次匹配','Complete a match first','សូមបញ្ចប់ការផ្គូផ្គងមួយសិន'));
   const db=window.gyxSupabase,u=await needUser();if(!u||!db){armCleanup();return}
-  const productId=m.product?.id;if(!productId){armCleanup();return toast(L('当前方案暂不可收藏','This plan cannot be saved yet','ផែនការនេះមិនទាន់អាចរក្សាទុកបាន'))}
+  const productId=String(m.product?.id||'').trim();if(!productId){armCleanup();return toast(L('方案ID无效，无法收藏','Invalid plan ID. Cannot save.','លេខសម្គាល់ផែនការមិនត្រឹមត្រូវ មិនអាចរក្សាទុកបាន'))}
   const rawAnswerId=Number(m.answer?.id),answerId=Number.isSafeInteger(rawAnswerId)&&rawAnswerId>0?rawAnswerId:null;
+  if(productId.startsWith('answer-')&&!answerId){armCleanup();return toast(L('答案ID无效，无法收藏','Invalid answer ID. Cannot save.','លេខសម្គាល់ចម្លើយមិនត្រឹមត្រូវ មិនអាចរក្សាទុកបាន'))}
   favorite.disabled=true;favorite.textContent=L('收藏中…','Saving…','កំពុងរក្សាទុក…');
   const payload={user_id:u.id,answer_id:answerId,question:m.question||'',selections:Array.isArray(m.selections)?m.selections:[],tier:m.tier||'standard',product_id:productId,quoted_price:Number(m.product?.product_price||0),matched_title:m.delivery_package?.title||m.answer?.title||m.question||'',matched_summary:m.delivery_package?.summary||m.answer?.answer_summary||m.question||'',updated_at:new Date().toISOString()};
   let timer;
