@@ -4,3 +4,7 @@ compatibility_date = "2026-08-17"
 
 [ai]
 binding = "AI"
+
+[vars]
+TOKENHUB_BASE_URL = "https://tokenhub-intl.tencentcloudmaas.com/v1"
+TOKENHUB_MODEL = "hy3"
