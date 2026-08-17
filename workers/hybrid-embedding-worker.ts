@@ -1,8 +1,8 @@
 export interface Env {
   AI: Ai;
-  TOKENHUB_API_KEY?: string;
-  TOKENHUB_BASE_URL?: string;
-  TOKENHUB_MODEL?: string;
+  OPENROUTER_API_KEY?: string;
+  OPENROUTER_BASE_URL?: string;
+  OPENROUTER_MODEL?: string;
 }
 
 const H = {
@@ -48,8 +48,8 @@ async function embeddings(body: any, env: Env) {
 }
 
 async function rerank(body: any, env: Env) {
-  const apiKey = String(env.TOKENHUB_API_KEY || '').trim();
-  if (!apiKey) return out({ error: 'TOKENHUB_NOT_CONFIGURED' }, 503);
+  const apiKey = String(env.OPENROUTER_API_KEY || '').trim();
+  if (!apiKey) return out({ error: 'OPENROUTER_NOT_CONFIGURED' }, 503);
 
   const query = String(body?.query ?? body?.originalQuestion ?? '').trim().slice(0, 800);
   const history = (Array.isArray(body?.history) ? body.history : [])
@@ -61,7 +61,9 @@ async function rerank(body: any, env: Env) {
       id: String(x?.id ?? '').trim(),
       title: String(x?.title ?? '').trim().slice(0, 160),
       summary: String(x?.summary ?? x?.answer_summary ?? '').trim().slice(0, 260),
-      keywords: Array.isArray(x?.keywords) ? x.keywords.map((k: unknown) => String(k ?? '').trim()).filter(Boolean).slice(0, 12) : []
+      keywords: Array.isArray(x?.keywords)
+        ? x.keywords.map((k: unknown) => String(k ?? '').trim()).filter(Boolean).slice(0, 12)
+        : []
     }))
     .filter((x: any) => x.id && x.title)
     .slice(0, 30);
@@ -69,12 +71,12 @@ async function rerank(body: any, env: Env) {
   if (!query) return out({ error: 'EMPTY_QUERY' }, 400);
   if (candidates.length < 5) return out({ error: 'NOT_ENOUGH_CANDIDATES', count: candidates.length }, 400);
 
-  const base = String(env.TOKENHUB_BASE_URL || 'https://tokenhub-intl.tencentcloudmaas.com/v1').replace(/\/$/, '');
-  const model = String(env.TOKENHUB_MODEL || 'hy3').trim();
+  const base = String(env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1').replace(/\/$/, '');
+  const model = String(env.OPENROUTER_MODEL || 'qwen/qwen3-next-80b-a3b-instruct:free').trim();
   const allowed = new Set(candidates.map((x: any) => x.id));
 
   const prompt = {
-    task: '从候选资料中选择与用户当前问题最匹配的5条。只能选择候选ID，禁止创造新ID、禁止生成候选之外的答案。优先保持明确主体、人名、行业、技能和用户目标一致；历史选择用于继续收窄。5条应有区别但都必须相关。',
+    task: '从候选资料中选择与用户当前问题最匹配的5条。只能选择候选ID，禁止创造新ID，禁止生成候选之外的答案。明确主体、人名、行业、技能必须优先一致；用户目标必须一致；历史选择用于继续收窄。5条应有区别但都必须相关。',
     query,
     history,
     candidates
@@ -84,43 +86,58 @@ async function rerank(body: any, env: Env) {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      'authorization': `Bearer ${apiKey}`
+      'authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://globalyouxuan-order.pages.dev',
+      'X-Title': 'GlobalYouXuan Search'
     },
     body: JSON.stringify({
       model,
       messages: [
-        { role: 'system', content: '你是检索重排器，不是内容生成器。只输出JSON：{"selected_ids":["id1","id2","id3","id4","id5"],"reason":"简短说明"}。selected_ids必须严格来自候选ID。' },
+        {
+          role: 'system',
+          content: '你是检索重排器，不是内容生成器。只输出JSON对象，格式严格为 {"selected_ids":["id1","id2","id3","id4","id5"],"reason":"简短说明"}。selected_ids必须严格来自候选ID，必须恰好5个且不得重复。'
+        },
         { role: 'user', content: JSON.stringify(prompt) }
       ],
       stream: false,
-      temperature: 0.1,
-      max_tokens: 260
+      temperature: 0,
+      max_tokens: 220
     })
   });
 
   const raw = await response.text();
-  if (!response.ok) return out({ error: 'TOKENHUB_FAILED', status: response.status, message: raw.slice(0, 600) }, 502);
+  if (!response.ok) {
+    return out({
+      error: 'OPENROUTER_FAILED',
+      status: response.status,
+      message: raw.slice(0, 600)
+    }, 502);
+  }
 
   let content = '';
+  let servedModel = model;
   try {
     const j = JSON.parse(raw);
     content = String(j?.choices?.[0]?.message?.content || '');
+    servedModel = String(j?.model || model);
   } catch {
-    return out({ error: 'TOKENHUB_BAD_RESPONSE' }, 502);
+    return out({ error: 'OPENROUTER_BAD_RESPONSE' }, 502);
   }
 
   const parsed = cleanJson(content) || {};
-  const ids = [...new Set((Array.isArray(parsed?.selected_ids) ? parsed.selected_ids : [])
-    .map((x: unknown) => String(x ?? '').trim())
-    .filter((id: string) => allowed.has(id)))]
-    .slice(0, 5);
+  const ids = [...new Set(
+    (Array.isArray(parsed?.selected_ids) ? parsed.selected_ids : [])
+      .map((x: unknown) => String(x ?? '').trim())
+      .filter((id: string) => allowed.has(id))
+  )].slice(0, 5);
 
-  if (ids.length !== 5) return out({ error: 'RERANK_INVALID', selected_ids: ids }, 422);
+  if (ids.length !== 5) {
+    return out({ error: 'RERANK_INVALID', selected_ids: ids }, 422);
+  }
 
   return out({
-    provider: 'tencent-tokenhub',
-    endpoint_region: base.includes('intl') ? 'global-singapore' : 'china',
-    model,
+    provider: 'openrouter',
+    model: servedModel,
     selected_ids: ids,
     reason: String(parsed?.reason || '').slice(0, 240)
   });
