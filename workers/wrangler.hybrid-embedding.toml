@@ -1,3 +1,4 @@
+# deployment trigger: qwen-openrouter-20260817-2221
 name = "globalyouxuan-embedding"
 main = "hybrid-embedding-worker.ts"
 compatibility_date = "2026-08-17"
