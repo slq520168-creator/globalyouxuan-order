@@ -1,1 +1,1 @@
-(()=>{'use strict';document.write('<script src="knowledge-decision-v3.js?v=20260817-strict-local-first-1"><\/script>')})();
+(()=>{'use strict';document.write('<script src="knowledge-decision-v4.js?v=20260817-local-five-round-1"><\/script>')})();
