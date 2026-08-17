@@ -6,7 +6,42 @@
   async function getVerifiedUser(){try{const{data:sessionData}=await client.auth.getSession();const sessionUser=sessionData?.session?.user||null;if(!sessionUser)return null;const{data,error}=await client.auth.getUser();if(!error&&data?.user)return data.user;return sessionUser}catch{return null}}
   async function invokeFunction(name,body){const{data,error}=await client.functions.invoke(name,{body});if(!error)return data;let code="";try{const payload=await error.context?.clone?.().json();code=payload?.error||payload?.message||""}catch{}const wrapped=new Error(code||error.message||"FUNCTION_REQUEST_FAILED");wrapped.code=code||"FUNCTION_REQUEST_FAILED";throw wrapped}
   window.gyxSupabase=client;window.gyxGetVerifiedUser=getVerifiedUser;window.gyxInvokeFunction=invokeFunction;window.GYX_ADMIN_AUTH_STORAGE="gyx_admin_auth";
+  const installAdminTouchStyles=()=>{if(document.getElementById("gyxAdminTouchStyles"))return;const s=document.createElement("style");s.id="gyxAdminTouchStyles";s.textContent=`
+    .admin-body .primary-btn,
+    .admin-body .danger-btn,
+    .admin-body .edit-btn,
+    .admin-body .priority-approve,
+    .admin-body .priority-reject,
+    .admin-body #editorUploadBtn{
+      min-height:44px!important;
+      padding:10px 14px!important;
+      border-radius:11px!important;
+      font-size:14px!important;
+      font-weight:800!important;
+      line-height:1.2!important;
+      touch-action:manipulation;
+    }
+    .admin-body .edit-btn{min-width:72px!important;margin:3px!important;}
+    .admin-body [data-approve],
+    .admin-body [data-papprove],
+    .admin-body [data-member-confirm],
+    .admin-body button[type="submit"].primary-btn{
+      min-width:128px!important;
+      min-height:46px!important;
+      font-size:15px!important;
+    }
+    .admin-body [data-reject],
+    .admin-body [data-preject],
+    .admin-body [data-member-ban],
+    .admin-body [data-member-unban]{min-width:92px!important;}
+    @media(max-width:780px){
+      .admin-body .manage-strip .primary-btn,
+      .admin-body .modal-actions .primary-btn,
+      .admin-body .modal-actions .danger-btn,
+      .admin-body .priority-actions button{min-height:46px!important;}
+    }
+  `;document.head.appendChild(s)};
   const load=(src,key)=>{if(document.querySelector("script[data-"+key+"]"))return;const s=document.createElement("script");s.src=src;s.defer=true;s.setAttribute("data-"+key,"1");document.head.appendChild(s)};
-  const go=()=>{load("admin-advanced.js?v=20260810-full-control-1","gyx-advanced");load("admin-data.js?v=20260816-growth-human-3","gyx-data");load("admin-code-file.js?v=20260810-code-upload-1","gyx-codefile");load("admin-member-level.js?v=20260811-levels-1","gyx-memberlevel");load("admin-member-profile.js?v=20260813-profile-edit-fixed-1","gyx-memberprofile");load("admin-profile-requests.js?v=20260811-profile-review-1","gyx-profilerequests");load("admin-member-security.js?v=20260813-mobile-scroll-fix-1","gyx-membersecurity")};
+  const go=()=>{installAdminTouchStyles();load("admin-advanced.js?v=20260810-full-control-1","gyx-advanced");load("admin-data.js?v=20260816-growth-human-3","gyx-data");load("admin-code-file.js?v=20260810-code-upload-1","gyx-codefile");load("admin-member-level.js?v=20260811-levels-1","gyx-memberlevel");load("admin-member-profile.js?v=20260813-profile-edit-fixed-1","gyx-memberprofile");load("admin-profile-requests.js?v=20260811-profile-review-1","gyx-profilerequests");load("admin-member-security.js?v=20260813-mobile-scroll-fix-1","gyx-membersecurity")};
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",go,{once:true});else go();
 })();
