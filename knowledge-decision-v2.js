@@ -1,1 +1,1 @@
-(()=>{'use strict';document.write('<script src="knowledge-decision-v7.js?v=20260817-local-route-compose-1"><\/script>')})();
+(()=>{'use strict';document.write('<script src="knowledge-decision-v8.js?v=20260817-local-detail-narrow-1"><\/script>')})();
