@@ -40,6 +40,12 @@
  .member-page #gyxFavoriteViewModal .modal-card,
  .member-page #memberOrderModal .modal-card{min-height:74dvh!important;max-height:calc(100dvh - 104px)!important}
 }
+@media(max-width:560px){
+ @supports not (-webkit-touch-callout:none){
+  html.payment-mode #memberPaymentScreen.gyx-pay-full{height:100svh!important;max-height:100svh!important;overflow-y:auto!important;scroll-padding-bottom:132px!important}
+  html.payment-mode #memberPaymentScreen.gyx-pay-full .p{padding-bottom:140px!important;box-sizing:border-box!important}
+ }
+}
 @media(max-width:430px){
  .member-page #searchHistoryList .search-history-card{padding-top:51px!important}
  .member-page #searchHistoryList .history-order-btn,.member-page #searchHistoryList .history-delete-btn{top:10px!important}
