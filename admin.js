@@ -1,181 +1,181 @@
 (() => {
-  "use strict";
+  "use strict";const I18N=window.GYXI18N,tr=(key,vars)=>I18N.t(key,vars),dateLocale=()=>I18N.locale==='zh'?'zh-CN':I18N.locale==='km'?'km-KH':'en';
   const $ = (s) => document.querySelector(s),
     $$ = (s) => Array.from(document.querySelectorAll(s));
   let currentEdit = null;
   const cols = {
     settings: [
-      ["label", "设置项"],
-      ["value", "当前值"],
-      ["group_name", "分类"],
-      ["is_public", "前台可读"],
+      ["label", tr("adminAuto001")],
+      ["value", tr("adminAuto002")],
+      ["group_name", tr("category")],
+      ["is_public", tr("adminAuto003")],
     ],
     members: [
-      ["email", "邮箱"],
-      ["display_name", "名称"],
-      ["phone", "电话"],
+      ["email", tr("email")],
+      ["display_name", tr("adminAuto004")],
+      ["phone", tr("phone")],
       ["telegram", "Telegram"],
-      ["locale", "语言"],
-      ["email_confirmed_at", "邮箱验证"],
-      ["last_sign_in_at", "最近登录"],
-      ["banned_until", "封禁到期"],
+      ["locale", tr("languageMenu")],
+      ["email_confirmed_at", tr("adminAuto005")],
+      ["last_sign_in_at", tr("adminAuto006")],
+      ["banned_until", tr("adminAuto007")],
     ],
     orders: [
-      ["order_no", "订单号"],
-      ["customer_name", "客户"],
-      ["product_name", "方案"],
-      ["payable_amount", "金额"],
-      ["status", "状态"],
+      ["order_no", tr("orderNo")],
+      ["customer_name", tr("adminAuto008")],
+      ["product_name", tr("adminAuto009")],
+      ["payable_amount", tr("amount")],
+      ["status", tr("status")],
       ["txid", "TXID"],
-      ["created_at", "时间"],
+      ["created_at", tr("adminAuto010")],
     ],
     products: [
       ["id", "ID"],
-      ["product_name", "名称"],
-      ["product_price", "价格"],
-      ["currency", "币种"],
-      ["is_active", "启用"],
-      ["sort_order", "排序"],
+      ["product_name", tr("adminAuto004")],
+      ["product_price", tr("homeIosNavLockCopy179")],
+      ["currency", tr("adminAuto011")],
+      ["is_active", tr("adminAuto012")],
+      ["sort_order", tr("adminAuto013")],
     ],
     answers: [
       ["id", "ID"],
-      ["module_code", "模块"],
-      ["title", "答案标题"],
-      ["priority", "优先级"],
-      ["is_active", "启用"],
+      ["module_code", tr("adminAuto014")],
+      ["title", tr("adminAuto015")],
+      ["priority", tr("adminAuto016")],
+      ["is_active", tr("adminAuto012")],
     ],
     fixed: [
-      ["module_code", "代码"],
-      ["module_name", "模块"],
-      ["description", "说明"],
-      ["sort_order", "排序"],
-      ["is_active", "启用"],
+      ["module_code", tr("adminAuto017")],
+      ["module_name", tr("adminAuto014")],
+      ["description", tr("adminAuto018")],
+      ["sort_order", tr("adminAuto013")],
+      ["is_active", tr("adminAuto012")],
     ],
     messages: [
       ["id", "ID"],
-      ["message_type", "类型"],
-      ["title", "标题"],
-      ["is_read", "已读"],
-      ["created_at", "时间"],
+      ["message_type", tr("adminAuto019")],
+      ["title", tr("adminAuto020")],
+      ["is_read", tr("adminAuto021")],
+      ["created_at", tr("adminAuto010")],
     ],
     payments: [
-      ["order_id", "订单"],
-      ["status", "状态"],
-      ["expected_amount", "应收"],
-      ["received_amount", "实收"],
-      ["checked_at", "核验时间"],
+      ["order_id", tr("orders")],
+      ["status", tr("status")],
+      ["expected_amount", tr("adminAuto022")],
+      ["received_amount", tr("adminAuto023")],
+      ["checked_at", tr("adminAuto024")],
     ],
     notifications: [
       ["id", "ID"],
-      ["event_type", "事件"],
-      ["order_id", "订单"],
-      ["status", "状态"],
-      ["attempt_count", "尝试"],
-      ["telegram_sent_at", "TG发送"],
-      ["last_error", "错误"],
+      ["event_type", tr("adminAuto025")],
+      ["order_id", tr("orders")],
+      ["status", tr("status")],
+      ["attempt_count", tr("adminAuto026")],
+      ["telegram_sent_at", tr("adminAuto027")],
+      ["last_error", tr("adminAuto028")],
     ],
     delivery: [
-      ["order_id", "订单"],
-      ["product_id", "产品"],
-      ["status", "状态"],
-      ["download_count", "已下载"],
-      ["max_downloads", "上限"],
-      ["expires_at", "到期"],
+      ["order_id", tr("orders")],
+      ["product_id", tr("adminAuto029")],
+      ["status", tr("status")],
+      ["download_count", tr("adminAuto030")],
+      ["max_downloads", tr("adminAuto031")],
+      ["expires_at", tr("adminAuto032")],
     ],
     sessions: [
-      ["email", "邮箱"],
-      ["ip", "登录IP"],
-      ["user_agent", "设备/浏览器"],
-      ["created_at", "登录时间"],
-      ["updated_at", "最近活动"],
-      ["not_after", "会话到期"],
+      ["email", tr("email")],
+      ["ip", tr("adminAuto033")],
+      ["user_agent", tr("adminAuto034")],
+      ["created_at", tr("adminAuto035")],
+      ["updated_at", tr("adminAuto036")],
+      ["not_after", tr("adminAuto037")],
     ],
     audit: [
-      ["event_type", "事件"],
+      ["event_type", tr("adminAuto025")],
       ["ip_address", "IP"],
-      ["device_type", "设备"],
-      ["browser_name", "浏览器"],
-      ["os_name", "系统"],
-      ["country_code", "国家"],
-      ["region", "地区"],
-      ["city", "城市"],
-      ["created_at", "时间"],
+      ["device_type", tr("adminAuto038")],
+      ["browser_name", tr("adminAuto039")],
+      ["os_name", tr("adminAuto040")],
+      ["country_code", tr("adminAuto041")],
+      ["region", tr("authCopy001")],
+      ["city", tr("adminAuto042")],
+      ["created_at", tr("adminAuto010")],
     ],
   };
   const fields = {
     settings: [
-      ["key", "设置键", "text"],
-      ["label", "设置名称", "text"],
-      ["value", "设置值", "textarea"],
-      ["group_name", "分类", "text"],
-      ["is_public", "前台可读取", "bool"],
+      ["key", tr("adminAuto043"), "text"],
+      ["label", tr("adminAuto044"), "text"],
+      ["value", tr("adminAuto045"), "textarea"],
+      ["group_name", tr("category"), "text"],
+      ["is_public", tr("adminAuto046"), "bool"],
     ],
     products: [
       ["id", "ID", "text"],
-      ["product_name", "名称", "text"],
-      ["product_price", "价格", "number"],
-      ["description", "说明", "textarea"],
-      ["currency", "币种", "text"],
-      ["download_url", "下载资料地址", "text"],
-      ["image_url", "图片地址", "text"],
-      ["is_active", "启用", "bool"],
-      ["sort_order", "排序", "number"],
+      ["product_name", tr("adminAuto004"), "text"],
+      ["product_price", tr("homeIosNavLockCopy179"), "number"],
+      ["description", tr("adminAuto018"), "textarea"],
+      ["currency", tr("adminAuto011"), "text"],
+      ["download_url", tr("adminAuto047"), "text"],
+      ["image_url", tr("adminAuto048"), "text"],
+      ["is_active", tr("adminAuto012"), "bool"],
+      ["sort_order", tr("adminAuto013"), "number"],
     ],
     answers: [
       ["id", "ID", "number"],
-      ["answer_code", "答案代码", "text"],
-      ["module_code", "模块代码", "text"],
-      ["title", "标题", "text"],
-      ["answer_summary", "摘要", "textarea"],
-      ["keywords", "关键词（逗号分隔）", "textarea"],
-      ["product_id", "产品ID", "text"],
-      ["priority", "优先级", "number"],
-      ["is_active", "启用", "bool"],
-      ["title_en", "英文标题", "text"],
-      ["title_km", "高棉文标题", "text"],
-      ["answer_summary_en", "英文摘要", "textarea"],
-      ["answer_summary_km", "高棉文摘要", "textarea"],
-      ["answer_detail_zh", "中文完整资料", "textarea"],
-      ["answer_detail_en", "英文完整资料", "textarea"],
-      ["answer_detail_km", "高棉文完整资料", "textarea"],
-      ["source_name", "资料来源名", "text"],
-      ["content_version", "内容版本", "number"],
-      ["image_url", "图片地址", "text"],
+      ["answer_code", tr("adminAuto049"), "text"],
+      ["module_code", tr("adminAuto050"), "text"],
+      ["title", tr("adminAuto020"), "text"],
+      ["answer_summary", tr("adminAuto051"), "textarea"],
+      ["keywords", tr("adminAuto052"), "textarea"],
+      ["product_id", tr("adminAuto053"), "text"],
+      ["priority", tr("adminAuto016"), "number"],
+      ["is_active", tr("adminAuto012"), "bool"],
+      ["title_en", tr("adminAuto054"), "text"],
+      ["title_km", tr("adminAuto055"), "text"],
+      ["answer_summary_en", tr("adminAuto056"), "textarea"],
+      ["answer_summary_km", tr("adminAuto057"), "textarea"],
+      ["answer_detail_zh", tr("adminAuto058"), "textarea"],
+      ["answer_detail_en", tr("adminAuto059"), "textarea"],
+      ["answer_detail_km", tr("adminAuto060"), "textarea"],
+      ["source_name", tr("adminAuto061"), "text"],
+      ["content_version", tr("adminAuto062"), "number"],
+      ["image_url", tr("adminAuto048"), "text"],
     ],
     fixed: [
-      ["module_code", "模块代码", "text"],
-      ["module_name", "模块名称", "text"],
-      ["emoji", "图标", "text"],
-      ["description", "说明", "textarea"],
-      ["keywords", "关键词（逗号分隔）", "textarea"],
-      ["sort_order", "排序", "number"],
-      ["is_active", "启用", "bool"],
-      ["module_name_en", "英文名称", "text"],
-      ["module_name_km", "高棉文名称", "text"],
-      ["description_en", "英文说明", "textarea"],
-      ["description_km", "高棉文说明", "textarea"],
-      ["image_url", "图片地址", "text"],
+      ["module_code", tr("adminAuto050"), "text"],
+      ["module_name", tr("adminAuto063"), "text"],
+      ["emoji", tr("adminAuto064"), "text"],
+      ["description", tr("adminAuto018"), "textarea"],
+      ["keywords", tr("adminAuto052"), "textarea"],
+      ["sort_order", tr("adminAuto013"), "number"],
+      ["is_active", tr("adminAuto012"), "bool"],
+      ["module_name_en", tr("adminAuto065"), "text"],
+      ["module_name_km", tr("adminAuto066"), "text"],
+      ["description_en", tr("adminAuto067"), "textarea"],
+      ["description_km", tr("adminAuto068"), "textarea"],
+      ["image_url", tr("adminAuto048"), "text"],
     ],
     orders: [
-      ["status", "订单状态", "text"],
+      ["status", tr("adminAuto069"), "text"],
       ["txid", "TXID", "text"],
-      ["download_url", "下载地址", "text"],
-      ["hidden_by_user", "用户隐藏", "bool"],
+      ["download_url", tr("adminAuto070"), "text"],
+      ["hidden_by_user", tr("adminAuto071"), "bool"],
     ],
     messages: [
-      ["user_id", "会员UUID", "text"],
-      ["order_id", "订单ID（可空）", "number"],
-      ["message_type", "消息类型", "text"],
-      ["title", "标题", "text"],
-      ["body", "正文", "textarea"],
-      ["txid", "TXID（可空）", "text"],
-      ["is_read", "已读", "bool"],
+      ["user_id", tr("adminAuto072"), "text"],
+      ["order_id", tr("adminAuto073"), "number"],
+      ["message_type", tr("adminAuto074"), "text"],
+      ["title", tr("adminAuto020"), "text"],
+      ["body", tr("adminAuto075"), "textarea"],
+      ["txid", tr("adminAuto076"), "text"],
+      ["is_read", tr("adminAuto021"), "bool"],
     ],
     delivery: [
-      ["status", "授权状态", "text"],
-      ["expires_at", "到期时间（ISO或日期时间）", "text"],
-      ["max_downloads", "最大下载次数", "number"],
-      ["download_count", "已下载次数", "number"],
+      ["status", tr("adminAuto077"), "text"],
+      ["expires_at", tr("adminAuto078"), "text"],
+      ["max_downloads", tr("adminAuto079"), "number"],
+      ["download_count", tr("adminAuto080"), "number"],
     ],
   };
   const deletable = new Set(["products", "answers", "fixed", "messages"]);
@@ -193,7 +193,7 @@
     );
   }
   function val(v, k) {
-    if (typeof v === "boolean") return v ? "是" : "否";
+    if (typeof v === "boolean") return v ? tr("adminAuto081") : tr("adminAuto082");
     if ((k.includes("at") || k === "expires_at") && v) {
       try {
         return new Date(v).toLocaleString();
@@ -214,7 +214,7 @@
     const s = data?.session;
     if (!s) {
       location.replace("admin-login.html");
-      throw new Error("请先登录管理员账号");
+      throw new Error(tr("adminAuto083"));
     }
     return s;
   }
@@ -234,11 +234,11 @@
     const j = await res.json().catch(() => ({}));
     if (res.status === 401) {
       location.replace("admin-login.html");
-      throw new Error("登录已失效");
+      throw new Error(tr("adminAuto084"));
     }
-    if (res.status === 403) throw new Error("当前账号没有管理员权限");
+    if (res.status === 403) throw new Error(tr("adminAuto085"));
     if (!res.ok || j.error)
-      throw new Error(j.message || j.error || "后台接口请求失败");
+      throw new Error(j.message || j.error || tr("adminAuto086"));
     return j;
   }
   async function me() {
@@ -252,7 +252,7 @@
         esc(j.email) +
         "</strong><br><span>" +
         esc(j.role) +
-        '</span> · <button id="adminLogout" class="refresh-btn" type="button">退出</button>';
+        tr("adminAuto087");
       head.appendChild(d);
       $("#adminLogout").onclick = async () => {
         await window.gyxSupabase.auth.signOut();
@@ -261,14 +261,14 @@
     }
   }
   function table(rows, c, resource) {
-    if (!rows?.length) return '<div class="empty">暂无数据</div>';
+    if (!rows?.length) return tr("adminAuto088");
     const editable = !!fields[resource],
       member = resource === "members",
       retry = resource === "notifications";
     return (
       '<div class="table-wrap"><table class="data-table"><thead><tr>' +
       c.map((x) => "<th>" + x[1] + "</th>").join("") +
-      (editable || member || retry ? "<th>操作</th>" : "") +
+      (editable || member || retry ? tr("adminAuto089") : "") +
       "</tr></thead><tbody>" +
       rows
         .map(
@@ -280,21 +280,21 @@
                 resource +
                 '" data-edit-index="' +
                 i +
-                '">编辑</button></td>'
+                tr("adminAuto090")
               : member
                 ? '<td><button class="edit-btn" data-member-edit="' +
                   i +
-                  '">资料</button><button class="edit-btn" data-member-confirm="' +
+                  tr("adminAuto091") +
                   i +
-                  '">确认邮箱</button><button class="edit-btn action-danger" data-member-ban="' +
+                  tr("adminAuto092") +
                   i +
-                  '">封禁</button><button class="edit-btn" data-member-unban="' +
+                  tr("adminAuto093") +
                   i +
-                  '">解封</button></td>'
+                  tr("adminAuto094")
                 : retry
                   ? '<td><button class="edit-btn" data-retry-notification="' +
                     esc(r.id) +
-                    '">重试</button></td>'
+                    tr("adminAuto095")
                   : "") +
             "</tr>",
         )
@@ -349,7 +349,7 @@
   async function load(resource) {
     const box = $('[data-table="' + resource + '"]');
     if (!box) return;
-    box.innerHTML = '<div class="loading">正在读取真实后台数据…</div>';
+    box.innerHTML = tr("adminAuto096");
     try {
       const j = await api({
         action: "list",
@@ -366,7 +366,7 @@
   async function loadMembers() {
     const box = $('[data-table="members"]');
     if (!box) return;
-    box.innerHTML = '<div class="loading">正在读取会员与登录状态…</div>';
+    box.innerHTML = tr("adminAuto097");
     try {
       const j = await api({ action: "members", limit: 100 });
       box._rows = j.data || [];
@@ -407,12 +407,12 @@
     }
   }
   async function editMember(r) {
-    const display_name = prompt("名称", r.display_name || "");
+    const display_name = prompt(tr("adminAuto004"), r.display_name || "");
     if (display_name === null) return;
-    const phone = prompt("电话", r.phone || "");
+    const phone = prompt(tr("phone"), r.phone || "");
     if (phone === null) return;
     const phone_country_code = prompt(
-      "国家/地区代码，例如 CN / KH / US / OTHER",
+      tr("adminAuto098"),
       r.phone_country_code || "",
     );
     if (phone_country_code === null) return;
@@ -423,20 +423,20 @@
     if (normalizedCountryCode && normalizedCountryCode !== "OTHER") {
       try {
         phone_country_name =
-          new Intl.DisplayNames(["zh-CN"], { type: "region" }).of(
+          new Intl.DisplayNames([dateLocale()], { type: "region" }).of(
             normalizedCountryCode,
           ) || normalizedCountryCode;
       } catch {
         phone_country_name = normalizedCountryCode;
       }
     }
-    const locale = prompt("语言，例如 zh-CN / en / km", r.locale || "zh-CN");
+    const locale = prompt(tr("adminAuto099"), r.locale || "zh-CN");
     if (locale === null) return;
-    const wechat = prompt("微信（可空）", r.wechat || "");
+    const wechat = prompt(tr("adminAuto100"), r.wechat || "");
     if (wechat === null) return;
-    const telegram = prompt("Telegram（可空）", r.telegram || "");
+    const telegram = prompt(tr("adminAuto101"), r.telegram || "");
     if (telegram === null) return;
-    const whatsapp = prompt("WhatsApp（可空）", r.whatsapp || "");
+    const whatsapp = prompt(tr("adminAuto102"), r.whatsapp || "");
     if (whatsapp === null) return;
     await api({
       action: "member_action",
@@ -453,12 +453,12 @@
         whatsapp,
       },
     });
-    toast("会员资料已更新");
+    toast(tr("adminAuto103"));
     loadMembers();
   }
   async function memberAction(r, kind) {
     if (kind === "ban") {
-      const h = prompt("封禁多少小时？", "24");
+      const h = prompt(tr("adminAuto104"), "24");
       if (h === null) return;
       await api({
         action: "member_action",
@@ -466,29 +466,29 @@
         user_id: r.user_id,
         hours: Number(h) || 24,
       });
-      toast("已封禁会员");
+      toast(tr("adminAuto105"));
     } else if (kind === "unban") {
-      if (!confirm("确定解除该会员封禁？")) return;
+      if (!confirm(tr("adminAuto106"))) return;
       await api({ action: "member_action", kind, user_id: r.user_id });
-      toast("已解除封禁");
+      toast(tr("adminAuto107"));
     } else if (kind === "confirm_email") {
-      if (!confirm("确定将该会员邮箱标记为已确认？")) return;
+      if (!confirm(tr("adminAuto108"))) return;
       await api({ action: "member_action", kind, user_id: r.user_id });
-      toast("邮箱已确认");
+      toast(tr("adminAuto109"));
     }
     loadMembers();
   }
   async function loadSecurity() {
     const box = $('[data-table="security"]');
     if (!box) return;
-    box.innerHTML = '<div class="loading">正在读取登录设备、IP与会话…</div>';
+    box.innerHTML = tr("adminAuto110");
     try {
       const j = await api({ action: "security" }),
         d = j.data || {};
       box.innerHTML =
-        "<h3>当前/历史会话</h3>" +
+        tr("adminAuto111") +
         table(d.sessions || [], cols.sessions) +
-        '<h3 style="margin-top:18px">登录审计记录</h3>' +
+        tr("adminAuto112") +
         table(d.audit || [], cols.audit);
     } catch (e) {
       box.innerHTML = '<div class="empty">' + esc(e.message) + "</div>";
@@ -506,7 +506,7 @@
   async function loadDelivery() {
     const box = $('[data-table="delivery"]');
     if (!box) return;
-    box.innerHTML = '<div class="loading">正在读取交付授权…</div>';
+    box.innerHTML = tr("adminAuto113");
     try {
       const j = await api({ action: "list", resource: "delivery", limit: 200 });
       box._rows = j.data || [];
@@ -519,16 +519,16 @@
   async function loadServices() {
     const box = $('[data-table="services"]');
     if (!box) return;
-    box.innerHTML = '<div class="loading">正在读取支付和通知状态…</div>';
+    box.innerHTML = tr("adminAuto114");
     try {
       const [p, n] = await Promise.all([
         api({ action: "list", resource: "payments", limit: 100 }),
         api({ action: "list", resource: "notifications", limit: 100 }),
       ]);
       box.innerHTML =
-        "<h3>支付核验记录</h3>" +
+        tr("adminAuto115") +
         table(p.data || [], cols.payments) +
-        '<h3 style="margin-top:18px">通知队列</h3>' +
+        tr("adminAuto116") +
         table(n.data || [], cols.notifications, "notifications");
       box
         .querySelectorAll("[data-retry-notification]")
@@ -543,7 +543,7 @@
   }
   async function retryNotification(id) {
     await api({ action: "retry_notification", id });
-    toast("通知已重新加入队列");
+    toast(tr("adminAuto117"));
     loadServices();
   }
   function inputHtml(k, label, type, v) {
@@ -556,9 +556,9 @@
         esc(k) +
         '"><option value="true"' +
         (v === true ? " selected" : "") +
-        '>是</option><option value="false"' +
+        tr("adminAuto118") +
         (v === false ? " selected" : "") +
-        ">否</option></select></div>"
+        tr("adminAuto119")
       );
     if (type === "textarea")
       return (
@@ -591,16 +591,16 @@
           : "id";
     currentEdit = { resource, row, isNew, pk };
     $("#editTitle").textContent =
-      (isNew ? "新增" : "编辑") +
+      (isNew ? tr("adminAuto120") : tr("edit")) +
       ({
-        settings: "网站设置",
-        products: "商品/方案",
-        answers: "答案资料",
-        fixed: "固定模块",
-        orders: "订单",
-        messages: "站内信",
-        delivery: "交付授权",
-      }[resource] || "资料");
+        settings: tr("adminAuto121"),
+        products: tr("adminAuto122"),
+        answers: tr("adminAuto123"),
+        fixed: tr("adminAuto124"),
+        orders: tr("orders"),
+        messages: tr("adminAuto125"),
+        delivery: tr("adminAuto126"),
+      }[resource] || tr("adminAuto127"));
     $("#editFields").innerHTML = (fields[resource] || [])
       .map((f) => inputHtml(f[0], f[1], f[2], row[f[0]]))
       .join("");
@@ -635,7 +635,7 @@
       data,
       original_pk,
     });
-    toast("已保存并写入正式后台");
+    toast(tr("adminAuto128"));
     const r = currentEdit.resource;
     closeEditor();
     if (r === "delivery") await loadDelivery();
@@ -649,7 +649,7 @@
       !deletable.has(currentEdit.resource)
     )
       return;
-    if (!confirm("确定删除这条资料？")) return;
+    if (!confirm(tr("adminAuto129"))) return;
     await api({
       action: "delete",
       resource: currentEdit.resource,
@@ -657,7 +657,7 @@
     });
     const r = currentEdit.resource;
     closeEditor();
-    toast("已删除");
+    toast(tr("adminAuto130"));
     await load(r);
     await stats();
   }
@@ -670,8 +670,8 @@
     });
   }
   async function uploadFile(file) {
-    if (!file) throw new Error("先选择文件");
-    if (file.size > 10485760) throw new Error("文件不能超过10MB");
+    if (!file) throw new Error(tr("adminAuto131"));
+    if (file.size > 10485760) throw new Error(tr("adminAuto132"));
     const base64 = await fileToBase64(file);
     return api({
       action: "upload_asset",
@@ -684,22 +684,22 @@
     const file = $("#assetFile")?.files?.[0],
       box = $("#assetUploadStatus");
     if (!file) {
-      toast("先选择文件");
+      toast(tr("adminAuto131"));
       return;
     }
-    box.innerHTML = '<div class="loading">上传中…</div>';
+    box.innerHTML = tr("adminAuto133");
     try {
       const j = await uploadFile(file);
       let html =
-        '<div class="upload-result"><b>上传成功</b><br>' +
+        tr("adminAuto134") +
         esc(j.url) +
         "</div>";
       if ((file.type || "").startsWith("image/"))
         html +=
-          '<img class="asset-preview" src="' + esc(j.url) + '" alt="预览">';
+          '<img class="asset-preview" src="' + esc(j.url) + tr("adminAuto135");
       box.innerHTML = html;
       navigator.clipboard?.writeText(j.url).catch(() => {});
-      toast("上传成功，地址已复制");
+      toast(tr("adminAuto136"));
     } catch (e) {
       box.innerHTML = '<div class="empty">' + esc(e.message) + "</div>";
     }
@@ -708,7 +708,7 @@
     if (!currentEdit) return;
     const file = $("#editorAssetFile")?.files?.[0];
     if (!file) {
-      toast("先选择文件");
+      toast(tr("adminAuto131"));
       return;
     }
     const btn = $("#editorUploadBtn");
@@ -726,13 +726,13 @@
             $('#editFields [name="image_url"]');
       if (target) {
         target.value = j.url;
-        toast("上传成功，地址已自动填入");
+        toast(tr("adminAuto137"));
       } else {
         navigator.clipboard?.writeText(j.url).catch(() => {});
-        toast("上传成功，地址已复制");
+        toast(tr("adminAuto136"));
       }
     } catch (e) {
-      toast("上传失败：" + e.message);
+      toast(tr("adminAuto138") + e.message);
     } finally {
       btn.disabled = false;
     }
@@ -743,11 +743,11 @@
     try {
       const j = await api({
         action: "publish",
-        note: "管理员后台一键部署/发布",
+        note: I18N.source("adminAuto139"),
       });
-      toast(j.message || "发布完成");
+      toast(j.message || tr("adminAuto140"));
     } catch (e) {
-      toast("发布失败：" + e.message);
+      toast(tr("adminAuto141") + e.message);
     } finally {
       btns.forEach((b) => (b.disabled = false));
     }
@@ -757,12 +757,12 @@
     btns.forEach((b) => (b.disabled = true));
     try {
       const j = await api({ action: "trigger_service", service: name });
-      toast(j.message || "执行完成");
+      toast(j.message || tr("adminAuto142"));
       if (name === "verify-payments") load("orders");
       else loadServices();
       stats();
     } catch (e) {
-      toast("执行失败：" + e.message);
+      toast(tr("adminAuto143") + e.message);
     } finally {
       btns.forEach((b) => (b.disabled = false));
     }
@@ -800,7 +800,7 @@
       const main = $(".admin-card-v2");
       if (main)
         main.innerHTML =
-          '<div class="notice">后台加载失败：' + esc(e.message) + "</div>";
+          tr("adminAuto144") + esc(e.message) + "</div>";
     }
   }
   if (document.readyState === "loading")

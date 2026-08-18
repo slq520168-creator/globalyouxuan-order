@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#f4f8ff">
-<title>免费专区 · GlobalYouXuan</title>
+<title>GlobalYouXuan</title>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{document.documentElement.dataset.theme='light'}</script>
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="member-page.css?v=20260811-member-security-3">
@@ -21,19 +21,19 @@ body.free-zone-page{background:var(--bg,#f4f8ff);color:var(--text,#142033)}
 <body class="free-zone-page">
 <main class="free-zone-main">
   <div class="free-zone-shell">
-    <div class="free-zone-head"><h1>免费专区</h1></div>
+    <div class="free-zone-head"><h1 data-i18n="navFreeZone"></h1></div>
     <section id="freeZone" class="free-zone-panel">
       <div id="freeZoneList"></div>
     </section>
   </div>
 </main>
 <aside id="supportPanel" class="support-panel" aria-hidden="true"></aside>
-<nav class="mobile-bottom-nav" aria-label="Mobile navigation"></nav>
+<nav class="mobile-bottom-nav" data-i18n-aria="mobileNavigation"></nav>
+<script src="i18n.js?v=20260819-sitewide-copy-1"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
 <script src="supabase-client.js?v=20260811-auth-cache-1"></script>
 <script>(async()=>{let u=null;try{u=await window.gyxGetVerifiedUser?.()}catch{}if(u)return;let known=false;try{known=localStorage.getItem('gyx_known_member')==='1'}catch{}location.replace(`login.html?mode=${known?'login':'register'}&next=${encodeURIComponent('free-zone.html')}`)})();</script>
 <script src="core-foundation.js?v=20260817-free-zone-page-1"></script>
-<script src="i18n.js?v=20260811-i18next-1"></script>
 <script src="site-ui.js?v=20260815-runtime-clean-1"></script>
 <script src="free-zone-tools.js?v=20260813-tools-1"></script>
 </body>

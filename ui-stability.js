@@ -1,6 +1,6 @@
 (()=>{'use strict';
 let growthSubmitLock=false;
-const growthLang=(zh,en,km)=>{const I=window.GYXI18N;return I?.locale==='en'?en:I?.locale==='km'?km:zh};
+const growthText=(key,vars)=>window.GYXI18N.t(key,vars);
 document.addEventListener('click',e=>{
   const btn=e.target.closest?.('.gyx-profile-submit');
   if(!btn||growthSubmitLock)return;
@@ -9,7 +9,7 @@ document.addEventListener('click',e=>{
   const checks=[...host.querySelectorAll('[data-confirm]')];
   if(checks.length&&checks.some(x=>!x.checked)){
     e.preventDefault();e.stopImmediatePropagation();
-    alert(growthLang('请完成最后确认','Please complete the final confirmation','សូមបំពេញការបញ្ជាក់ចុងក្រោយ'));
+    alert(growthText('growthFinalConfirmationRequired'));
     return;
   }
   e.preventDefault();e.stopImmediatePropagation();
@@ -30,7 +30,7 @@ document.addEventListener('click',e=>{
   try{localStorage.setItem('gyx_growth_profile_submitted',JSON.stringify(profile))}catch{}
   growthSubmitLock=true;
   btn.disabled=true;
-  btn.textContent=growthLang('正在提交…','Submitting…','កំពុងបញ្ជូន…');
+  btn.textContent=growthText('growthSubmitting');
   window.dispatchEvent(new CustomEvent('gyx:growth-profile-submit',{detail:{profile,gate_answers:profile?.gate?.answers||[]}}));
   try{localStorage.removeItem('gyx_growth_profile_submitted')}catch{}
   setTimeout(()=>{growthSubmitLock=false},4000);
