@@ -15,20 +15,24 @@ const toast=t=>{const e=$('toast');if(!e)return;e.textContent=t;e.classList.add(
 const clearCleanup=()=>{if(cleanupTimer)clearTimeout(cleanupTimer);cleanupTimer=null};
 const clearSearch=()=>{clearCleanup();window.GYX_KNOWLEDGE_DECISION?.clear?.()};
 const armCleanup=()=>{clearCleanup();cleanupTimer=setTimeout(()=>{cleanupTimer=null;window.GYX_KNOWLEDGE_DECISION?.clear?.()},12000)};
+const GENERATED_PRODUCT_ID='knowledge-decision-standard';
 function setPlaceholder(){const n=$('problemInput');if(!n)return;n.placeholder=window.GYXI18N.t("searchActionsV2Copy001")}
 function labels(){if(favorite&&!favorite.disabled){favorite.removeAttribute('data-i18n');favorite.textContent=window.GYXI18N.t("searchActionsV2Copy002")}if(close)close.textContent=window.GYXI18N.t("close")}
 async function resolveMatchedProduct(m){
   if(!m||m.__matchedProductResolved)return;
+  if(m.product?.id){m.__matchedProductResolved=true;return}
   const answerId=Number(m.answer?.id),db=window.gyxSupabase;
-  if(!db||!Number.isSafeInteger(answerId)||answerId<=0)return;
-  const ar=await db.from('product_answer_options').select('product_id').eq('id',answerId).eq('is_active',true).maybeSingle();
-  const productId=String(ar.data?.product_id||'').trim();
-  if(!productId.startsWith('answer-')||!TIER_BY_PRODUCT[productId])return;
-  const pr=await db.from('products').select('id,product_name,product_price,description,is_active').eq('id',productId).eq('is_active',true).maybeSingle();
-  if(!pr.data)return;
-  m.product=pr.data;
-  m.tier=TIER_BY_PRODUCT[productId];
-  m.tier_label=pr.data.product_name||m.tier_label;
+  if(db&&Number.isSafeInteger(answerId)&&answerId>0)try{
+    const ar=await db.from('product_answer_options').select('product_id').eq('id',answerId).eq('is_active',true).maybeSingle();
+    const productId=String(ar.data?.product_id||'').trim();
+    if(productId.startsWith('answer-')&&TIER_BY_PRODUCT[productId]){
+      const pr=await db.from('products').select('id,product_name,product_price,description,is_active').eq('id',productId).eq('is_active',true).maybeSingle();
+      if(pr.data){m.product=pr.data;m.tier=TIER_BY_PRODUCT[productId];m.tier_label=pr.data.product_name||m.tier_label;m.__matchedProductResolved=true;return}
+    }
+  }catch(err){console.error('resolve matched product',err)}
+  m.product={id:GENERATED_PRODUCT_ID};
+  m.tier='standard';
+  m.tier_label=m.tier_label||I.t('searchActionsV2Copy004');
   m.__matchedProductResolved=true;
 }
 async function renderFinal(){
@@ -84,7 +88,7 @@ favorite?.addEventListener('click',async e=>{
     clearTimeout(timer);favorite.disabled=false;favorite.textContent=window.GYXI18N.t("searchActionsV2Copy002");toast(window.GYXI18N.t("searchActionsV2Copy009"));armCleanup();
   }
 },true);
-order?.addEventListener('click',async e=>{e.preventDefault();e.stopImmediatePropagation();clearCleanup();const m=window.GYX_CURRENT_AI_MATCH;if(!m){armCleanup();return toast(window.GYXI18N.t("searchActionsV2Copy010"))}try{await resolveMatchedProduct(m)}catch(err){console.error('resolve order tier',err)}if(!m?.product?.id){armCleanup();return toast(window.GYXI18N.t("searchActionsV2Copy010"))}const u=await needUser();if(!u){armCleanup();return}if(!window.GYX_ORDER?.create){armCleanup();return toast(window.GYXI18N.t("searchActionsV2Copy011"))}window.GYX_ORDER.create(m.product.id,m);clearSearch()},true);
+order?.addEventListener('click',async e=>{e.preventDefault();e.stopImmediatePropagation();clearCleanup();const m=window.GYX_CURRENT_AI_MATCH;if(!m){armCleanup();return toast(window.GYXI18N.t("searchActionsV2Copy010"))}try{await resolveMatchedProduct(m)}catch(err){console.error('resolve order tier',err)}if(!m?.product?.id){armCleanup();return toast(window.GYXI18N.t("searchActionsV2Copy010"))}const u=await needUser();if(!u){armCleanup();return}if(!window.GYX_ORDER?.create){armCleanup();return toast(window.GYXI18N.t("searchActionsV2Copy011"))}try{const opened=await window.GYX_ORDER.create(m.product.id,m);if(opened)clearSearch();else armCleanup()}catch(err){console.error('open homepage checkout',err);toast(window.GYXI18N.t("searchActionsV2Copy011"));armCleanup()}},true);
 close?.addEventListener('pointerdown',e=>{e.stopImmediatePropagation()},true);
 close?.addEventListener('pointerup',e=>{e.stopImmediatePropagation()},true);
 close?.addEventListener('click',e=>{e.preventDefault();e.stopImmediatePropagation();clearCleanup();clearTimeout(closeTimer);close.disabled=true;closeTimer=setTimeout(()=>{clearSearch();close.disabled=false},420)},true);
