@@ -6,7 +6,7 @@
 
   const CORE_SCRIPTS = [
     "admin.js?v=20260818-admin-direct-1",
-    "admin-priority.js?v=20260818-priority-direct-1",
+    "admin-priority.js?v=20260818-payment-channels-live-1",
   ];
 
   const SECONDARY_SCRIPTS = [
