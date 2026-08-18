@@ -13,7 +13,8 @@
 .member-page #orders button{vertical-align:middle}
 .member-page #favorites .btn,
 .member-page #searches .btn{border-radius:14px}
-.member-page #gyxFavoriteViewModal .modal-card{min-height:68dvh!important;max-height:calc(100dvh - 118px)!important;padding-bottom:calc(112px + env(safe-area-inset-bottom))!important;overflow:auto!important}
+.member-page #gyxFavoriteViewModal .modal-card,
+.member-page #memberOrderModal .modal-card{min-height:68dvh!important;max-height:calc(100dvh - 118px)!important;padding-bottom:calc(112px + env(safe-area-inset-bottom))!important;overflow:auto!important}
 .member-page #gyxFavoriteViewModal [data-favorite-next]{position:sticky!important;bottom:calc(84px + env(safe-area-inset-bottom))!important;z-index:5!important;width:100%!important;min-height:54px!important;margin-top:16px!important;font-size:16px!important}
 .member-page #searchHistoryList .search-history-card{position:relative!important;padding-top:54px!important}
 .member-page #searchHistoryList .search-history-head{display:grid!important;grid-template-columns:1fr!important;gap:5px!important;position:static!important}
@@ -33,7 +34,8 @@
  .member-page #orders #orderFilters .order-filter{width:100%;min-width:0;min-height:46px;margin:0}
  .member-page #orders #refreshOrdersButton{min-width:78px;min-height:44px}
  .member-page #favorites input[type="checkbox"],.member-page #searches input[type="checkbox"]{width:22px;height:22px}
- .member-page #gyxFavoriteViewModal .modal-card{min-height:74dvh!important;max-height:calc(100dvh - 104px)!important}
+ .member-page #gyxFavoriteViewModal .modal-card,
+ .member-page #memberOrderModal .modal-card{min-height:74dvh!important;max-height:calc(100dvh - 104px)!important}
 }
 @media(max-width:430px){
  .member-page #searchHistoryList .search-history-card{padding-top:51px!important}
