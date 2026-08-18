@@ -4809,9 +4809,51 @@ Object.assign(R.km,{
   "communityOpportunity.2c7a619f-4bda-4a9a-a773-06648882f48a.title":"ទីផ្សារបណ្ដាញសង្គម",
   "communityOpportunity.3cb6df8c-1eaa-4211-b7f3-1fc18dd5f6c9.title":"ការបង្កើតមាតិកាដោយបញ្ញាសិប្បនិម្មិត"
 });
-Object.assign(R.zh,{telegram:"Telegram"});
-Object.assign(R.en,{telegram:"Telegram"});
-Object.assign(R.km,{telegram:"Telegram"});
+Object.assign(R.zh,{
+  memberCheckoutTitle:"创建订单",
+  memberCheckoutLead:"确认注册资料后创建订单",
+  memberCheckoutAccountName:"账号名",
+  memberCheckoutPhone:"联系电话",
+  memberCheckoutEmail:"邮箱",
+  memberCheckoutCancel:"取消",
+  memberCheckoutCreate:"创建订单",
+  memberCheckoutCreating:"创建中…",
+  memberCheckoutUnavailable:"订单信息不可用",
+  memberCheckoutProfileRequired:"账号名、邮箱、手机号必须完整，请先完善注册资料。",
+  memberCheckoutExistingOrder:"已有待付款订单，请刷新后重试。",
+  memberCheckoutFailed:"订单创建失败，请稍后重试。",
+  telegram:"Telegram"
+});
+Object.assign(R.en,{
+  memberCheckoutTitle:"Create order",
+  memberCheckoutLead:"Confirm your registered details to create the order",
+  memberCheckoutAccountName:"Account name",
+  memberCheckoutPhone:"Phone",
+  memberCheckoutEmail:"Email",
+  memberCheckoutCancel:"Cancel",
+  memberCheckoutCreate:"Create order",
+  memberCheckoutCreating:"Creating…",
+  memberCheckoutUnavailable:"Order information is unavailable",
+  memberCheckoutProfileRequired:"Account name, email and phone are required. Please complete your profile first.",
+  memberCheckoutExistingOrder:"You already have an unpaid order. Refresh and try again.",
+  memberCheckoutFailed:"Could not create the order. Please try again.",
+  telegram:"Telegram"
+});
+Object.assign(R.km,{
+  memberCheckoutTitle:"បង្កើតការបញ្ជាទិញ",
+  memberCheckoutLead:"បញ្ជាក់ព័ត៌មានដែលបានចុះឈ្មោះ រួចបង្កើតការបញ្ជាទិញ",
+  memberCheckoutAccountName:"ឈ្មោះគណនី",
+  memberCheckoutPhone:"លេខទូរស័ព្ទ",
+  memberCheckoutEmail:"អ៊ីមែល",
+  memberCheckoutCancel:"បោះបង់",
+  memberCheckoutCreate:"បង្កើតការបញ្ជាទិញ",
+  memberCheckoutCreating:"កំពុងបង្កើត…",
+  memberCheckoutUnavailable:"មិនមានព័ត៌មានការបញ្ជាទិញ",
+  memberCheckoutProfileRequired:"ត្រូវមានឈ្មោះគណនី អ៊ីមែល និងលេខទូរស័ព្ទពេញលេញ។",
+  memberCheckoutExistingOrder:"មានការបញ្ជាទិញដែលមិនទាន់បង់ប្រាក់រួចហើយ។ សូមផ្ទុកឡើងវិញ។",
+  memberCheckoutFailed:"មិនអាចបង្កើតការបញ្ជាទិញបាន។ សូមព្យាយាមម្តងទៀត។",
+  telegram:"Telegram"
+});
 function norm(l){if(l==='zh-CN'||l==='zh')return'zh';return VALID.has(l)?l:'zh'}
 function stored(){try{return norm(localStorage.getItem(STORE)||localStorage.getItem('gyx_locale')||'zh')}catch{return'zh'}}
 let lang=stored();
