@@ -16,6 +16,9 @@
 .member-page #gyxFavoriteViewModal .modal-card,
 .member-page #memberOrderModal .modal-card{min-height:68dvh!important;max-height:calc(100dvh - 118px)!important;padding-bottom:calc(112px + env(safe-area-inset-bottom))!important;overflow:auto!important}
 .member-page #gyxFavoriteViewModal [data-favorite-next]{position:sticky!important;bottom:calc(84px + env(safe-area-inset-bottom))!important;z-index:5!important;width:100%!important;min-height:54px!important;margin-top:16px!important;font-size:16px!important}
+.member-page #memberCancelOrder{display:none!important}
+.member-page #memberOrderModal .modal-actions{grid-template-columns:1fr!important}
+.member-page #memberCreateOrder{width:100%!important}
 .member-page #searchHistoryList .search-history-card{position:relative!important;padding-top:54px!important}
 .member-page #searchHistoryList .search-history-head{display:grid!important;grid-template-columns:1fr!important;gap:5px!important;position:static!important}
 .member-page #searchHistoryList .search-history-controls{display:contents!important}
