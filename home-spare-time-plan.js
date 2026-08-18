@@ -2,11 +2,11 @@
 const $=(s,r=document)=>r.querySelector(s),I=window.GYXI18N;
 const L=(zh,en,km)=>I?.locale==='en'?en:I?.locale==='km'?km:zh;
 const gate=[
- {q:'你目前最接近哪种状态？',opts:['有正常工作，想利用零碎时间提升自己','暂时没有固定工作，时间比较自由','在家照顾家庭，希望利用空闲时间','已经退休 / 半退休，希望找点适合自己的事情','学生 / 正在学习，希望提前积累能力','其他普通生活状态']},
- {q:'你每天真正能稳定拿出来的时间大约有多少？',opts:['15分钟以内','15–30分钟','30–60分钟','1–2小时','2小时以上','每天不固定，但每周能安排时间']},
- {q:'你现在主要使用什么设备？',opts:['只有手机','手机 + 平板','手机 + 电脑','设备都有，但不太熟悉','设备不是问题']},
- {q:'你是否愿意按照每天的小计划实际去做，并反馈真实完成情况？',opts:['愿意执行并反馈','可以执行，但时间不固定','想先试几天看看','目前做不到'],reject:'目前做不到'},
- {q:'这是一套需要持续实践、逐步调整的养成计划，不是“一次看完就结束”的资料。你是否愿意继续了解自己的专属方案？',opts:['我了解并愿意继续','暂不接受'],reject:'暂不接受'}
+ {q:'你现在是否真的有可以利用的零碎时间？',opts:['每天都有一点','工作日有一些','周末或休息日有','时间不固定但能安排','目前几乎没有'],reject:'目前几乎没有'},
+ {q:'你是否愿意每天拿出固定时间实际执行？',opts:['愿意每天执行','大部分时间可以','一周能执行3–5天','想先试7天','目前做不到'],reject:'目前做不到'},
+ {q:'你是否愿意按真实情况回答后续问题？',opts:['愿意按真实情况回答','可以，大部分都能回答','涉及隐私的部分希望可以跳过','不愿意'],reject:'不愿意'},
+ {q:'你是否接受根据个人情况安排不同路径，而不是所有人使用同一套方法？',opts:['接受，按实际情况安排','可以，但希望步骤简单','可以，先从最容易执行的开始','只想要固定模板'],reject:'只想要固定模板'},
+ {q:'如果最后有适合你的付费方案，你能接受继续了解吗？',opts:['可以接受合适的付费方案','先看清楚内容和价格再决定','只接受自己能负担的方案','完全不接受任何付费方案'],reject:'完全不接受任何付费方案'}
 ];
 const steps=[
  {title:'基础情况',fields:[
@@ -14,76 +14,53 @@ const steps=[
   {k:'region',label:'你目前主要生活在哪个地区？',opts:['中国大陆','港澳台','东南亚','欧洲','北美','南美','中东','非洲','其他地区']},
   {k:'life_state',label:'你目前的主要生活状态？',opts:['正常上班','自由职业 / 零工','在家照顾家庭','暂时待业','学生 / 学习阶段','退休 / 半退休','其他']}
  ]},
- {title:'真实时间结构',fields:[
+ {title:'真实时间',fields:[
   {k:'daily_time',label:'你每天真正能用于实践的时间？',opts:['15分钟以内','15–30分钟','30–60分钟','1–2小时','2小时以上']},
   {k:'free_time',label:'你最容易空出来的时间段？',opts:['早上','中午','下午','晚上','深夜','时间不固定']},
   {k:'weekly_days',label:'一周大约能认真执行几天？',opts:['1–2天','3–4天','5天左右','6天','每天']}
  ]},
- {title:'设备与网络',fields:[
+ {title:'设备与使用习惯',fields:[
   {k:'device',label:'你实际能长期使用的设备？',opts:['只有手机','手机 + 平板','手机 + 电脑','只有电脑','设备比较齐全']},
   {k:'phone_level',label:'你对手机操作熟悉到什么程度？',opts:['只会聊天和刷视频','会安装软件和传文件','会剪视频 / 做图 / 用AI','会处理文档表格和云盘','手机操作非常熟练']},
-  {k:'network',label:'你平时的网络条件？',opts:['经常不稳定','手机流量为主','普通Wi‑Fi够用','网络比较稳定','网络条件很好']}
+  {k:'video_app',label:'你平时最常用的视频或内容平台？',opts:['抖音','TikTok','快手','小红书','YouTube','Facebook / Reels','Instagram / Reels','B站','基本不用','其他']}
  ]},
- {title:'你平时真正会用什么',fields:[
-  {k:'video_app',label:'你平时最喜欢或最常使用哪个视频软件？',opts:['抖音','TikTok','快手','小红书','YouTube','Facebook / Reels','Instagram / Reels','B站','基本不看短视频','其他']},
-  {k:'editing_app',label:'你现在用过哪些剪辑或内容工具？',opts:['剪映 / CapCut','Canva','VN','Premiere / PR','其他剪辑软件','只看过没做过','完全没用过']},
-  {k:'ai_level',label:'你目前使用AI工具到什么程度？',opts:['几乎没用过','偶尔聊天问问题','会让AI写文案 / 总结','会用AI做图 / 视频','已经经常用AI完成实际任务']}
- ]},
- {title:'目前的经济情况',fields:[
+ {title:'目前经济情况',fields:[
   {k:'economic_status',label:'你目前的经济状况更接近哪一种？',opts:['收入稳定，压力较小','收入稳定，但支出压力较大','收入一般，希望增加收入','收入不稳定','暂时没有固定收入','不方便说明']},
   {k:'income_urgency',label:'你现在增加收入的紧迫程度？',opts:['暂时不急','希望慢慢增加','希望3个月内看到变化','希望1个月内开始尝试','目前非常需要增加收入']},
   {k:'cost_limit',label:'开始实践时，你更能接受哪种投入方式？',opts:['尽量零投入','只用现有设备和免费工具','先验证有效再考虑投入','小额必要投入可以接受','投入不是主要限制']}
  ]},
- {title:'当前能力盘点',fields:[
-  {k:'writing',label:'你的文字表达和整理能力？',opts:['基本不会','能写简单内容','一般水平','比较擅长','非常擅长']},
-  {k:'image',label:'图片、海报、封面这类内容你做到什么程度？',opts:['完全没做过','只会简单修图','会套模板','能独立做一些设计','比较熟练']},
-  {k:'video',label:'短视频制作你做到什么程度？',opts:['完全没做过','会简单剪切','会字幕配乐和基础剪辑','能独立完成短视频','比较熟练']}
+ {title:'方向偏好',fields:[
+  {k:'start_direction',label:'你更希望从哪一类事情开始？',opts:['学一个实用技能','做图片 / 视频 / 内容','学AI工具','给个人或商户提供服务','做本地小项目','做线上项目','目前还不清楚']},
+  {k:'interest',label:'下面哪类事情你做起来最不容易烦？',opts:['写东西 / 整理资料','图片 / 视觉内容','视频 / 内容制作','研究工具和AI','和人沟通 / 服务别人','本地跑动 / 做实际项目','都不确定']},
+  {k:'income_goal',label:'你希望未来主要通过什么方式增加收入？',opts:['暂时不考虑收入','线上兼职 / 小任务','技能接单','内容创作','给商家 / 公司提供服务','本地便民小项目','做自己的长期项目','还不知道']}
  ]},
- {title:'兴趣与方向',fields:[
-  {k:'start_direction',label:'你更希望从哪一类事情开始？',opts:['学一个实用技能','做图片 / 视频 / 内容','学会使用AI工具','整理资料 / 文档 / 表格','做居家线上小项目','找适合自己的长期方向','目前还不清楚']},
-  {k:'interest',label:'下面哪类事情你做起来最不容易烦？',opts:['写东西 / 整理资料','做图片 / 视觉内容','剪视频 / 做内容','研究工具和新方法','和人沟通 / 回答问题','整理数据 / 表格','都不确定']},
-  {k:'dislike',label:'你最不愿意长期做哪种事情？',opts:['大量写字','露脸拍摄','和陌生人沟通','反复做表格','学习复杂工具','长时间坐着操作','暂时没有明显排斥']}
- ]},
- {title:'家庭与现实限制',fields:[
-  {k:'interrupt',label:'你在家做事时最常被什么打断？',opts:['工作消息','孩子 / 家务','家人事务','手机娱乐','身体容易疲劳','没有明显打断']},
-  {k:'family_support',label:'家人对你每天留时间学习或实践的态度？',opts:['很支持','基本支持','不太关注','偶尔会影响','很难配合','不适用']},
-  {k:'energy',label:'你通常什么时候精神状态最好？',opts:['早上','上午','中午','下午','晚上','深夜','不固定']}
- ]},
- {title:'过去尝试过什么',fields:[
-  {k:'experience',label:'以前有没有认真尝试过类似学习或副业实践？',opts:['完全没有','试过但没有坚持','学过一些但比较零散','已经有一点基础','做过不少但没有形成体系']},
-  {k:'tried_type',label:'以前主要尝试过什么？',opts:['看教程学技能','做短视频 / 内容','学AI工具','学设计 / 剪辑','办公 / 表格','尝试副业 / 接单','买过课程但没学完','没有尝试过']},
-  {k:'quit_reason',label:'以前最容易为什么停下来？',opts:['没时间','太难','看不到结果','方向太多太乱','没人告诉我下一步','没人监督','生活突然有事','没有中断过']}
- ]},
- {title:'执行习惯',fields:[
-  {k:'habit_style',label:'哪一种方式你最容易坚持？',opts:['每天一个很小的任务','每天固定30分钟','有时间就多做一点','每周集中做几次','需要明确步骤带着做']},
-  {k:'start_problem',label:'你最难的是哪一步？',opts:['开始行动','持续坚持','遇到问题继续','把作品做完整','复盘和改进','不知道今天该做什么']},
-  {k:'task_size',label:'每天任务做到什么大小你最容易接受？',opts:['5–10分钟','15–20分钟','30分钟左右','45–60分钟','只要结果明确，时间不是问题']}
- ]},
- {title:'你真正想得到什么',fields:[
-  {k:'goal',label:'你最希望先得到什么变化？',opts:['不再浪费零碎时间','学会一个真正能用的技能','做出自己的第一个成果','形成稳定习惯','找到长期方向','为以后增加收入能力做准备']},
-  {k:'priority',label:'如果只能先完成一件事，你最想先做到什么？',opts:['养成每天行动','学会一个工具','做出一个作品','找到适合方向','提高效率','开始建立收入能力']},
-  {k:'speed',label:'你希望多久开始看到第一批明显变化？',opts:['7天左右','14天左右','30天左右','1–3个月','不追求快，稳定最重要']}
- ]},
- {title:'收入方向判断',fields:[
-  {k:'income_goal',label:'你希望未来通过哪种方式增加收入？',opts:['暂时不考虑收入','线上兼职 / 小任务','技能接单','内容创作','给商家 / 公司提供服务','做自己的长期项目','还不知道']},
-  {k:'customer_contact',label:'如果需要和客户沟通，你目前能接受到什么程度？',opts:['不想接触客户','只接受文字沟通','可以语音沟通','可以正常谈需求和报价','沟通不是问题']},
-  {k:'show_face',label:'如果一个方向需要出镜，你的接受程度？',opts:['完全不接受露脸','只接受声音不露脸','偶尔可以','如果确实有价值可以','出镜不是问题']}
- ]},
- {title:'居家实践方式',fields:[
-  {k:'plan_type',label:'你希望计划更偏向哪一种？',opts:['非常简单，先养成习惯','边学边做，马上有成果','实用技能优先','收入能力优先','最终形成长期可用能力']},
-  {k:'practice_ratio',label:'你更能接受哪种学习与实践比例？',opts:['少讲理论，直接做','20%学习 + 80%实践','一半学习一半实践','先学清楚再做','根据任务决定']},
-  {k:'output',label:'你希望每周至少留下什么？',opts:['1个完整成果','2–3个小成果','一套模板 / 清单','一项新技能记录','一份周复盘','根据实际任务决定']}
- ]},
- {title:'反馈与调整',fields:[
-  {k:'period',label:'你愿意连续实践多久再判断有没有效果？',opts:['7天','14天','30天','1–3个月','只要适合我，可以长期坚持']},
-  {k:'review',label:'你愿意多久做一次真实复盘？',opts:['每天简单复盘','每3天一次','每周一次','两周一次','只在遇到问题时复盘']},
-  {k:'adjust',label:'如果计划执行后发现不适合，你能接受怎么调整？',opts:['减少任务量','更换工具','换一种实践方式','调整目标顺序','必要时换方向','都可以，以实际效果为准']}
- ]},
- {title:'最后确认',fields:[
-  {k:'avoid',label:'下面哪种情况你最不希望出现？',opts:['频繁外出','大量前期投入','必须买昂贵软件','每天任务太长','强迫露脸或直播','操作过于复杂','都希望尽量避免']},
-  {k:'final_confirm',label:'你最终最希望得到哪一种结果？',opts:['养成稳定习惯','找到长期方向','掌握一项实用能力','做出可展示成果','建立可复用工作方法','形成可持续增加收入的能力']},
-  {k:'commitment',label:'如果每天只给你一个明确的小任务，你愿意怎么开始？',opts:['从今天开始执行','先执行7天看看','节奏慢一点但会坚持','需要非常明确的步骤','先了解清楚再决定']}
+ {title:'线上与线下接受度',fields:[
+  {k:'work_mode',label:'你更能接受哪种实践方式？',opts:['只做线上','线上为主，偶尔线下','线上线下都可以','线下为主，也可以线上','只做线下','还不确定']},
+  {k:'customer_contact',label:'如果需要和客户或商户沟通，你能接受到什么程度？',opts:['不想接触客户','只接受文字沟通','可以语音沟通','可以当面沟通','可以谈需求和报价','沟通不是问题']},
+  {k:'local_mobility',label:'如果项目需要到附近社区、夜市或商户现场，你能接受吗？',opts:['完全不能外出','只接受家附近','偶尔可以外出','每天可以安排短时间','外出不是问题','看项目再决定']}
  ]}
+];
+const deepFields=[
+ {k:'gender',label:'性别',opts:['男','女','不方便说明']},
+ {k:'occupation',label:'你目前最接近哪种职业状态？',opts:['企业 / 公司上班','机关 / 事业单位','个体经营','自由职业','灵活就业 / 零工','全职照顾家庭','学生','退休','暂时待业','其他']},
+ {k:'education',label:'你的教育程度？',opts:['初中及以下','高中 / 中专','大专','本科','研究生及以上','不方便说明']},
+ {k:'editing_app',label:'你实际用过哪些剪辑或内容工具？',opts:['剪映 / CapCut','Canva','VN','Premiere / PR','其他工具','只看过没做过','完全没用过']},
+ {k:'ai_level',label:'你目前使用AI到什么程度？',opts:['几乎没用过','偶尔聊天问问题','会写文案 / 总结','会做图 / 视频','会用AI完成实际任务','已经形成自己的工作流']},
+ {k:'writing',label:'你的文字表达和资料整理能力？',opts:['基本不会','能写简单内容','一般','比较擅长','非常擅长']},
+ {k:'image',label:'图片、海报、菜单、封面这类内容你做到什么程度？',opts:['完全没做过','只会简单修图','会套模板','能独立完成','比较熟练']},
+ {k:'video',label:'短视频制作你做到什么程度？',opts:['完全没做过','会简单剪切','会字幕配乐','能独立完成短视频','比较熟练']},
+ {k:'printer_access',label:'你身边是否容易接触打印、照片打印或简单制作设备？',opts:['完全没有','附近有打印店','家里有普通打印机','可以低成本使用设备','已经有相关设备','不清楚']},
+ {k:'merchant_access',label:'你平时接触附近商户、摊主、社区门店方便吗？',opts:['几乎接触不到','家附近有一些','经常经过商业街 / 夜市','认识一些商户','自己就有商户资源','愿意主动去找']},
+ {k:'community_access',label:'你是否使用本地微信群、Telegram群、Facebook群或社区群组？',opts:['基本不用','只看消息','偶尔发信息','经常使用','自己管理群组','愿意尝试建立或运营群组']},
+ {k:'service_interest',label:'下面哪些实际服务你更愿意尝试？',opts:['照片打印 / 简单纪念品','3分钟商户短视频','电子菜单 / 海报','群组便民信息','AI图片 / 设计','线上资料整理','都可以先试','都不确定']},
+ {k:'show_face',label:'如果一个方向需要露脸或当面服务，你的接受程度？',opts:['完全不接受','只接受声音不露脸','偶尔可以','线下服务可以但不拍自己','如果有价值可以','没有限制']},
+ {k:'sales_comfort',label:'你对主动介绍自己的服务是什么感觉？',opts:['非常排斥','有点紧张但可以练','只愿意发文字介绍','熟悉以后可以','可以主动介绍和报价','比较擅长']},
+ {k:'past_attempt',label:'以前有没有认真尝试过副业、接单或小项目？',opts:['完全没有','试过但没坚持','做过一些但没成交','有过少量成交','有稳定客户经验','做过多个项目']},
+ {k:'biggest_block',label:'你过去最容易卡在哪一步？',opts:['不知道做什么','不会开始','学很多但不执行','不敢找客户','做了没人买','坚持不了','时间不够','工具太复杂']},
+ {k:'habit_style',label:'哪种方式你最容易坚持？',opts:['每天一个小任务','每天固定30分钟','有时间就多做','每周集中做几次','需要非常明确的步骤','需要反馈后再给下一步']},
+ {k:'result_speed',label:'你希望多久看到第一批真实变化？',opts:['7天左右','14天左右','30天左右','1–3个月','不追求快，稳定最重要']},
+ {k:'first_goal',label:'第一阶段你最想先得到什么？',opts:['养成稳定执行','学会一个实用工具','做出第一个作品','完成第一次真实服务','拿到第一笔小订单','找到适合自己的方向','建立长期收入能力']},
+ {k:'commitment',label:'遇到前几次没有结果时，你愿意怎么做？',opts:['继续按计划执行','复盘后调整再试','降低任务难度继续','换一个更适合的方向','需要有人帮我判断问题','很可能会停下来']}
 ];
 const cases=[
  {who:'每天固定时间投稿的音乐创作者',before:'他一开始会做歌，但最大的错误是只顾着做作品，做完以后没有固定投稿节奏。作品躺在文件夹里，偶尔想到才发一次，客户根本没有持续看到他。',tools:'手机或电脑做基础制作；AI辅助歌词、主题和Demo方向；BandLab / Audacity一类工具做简单整理；表格记录歌曲名称、投稿时间、投给谁、有没有回复、有没有成交。',do:'后来把每天流程拆成两段：零碎时间只做创作和修改，晚上固定一个投稿时间。每首歌准备30秒试听片段、完整试听文件、适用场景和一句报价说明；同一首歌分批发给不同音乐需求方、短视频团队、商用配乐需求和定制歌曲客户。投稿结束后记录已发、已读、询价、修改、成交，第二天优先跟进已经有反馈的人。',gain:'真正让他开始稳定成交的是作品生产和客户触达同时固定下来。每天都有新作品进入市场、旧作品继续被看见、昨天有反馈的人继续跟进，成交才从偶发逐渐变成连续。'},
@@ -102,16 +79,18 @@ let gi=0,gateAnswers=[],si=0,profile={};
 function screen(){return $('[data-gyx-screen="home"]')}
 function host(){const s=screen();if(!s)return null;const m=$('main',s);let h=$('.gyx-home-plan-host',m);if(!h){m.replaceChildren();h=document.createElement('div');h.className='gyx-gate gyx-home-plan-host';m.appendChild(h)}return h}
 function close(){screen()?.querySelector('.gyx-full-close')?.click()}
-function fail(){const h=host();if(!h)return;h.innerHTML=`<div class="gyx-gate-card"><h2 class="gyx-gate-title">目前先不进入计划</h2><div class="gyx-gate-note">等你准备好稳定实践时，可以随时回来重新填写。</div><button class="gyx-gate-home">返回首页</button></div>`;$('.gyx-gate-home',h).onclick=close}
+function fail(){const h=host();if(!h)return;h.innerHTML=`<div class="gyx-gate-card"><h2 class="gyx-gate-title">目前先不进入计划</h2><div class="gyx-gate-note">等你准备好并愿意继续了解适合自己的方案时，可以随时回来。</div><button class="gyx-gate-home">返回首页</button></div>`;$('.gyx-gate-home',h).onclick=close}
 function renderGate(){gi=0;gateAnswers=[];drawGate()}
-function drawGate(){const h=host();if(!h)return;const x=gate[gi];h.innerHTML=`<div class="gyx-gate-card"><div class="gyx-gate-progress">资格确认 ${gi+1} / ${gate.length}</div><h2 class="gyx-gate-title">${x.q}</h2><div class="gyx-gate-options">${x.opts.map(v=>`<button type="button" class="gyx-gate-option" data-value="${v.replace(/"/g,'&quot;')}">${v}</button>`).join('')}</div><button class="gyx-gate-next" disabled>下一步</button><div class="gyx-gate-note">请选择符合你真实情况的选项</div></div>`;let selected='';h.querySelectorAll('[data-value]').forEach(b=>b.onclick=()=>{selected=b.dataset.value;h.querySelectorAll('[data-value]').forEach(z=>z.classList.toggle('is-selected',z===b));$('.gyx-gate-next',h).disabled=false});$('.gyx-gate-next',h).onclick=()=>{if(!selected)return;if(x.reject&&selected===x.reject)return fail();gateAnswers.push({question:x.q,answer:selected});gi++;if(gi<gate.length)drawGate();else pass()}}
-function pass(){const h=host();if(!h)return;const rec={project:'spare-time-plan',passed:true,answers:gateAnswers,passed_at:new Date().toISOString()};try{localStorage.setItem('gyx_spare_time_gate',JSON.stringify(rec))}catch{}h.innerHTML=`<div class="gyx-gate-card"><h2 class="gyx-gate-title">资格确认完成</h2><div class="gyx-profile-alert">接下来继续了解你的真实生活情况。了解得越细，后面的方案才能越贴近你。</div><button class="gyx-profile-next">下一步</button></div>`;$('.gyx-profile-next',h).onclick=()=>{si=0;profile={gate:rec};drawStep()}}
+function drawGate(){const h=host(),x=gate[gi];if(!h||!x)return;h.innerHTML=`<div class="gyx-gate-card"><div class="gyx-gate-progress">资格确认 ${gi+1} / ${gate.length}</div><h2 class="gyx-gate-title">${x.q}</h2><div class="gyx-gate-options">${x.opts.map(v=>`<button type="button" class="gyx-gate-option" data-value="${v.replace(/"/g,'&quot;')}">${v}</button>`).join('')}</div><button class="gyx-gate-next" disabled>下一步</button></div>`;let selected='';h.querySelectorAll('[data-value]').forEach(b=>b.onclick=()=>{selected=b.dataset.value;h.querySelectorAll('[data-value]').forEach(z=>z.classList.toggle('is-selected',z===b));$('.gyx-gate-next',h).disabled=false});$('.gyx-gate-next',h).onclick=()=>{if(!selected)return;if(x.reject&&selected===x.reject)return fail();gateAnswers.push({question:x.q,answer:selected});gi++;if(gi<gate.length)drawGate();else pass()}}
+function pass(){const h=host();if(!h)return;const rec={project:'spare-time-plan',passed:true,answers:gateAnswers,passed_at:new Date().toISOString()};try{localStorage.setItem('gyx_spare_time_gate',JSON.stringify(rec))}catch{}h.innerHTML=`<div class="gyx-gate-card"><h2 class="gyx-gate-title">继续了解你的实际情况</h2><div class="gyx-profile-alert">接下来每页3个问题，后面还有一张更完整的实际情况页。全部都只为让最终方向更贴近你真正能做的事情。</div><button class="gyx-profile-next">下一步</button></div>`;$('.gyx-profile-next',h).onclick=()=>{si=0;profile={gate:rec};drawStep()}}
 function field(f){return `<div class="gyx-field"><label>${f.label}</label><div class="gyx-choice-grid three">${f.opts.map(v=>`<button type="button" class="gyx-choice" data-key="${f.k}" data-value="${v.replace(/"/g,'&quot;')}">${v}</button>`).join('')}</div></div>`}
-function drawStep(){const h=host(),s=steps[si];if(!h||!s)return;h.innerHTML=`<div class="gyx-profile"><div class="gyx-profile-card"><div class="gyx-profile-alert">请按真实情况选择。问题越完整，后面的方向、节奏和方案才会越具体。</div><div class="gyx-profile-step">个人情况 ${si+1} / ${steps.length}</div><h2 class="gyx-profile-title">${s.title}</h2>${s.fields.map(field).join('')}<div class="gyx-profile-actions">${si?'<button class="gyx-profile-back">上一步</button>':'<span></span>'}<button class="gyx-profile-next">下一步</button></div></div></div>`;bindStep()}
-function bindStep(){const h=host(),s=steps[si];h.querySelectorAll('.gyx-choice').forEach(b=>b.onclick=()=>{profile[b.dataset.key]=b.dataset.value;h.querySelectorAll(`.gyx-choice[data-key="${b.dataset.key}"]`).forEach(z=>z.classList.toggle('is-selected',z===b))});const back=$('.gyx-profile-back',h);if(back)back.onclick=()=>{si--;drawStep();screen().scrollTop=0};const next=$('.gyx-profile-next',h);if(next)next.onclick=()=>{if(s.fields.some(f=>!profile[f.k]))return alert('请先完成本页3个问题');try{localStorage.setItem('gyx_spare_time_profile_draft',JSON.stringify(profile))}catch{}if(si<steps.length-1){si++;drawStep();screen().scrollTop=0;return}profile.completed_at=new Date().toISOString();try{localStorage.setItem('gyx_spare_time_profile',JSON.stringify(profile))}catch{}renderCases()}}
-function renderCases(){const h=host();if(!h)return;h.innerHTML=`<div class="gyx-profile gyx-spare-cases"><div class="gyx-profile-card"><div class="gyx-profile-step">他们只是把零碎时间用对了</div><h2 class="gyx-profile-title">看清楚他们到底用什么、每天做什么、为什么最后能跑通</h2><div class="gyx-case-list">${cases.map(c=>`<article class="gyx-case"><b>${c.who}</b><p><strong>一开始：</strong>${c.before}</p><p><strong>用什么：</strong>${c.tools}</p><p><strong>具体怎么做：</strong>${c.do}</p><p><strong>为什么最后能成功：</strong>${c.gain}</p></article>`).join('')}</div><div class="gyx-finish-note">收入和成交数字只属于对应经历，不代表所有人都会得到相同结果。真正值得看的，是他们怎样把工具、固定动作、客户触达和持续交付连成一条完整路径。</div><button type="button" class="gyx-see-offers">下一步</button></div></div>`;$('.gyx-see-offers',h).onclick=renderOffers;screen().scrollTop=0}
-function renderOffers(){const h=host();if(!h)return;h.innerHTML=`<div class="gyx-profile gyx-spare-offers"><div class="gyx-profile-card"><section class="gyx-emotion"><span>你已经认真回答了前面的每一个问题</span><h2>很多人真正缺的，不是时间，而是一条有人帮你拆清楚、今天就能开始走的路。</h2><p>我们不要求你一下变得多厉害，也不要求你每天拿出几个小时。你有15分钟，就从15分钟开始；只有手机，就先把手机能做的事情做好。生活已经够忙了，这个计划存在的意义，就是让普通人不用东奔西走，也能在自己的时间里，一点一点把能力留下来。</p><p>你不需要证明给谁看。只要一个月后的你，比今天多会一件事、多留下几个成果、多一点选择，这些零碎时间就没有白过。</p></section><section class="gyx-price-area"><div class="gyx-profile-step">选择适合自己的节奏</div><div class="gyx-price-grid">${offers.slice(0,5).map(o=>`<button type="button" class="gyx-price-card" data-product="${o.id}"><span>${o.name}</span><strong>${o.price}</strong><small>USDT</small><em>${o.desc}</em></button>`).join('')}</div><button type="button" class="gyx-private-card" data-product="${offers[5].id}"><span><b>${offers[5].name}</b><small>${offers[5].desc}</small></span><strong>${offers[5].price} USDT</strong></button></section></div></div>`;h.querySelectorAll('[data-product]').forEach(b=>b.onclick=async()=>{const id=b.dataset.product;if(!window.GYX_MEMBER_CHECKOUT?.open)return alert('订单功能正在加载，请稍后再点一次');await window.GYX_MEMBER_CHECKOUT.open(id,{question:'零碎时间养成计划',selections:Object.entries(profile).filter(([k])=>k!=='gate').map(([k,v])=>`${k}: ${v}`),tier:id})});screen().scrollTop=0}
-const st=document.createElement('style');st.textContent=`.gyx-case-list{display:grid;gap:12px}.gyx-case{padding:16px;border:1px solid rgba(70,110,160,.14);border-radius:16px;background:#f8fafc;color:#182230}.gyx-case>b{display:block;font-size:16px;margin-bottom:8px}.gyx-case p{margin:7px 0;line-height:1.65;font-size:14px}.gyx-see-offers{width:100%;min-height:54px;border:0;border-radius:14px;background:#182230;color:#fff;font-size:17px;font-weight:850;margin-top:16px}.gyx-emotion{min-height:44vh;display:flex;flex-direction:column;justify-content:center;text-align:center;padding:18px 6px 28px}.gyx-emotion>span{font-size:13px;font-weight:850;color:#69768a}.gyx-emotion h2{font-size:24px;line-height:1.45;color:#182230;margin:14px 0}.gyx-emotion p{font-size:14px;line-height:1.8;color:#56657a;margin:6px 0}.gyx-price-area{border-top:1px solid rgba(70,110,160,.12);padding-top:20px}.gyx-price-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.gyx-price-card{border:1px solid rgba(70,110,160,.18);border-radius:15px;background:#fff;color:#182230;min-height:132px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center}.gyx-price-card span{font-size:13px;font-weight:850}.gyx-price-card strong{font-size:30px;line-height:1.1;margin-top:7px}.gyx-price-card small{font-size:11px;color:#69768a}.gyx-price-card em{font-style:normal;font-size:11px;line-height:1.4;color:#69768a;margin-top:7px}.gyx-price-card:nth-child(5){grid-column:1/-1;background:#182230;color:#fff}.gyx-private-card{width:100%;margin-top:10px;min-height:76px;border:0;border-radius:16px;background:linear-gradient(135deg,#5b37ff,#7a4cff);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;text-align:left}.gyx-private-card span{display:grid;gap:4px}.gyx-private-card b{font-size:17px}.gyx-private-card small{font-size:11px;opacity:.85}.gyx-private-card strong{font-size:20px;white-space:nowrap}html[data-theme="dark"] .gyx-case,html[data-theme="dark"] .gyx-price-card{background:#101f35;color:#f8fafc;border-color:#26364c}`;document.head.appendChild(st);
+function bindChoices(h){h.querySelectorAll('.gyx-choice').forEach(b=>b.onclick=()=>{profile[b.dataset.key]=b.dataset.value;h.querySelectorAll(`.gyx-choice[data-key="${b.dataset.key}"]`).forEach(z=>z.classList.toggle('is-selected',z===b))})}
+function drawStep(){const h=host(),s=steps[si];if(!h||!s)return;h.innerHTML=`<div class="gyx-profile"><div class="gyx-profile-card"><div class="gyx-profile-step">基础了解 ${si+1} / ${steps.length}</div><h2 class="gyx-profile-title">${s.title}</h2>${s.fields.map(field).join('')}<div class="gyx-profile-actions">${si?'<button class="gyx-profile-back">上一步</button>':'<span></span>'}<button class="gyx-profile-next">下一步</button></div></div></div>`;bindChoices(h);const back=$('.gyx-profile-back',h);if(back)back.onclick=()=>{si--;drawStep();screen().scrollTop=0};$('.gyx-profile-next',h).onclick=()=>{if(s.fields.some(f=>!profile[f.k]))return alert('请先完成本页3个问题');try{localStorage.setItem('gyx_spare_time_profile_draft',JSON.stringify(profile))}catch{}if(si<steps.length-1){si++;drawStep();screen().scrollTop=0}else renderDeep()}}
+function renderDeep(){const h=host();if(!h)return;h.innerHTML=`<div class="gyx-profile gyx-deep-profile"><div class="gyx-profile-card"><div class="gyx-profile-step">实际情况</div><h2 class="gyx-profile-title">把真正影响你后面方向的情况一次问清楚</h2><div class="gyx-profile-alert">这张会比前面长。按真实情况选择即可，不需要把自己包装得更好。</div>${deepFields.map(field).join('')}<div class="gyx-profile-actions"><button class="gyx-deep-back">上一步</button><button class="gyx-deep-next">下一步</button></div></div></div>`;bindChoices(h);$('.gyx-deep-back',h).onclick=()=>{si=steps.length-1;drawStep();screen().scrollTop=0};$('.gyx-deep-next',h).onclick=()=>{if(deepFields.some(f=>!profile[f.k]))return alert('请先完成这张实际情况页');profile.completed_at=new Date().toISOString();try{localStorage.setItem('gyx_spare_time_profile',JSON.stringify(profile))}catch{}renderCases()};screen().scrollTop=0}
+function renderCases(){const h=host();if(!h)return;h.innerHTML=`<div class="gyx-profile gyx-spare-cases"><div class="gyx-profile-card"><div class="gyx-profile-step">他们只是把零碎时间用对了</div><h2 class="gyx-profile-title">看清楚他们到底用什么、每天做什么、为什么最后能跑通</h2><div class="gyx-case-list">${cases.map(c=>`<article class="gyx-case"><b>${c.who}</b><p><strong>一开始：</strong>${c.before}</p><p><strong>用什么：</strong>${c.tools}</p><p><strong>具体怎么做：</strong>${c.do}</p><p><strong>为什么最后能成功：</strong>${c.gain}</p></article>`).join('')}</div><button type="button" class="gyx-see-offers">下一步</button></div></div>`;$('.gyx-see-offers',h).onclick=renderOffers;screen().scrollTop=0}
+function buildEmotion(){const t=profile.daily_time||'你现在能拿出来的时间';const mode=profile.work_mode||'你能接受的方式';const econ=profile.economic_status||'你目前的实际状态';const start=profile.start_direction||'你想开始的方向';let p1=`你现在每天真正能拿出来的是“${t}”，适合你的路就不应该建立在每天连续几个小时的假设上。`;let p2=`你选择的是“${mode}”，所以后面的方向不必只盯着电脑或手机。能线上完成的，就尽量在线上做；如果你也能接受线下，本地商户、社区、夜市和身边真实需求同样可以成为起点。`;let p3=`你目前更接近“${econ}”，而你想从“${start}”开始。真正重要的不是一下做得多大，而是先选一个你负担得起、做得了、能够持续重复的动作。前几次没有结果很正常，能不能复盘、调整、继续做，才会决定它最后只是一次尝试，还是慢慢变成你的能力。`;return[p1,p2,p3]}
+function renderOffers(){const h=host();if(!h)return;const e=buildEmotion();h.innerHTML=`<div class="gyx-profile gyx-spare-offers"><div class="gyx-profile-card"><section class="gyx-emotion"><h2>按你现在的实际情况，先选一条真正能坚持的路。</h2>${e.map(x=>`<p>${x}</p>`).join('')}</section><section class="gyx-price-area"><div class="gyx-profile-step">选择适合自己的节奏</div><div class="gyx-price-grid">${offers.slice(0,5).map(o=>`<button type="button" class="gyx-price-card" data-product="${o.id}"><span>${o.name}</span><strong>${o.price}</strong><small>USDT</small><em>${o.desc}</em></button>`).join('')}</div><button type="button" class="gyx-private-card" data-product="${offers[5].id}"><span><b>${offers[5].name}</b><small>${offers[5].desc}</small></span><strong>${offers[5].price} USDT</strong></button></section></div></div>`;h.querySelectorAll('[data-product]').forEach(b=>b.onclick=async()=>{const id=b.dataset.product;if(!window.GYX_MEMBER_CHECKOUT?.open)return alert('订单功能正在加载，请稍后再点一次');await window.GYX_MEMBER_CHECKOUT.open(id,{question:'零碎时间养成计划',selections:Object.entries(profile).filter(([k])=>k!=='gate').map(([k,v])=>`${k}: ${v}`),tier:id})});screen().scrollTop=0}
+const st=document.createElement('style');st.textContent=`.gyx-case-list{display:grid;gap:12px}.gyx-case{padding:16px;border:1px solid rgba(70,110,160,.14);border-radius:16px;background:#f8fafc;color:#182230}.gyx-case>b{display:block;font-size:16px;margin-bottom:8px}.gyx-case p{margin:7px 0;line-height:1.65;font-size:14px}.gyx-see-offers,.gyx-deep-next,.gyx-deep-back{min-height:52px;border:0;border-radius:14px;font-size:16px;font-weight:850}.gyx-see-offers{width:100%;background:#182230;color:#fff;margin-top:16px}.gyx-deep-profile .gyx-field{margin-bottom:18px}.gyx-emotion{min-height:44vh;display:flex;flex-direction:column;justify-content:center;text-align:left;padding:18px 6px 28px}.gyx-emotion h2{font-size:24px;line-height:1.45;color:#182230;margin:14px 0}.gyx-emotion p{font-size:14px;line-height:1.85;color:#56657a;margin:7px 0}.gyx-price-area{border-top:1px solid rgba(70,110,160,.12);padding-top:20px}.gyx-price-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.gyx-price-card{border:1px solid rgba(70,110,160,.18);border-radius:15px;background:#fff;color:#182230;min-height:132px;padding:13px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center}.gyx-price-card span{font-size:13px;font-weight:850}.gyx-price-card strong{font-size:30px;line-height:1.1;margin-top:7px}.gyx-price-card small{font-size:11px;color:#69768a}.gyx-price-card em{font-style:normal;font-size:11px;line-height:1.4;color:#69768a;margin-top:7px}.gyx-price-card:nth-child(5){grid-column:1/-1;background:#182230;color:#fff}.gyx-private-card{width:100%;margin-top:10px;min-height:76px;border:0;border-radius:16px;background:linear-gradient(135deg,#5b37ff,#7a4cff);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;text-align:left}.gyx-private-card span{display:grid;gap:4px}.gyx-private-card b{font-size:17px}.gyx-private-card small{font-size:11px;opacity:.85}.gyx-private-card strong{font-size:20px;white-space:nowrap}html[data-theme="dark"] .gyx-case,html[data-theme="dark"] .gyx-price-card{background:#101f35;color:#f8fafc;border-color:#26364c}html[data-theme="dark"] .gyx-emotion h2{color:#f8fafc}html[data-theme="dark"] .gyx-emotion p{color:#c6d0df}`;document.head.appendChild(st);
 document.addEventListener('click',e=>{const b=e.target.closest?.('[data-gyx-full="home"]');if(!b)return;setTimeout(renderGate,0)},true);
 window.addEventListener('gyx:languagechange',()=>{if(screen()?.classList.contains('is-open'))renderGate()});
 })();
