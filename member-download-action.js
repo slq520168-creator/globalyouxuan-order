@@ -32,8 +32,15 @@
       const r=await window.gyxInvokeFunction(fn,{order_id:o.id});
       const waiting=r?.error==='DELIVERY_PREPARING'||r?.error==='TRANSLATION_PREPARING'||r?.status==='pending'||r?.status==='processing';
       if(waiting){await sleep(4000);continue}
+      if(r?.status==='failed'||r?.error==='DELIVERY_PREPARATION_FAILED'){
+        const fallback=await window.gyxInvokeFunction(fn,{order_id:o.id,fallback_to_zh:true});
+        if(fallback?.content)console.warn('[GYX delivery] translation failed; downloaded Chinese fallback',{order_id:o.id,requested_locale:o.delivery_locale});
+        return fallback;
+      }
       return r;
     }
+    const fallback=await window.gyxInvokeFunction(fn,{order_id:o.id,fallback_to_zh:true});
+    if(fallback?.content){console.warn('[GYX delivery] translation timed out; downloaded Chinese fallback',{order_id:o.id,requested_locale:o.delivery_locale});return fallback}
     return {error:'DELIVERY_STILL_PREPARING'};
   }
 
@@ -57,7 +64,28 @@
   function shell(o){const c=document.createElement('article');c.className='order-card';c.dataset.gyxDownloadOrderNo=String(o.order_no||o.id||'');const top=document.createElement('div');top.className='order-top';const w=document.createElement('div'),h=document.createElement('h3'),m=document.createElement('p');h.className='order-title';h.textContent=title(o);m.className='order-number';m.textContent=[o.order_no,fmt(o.created_at)].filter(Boolean).join(' · ');w.append(h,m);const b=document.createElement('span');b.className='status-badge delivered';b.textContent=o.delivery_downloaded_at?window.GYXI18N.t("memberDownloadActionCopy004"):window.GYXI18N.t("delivered");top.append(w,b);c.append(top);return c}
   function card(o){const c=shell(o),actions=document.createElement('div');actions.className='order-actions';if(o.delivery_downloaded_at){const b=document.createElement('button'),p=document.createElement('p');b.className='btn';b.type='button';b.disabled=true;b.textContent=window.GYXI18N.t("memberDownloadActionCopy002");p.className='muted';p.textContent=fileLocationText();actions.append(b);c.append(actions,p);return c}if(String(o.status)==='delivered'&&(Number.isFinite(Number(o.answer_id))||o.source_module==='home_fixed'||String(o.product_id||'').startsWith('spare-time-'))){const b=document.createElement('button');b.className='btn';b.type='button';b.textContent=window.GYXI18N.t("memberDownloadActionCopy005");b.onclick=()=>downloadAnswer(o,b);actions.append(b)}else if(String(o.status)==='paid'){const p=document.createElement('p');p.className='muted';p.textContent=window.GYXI18N.t("memberDownloadActionCopy006");c.append(p)}if(actions.childNodes.length)c.append(actions);return c}
 
-  function downloadOpportunity(r,btn){const text=String(r.delivery_text_snapshot||''),bom=new Uint8Array([0xEF,0xBB,0xBF]),body=new TextEncoder().encode(text.replace(/\r?\n/g,'\r\n')),blob=new Blob([bom,body],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=safeName(opportunityTitle(r))+'.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);if(btn){btn.disabled=true;btn.textContent=window.GYXI18N.t("memberDownloadActionCopy002");const p=document.createElement('p');p.className='muted';p.textContent=fileLocationText();btn.closest('.order-card')?.append(p)}toast(fileLocationText())}
+  async function downloadOpportunity(r,btn){
+    const old=btn?.textContent||I.t("memberDownloadActionCopy005");
+    if(btn){btn.disabled=true;showLoader(btn)}
+    try{
+      let translated=await window.gyxInvokeFunction('answer-auto-translate',{action:'community',redemption_id:r.id,locale:I.locale});
+      if(!translated?.content&&I.locale!=='zh'){
+        console.warn('[GYX community delivery] requested translation unavailable; retrying Chinese fallback',{redemption_id:r.id,requested_locale:I.locale});
+        translated=await window.gyxInvokeFunction('answer-auto-translate',{action:'community',redemption_id:r.id,locale:'zh-CN'});
+      }
+      if(!translated?.content)throw new Error(translated?.error||'DELIVERY_PREPARATION_FAILED');
+      const delivery={...r,localized_body:translated.content,localized_source_url:translated.source_url};
+      const content=window.GYXDeliveryContent?.opportunityText?.(delivery)||window.GYXDeliveryContent?.normalize?.(translated.content)||String(translated.content||'');
+      const bom=new Uint8Array([0xEF,0xBB,0xBF]),body=new TextEncoder().encode(content.replace(/\r?\n/g,'\r\n')),blob=new Blob([bom,body],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+      a.href=url;a.download=safeName(opportunityTitle(r))+'.txt';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+      if(btn){btn.disabled=true;btn.textContent=window.GYXI18N.t("memberDownloadActionCopy002");const p=document.createElement('p');p.className='muted';p.textContent=fileLocationText();btn.closest('.order-card')?.append(p)}
+      toast(fileLocationText());
+    }catch(error){
+      console.error('[GYX community delivery] download failed',error);
+      if(btn){btn.disabled=false;btn.textContent=old}
+      toast(window.GYXI18N.t("memberDownloadActionCopy003"),true);
+    }
+  }
   function opportunityCard(r){const c=document.createElement('article');c.className='order-card';c.dataset.gyxOpportunityRedemption=String(r.id||'');const top=document.createElement('div'),w=document.createElement('div'),h=document.createElement('h3'),m=document.createElement('p'),badge=document.createElement('span');top.className='order-top';h.className='order-title';h.textContent=opportunityTitle(r);m.className='order-number';m.textContent=[window.GYXI18N.t("memberDownloadActionCopy008"),`${Number(r.points_spent||2000)} ${window.GYXI18N.t("memberDownloadActionCopy009")}`,fmt(r.created_at)].join(' · ');badge.className='status-badge delivered';badge.textContent=window.GYXI18N.t("memberDownloadActionCopy010");w.append(h,m);top.append(w,badge);c.append(top);const actions=document.createElement('div'),down=document.createElement('button');actions.className='order-actions';down.className='btn';down.type='button';down.textContent=window.GYXI18N.t("memberDownloadActionCopy005");down.onclick=()=>downloadOpportunity(r,down);actions.append(down);c.append(actions);return c}
 
   function render(){const list=document.getElementById('downloadList');if(!list)return;rows=sortNewestFirst(rows);opportunityRows=sortNewestFirst(opportunityRows);list.replaceChildren();setCount(rows.length+opportunityRows.length);const merged=[...rows.map(x=>({kind:'order',created_at:x.created_at,data:x})),...opportunityRows.map(x=>({kind:'opportunity',created_at:x.created_at,data:x}))].sort((a,b)=>(Date.parse(b.created_at||'')||0)-(Date.parse(a.created_at||'')||0));if(!merged.length){const e=document.createElement('div');e.className='empty-state';e.textContent=window.GYXI18N.t("memberDownloadActionCopy011");list.append(e);return}for(const x of merged)list.append(x.kind==='opportunity'?opportunityCard(x.data):card(x.data));focusRequested()}
