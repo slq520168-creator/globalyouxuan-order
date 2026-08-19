@@ -11,7 +11,7 @@ const HEADERS = {
 };
 const HAN = /[\u3400-\u9fff\uf900-\ufaff]/;
 const KHMER = /[\u1780-\u17ff]/;
-const VERSION = "search-ui-v2";
+const VERSION = "search-ui-v3";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: HEADERS });
@@ -79,17 +79,16 @@ function validate(source: string, translated: string, locale: "en" | "km") {
   if (!translated) throw new Error("EMPTY_TRANSLATION");
   if (HAN.test(translated)) throw new Error("SOURCE_LANGUAGE_REMAINS");
   if (locale === "en" && KHMER.test(translated)) throw new Error("WRONG_TARGET_LANGUAGE");
-  if (locale === "km" && (HAN.test(source) || /[A-Za-z]{3}/.test(source)) && !KHMER.test(translated)) {
-    throw new Error("KHMER_TEXT_MISSING");
-  }
+  if (locale === "km" && !KHMER.test(translated)) throw new Error("KHMER_TEXT_MISSING");
   const multiplier = locale === "km" ? 8 : 5;
   const maxLength = Math.max(120, source.length * multiplier + 120);
   if (translated.length > maxLength) throw new Error("TRANSLATION_TOO_LONG");
   if (!source.includes("\n") && translated.split("\n").length > 3) throw new Error("TRANSLATION_STRUCTURE_CHANGED");
 }
-async function translateOne(source: string, locale: "en" | "km") {
-  const target = locale === "km" ? "standard natural Khmer" : "natural English";
-  const system = `You are a literal UI localization translator. This is a TRANSLATION task, never a question-answering task. Translate the exact value of the JSON field \"source\" from its current language into ${target}. If the source is a question, translate the question only; NEVER answer it. Preserve numbers, URLs, API, AI, Groq, Gemini, GlobalYouXuan and established technical identifiers. Preserve meaning and approximate length and structure. Do not add examples, advice, explanations, lists, introductions, conclusions, or facts. Output strict JSON only in exactly this shape: {\"translation\":\"...\"}.`;
+async function modelTranslate(source: string, target: "en" | "km") {
+  const targetName = target === "km" ? "natural standard Khmer" : "natural English";
+  const sourceHint = target === "km" ? "English" : "the source language";
+  const system = `You are a literal UI localization translator. This is a TRANSLATION task, never a question-answering task. Translate the exact value of the JSON field \"source\" from ${sourceHint} into ${targetName}. If the source is a question, translate the question only; NEVER answer it. Preserve numbers, URLs, API, AI, Groq, Gemini, GlobalYouXuan and established technical identifiers. Preserve meaning and approximate length and structure. Do not add examples, advice, explanations, lists, introductions, conclusions, or facts. Output strict JSON only in exactly this shape: {\"translation\":\"...\"}.`;
   let lastError: unknown = new Error("TRANSLATION_FAILED");
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const controller = new AbortController();
@@ -109,7 +108,7 @@ async function translateOne(source: string, locale: "en" | "km") {
       const raw = await response.text();
       if (!response.ok) throw new Error(`AI_${response.status}`);
       const translated = parseTranslation(extractModelText(raw));
-      validate(source, translated, locale);
+      validate(source, translated, target);
       return translated;
     } catch (error) {
       lastError = error;
@@ -119,6 +118,13 @@ async function translateOne(source: string, locale: "en" | "km") {
     }
   }
   throw lastError;
+}
+async function translateOne(source: string, locale: "en" | "km") {
+  if (locale === "en") return await modelTranslate(source, "en");
+  const englishBridge = await modelTranslate(source, "en");
+  const khmer = await modelTranslate(englishBridge, "km");
+  validate(source, khmer, "km");
+  return khmer;
 }
 
 Deno.serve(async (request: Request) => {
