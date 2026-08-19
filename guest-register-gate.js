@@ -1,1 +1,33 @@
-(()=>{'use strict';let bypass=false;const protectedSelector='#saveSearchButton,#favoriteButton,#orderAnswerButton,#fixedDetailFavorite,#fixedDetailOrder,#homeRegisterSupportAction,.gyx-extra-strip,a[href^="member.html"],a[href^="community.html"],a[href^="free-zone.html"]';async function user(){try{return await window.gyxGetVerifiedUser?.()||null}catch{return null}}function knownMember(){try{return localStorage.getItem('gyx_known_member')==='1'}catch{return false}}function authUrl(next='shop.html'){if(typeof window.gyxAuthEntryUrl==='function')return window.gyxAuthEntryUrl(next);return `login.html?mode=${knownMember()?'login':'register'}&next=${encodeURIComponent(next)}`}async function openGuestRegister(){if(typeof window.GYX_OPEN_REGISTER_INLINE==='function'){await window.GYX_OPEN_REGISTER_INLINE();return true}return false}document.addEventListener('click',async e=>{const target=e.target.closest?.(protectedSelector);if(!target||bypass)return;const href=target.getAttribute?.('href')||'',next=href&&/^(member|community|free-zone)\.html/i.test(href)?href:'shop.html',isExtra=target.matches?.('.gyx-extra-strip'),isFree=/^free-zone\.html/i.test(href);e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();const u=await user();if(!u){if(isExtra){location.href='login.html?mode=register&next='+encodeURIComponent('shop.html');return}if(isFree){location.href=authUrl('free-zone.html');return}if(!knownMember()&&await openGuestRegister())return;location.href=authUrl(next);return}bypass=true;try{if(target.tagName==='A'&&href&&!href.startsWith('#'))location.href=href;else target.click()}finally{setTimeout(()=>{bypass=false},0)}},true)})();
+(()=>{'use strict';
+let bypass=false;
+const protectedSelector='#saveSearchButton,#favoriteButton,#orderAnswerButton,#fixedDetailFavorite,#fixedDetailOrder,#homeRegisterSupportAction,.gyx-extra-strip,a[href^="member.html"],a[href^="community.html"],a[href^="free-zone.html"]';
+async function user(){try{return await window.gyxGetVerifiedUser?.()||null}catch{return null}}
+function knownMember(){try{return localStorage.getItem('gyx_known_member')==='1'}catch{return false}}
+function authUrl(next='shop.html'){if(typeof window.gyxAuthEntryUrl==='function')return window.gyxAuthEntryUrl(next);return `login.html?mode=${knownMember()?'login':'register'}&next=${encodeURIComponent(next)}`}
+async function openGuestRegister(){if(typeof window.GYX_OPEN_REGISTER_INLINE==='function'){await window.GYX_OPEN_REGISTER_INLINE();return true}if(typeof window.GYX_ENTRY_AUTH?.open==='function'){window.GYX_ENTRY_AUTH.open('register');return true}return false}
+function isHome(href){return !href||href==='#'||/^shop\.html(?:[?#].*)?$/i.test(href)}
+document.addEventListener('click',async e=>{
+ const target=e.target.closest?.(protectedSelector);if(!target||bypass)return;
+ const href=target.getAttribute?.('href')||'';
+ const next=href&&/^(member|community|free-zone)\.html/i.test(href)?href:'shop.html';
+ e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+ const u=await user();
+ if(!u){
+   if(await openGuestRegister())return;
+   location.href=authUrl(next);return;
+ }
+ bypass=true;try{if(target.tagName==='A'&&href&&!href.startsWith('#'))location.href=href;else target.click()}finally{setTimeout(()=>{bypass=false},0)}
+},true);
+// Visitor landing rule: before registration/login, only Home and the controls inside the
+// registration/login overlay may operate. Protected bottom-nav destinations never switch
+// the underlying page first; the auth overlay opens on the current home page.
+document.addEventListener('click',async e=>{
+ const a=e.target.closest?.('.mobile-bottom-nav a');if(!a||bypass)return;
+ const href=a.getAttribute('href')||'';
+ if(isHome(href))return;
+ const u=await user();if(u)return;
+ e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+ if(await openGuestRegister())return;
+ location.href=authUrl('shop.html');
+},true);
+})();
