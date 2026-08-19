@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const I=window.GYXI18N,t=(key,vars)=>I.t(key,vars),$=id=>document.getElementById(id),N=s=>String(s||'').toLowerCase().replace(/[\s，。！？、；：,.!?;:()（）【】\[\]"'“”‘’_\-\/\\]+/g,''),uid=()=>crypto.randomUUID?.()||('s-'+Date.now()+Math.random()),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));
+const I=window.GYXI18N,t=(key,vars)=>I.t(key,vars),$=id=>document.getElementById(id),N=s=>String(s||'').toLowerCase().replace(/[\s，。！？、；：,.!?;:()（）【】\[\]"'“”‘’_\-\/\\]+/g,''),uid=()=>crypto.randomUUID?.()||('s-'+Date.now()+Math.random()),esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 let st=null,busy=false,autoBusy=false,product=null,idle=null,idleClear=null,composing=false,seedCache=null,detailCache=new Map(),typeSeq=0;
 const fresh=()=>({sessionId:uid(),mode:'manual',originalQuestion:'',round:1,history:[],rounds:{},shownMaterialIds:[],shownTexts:[],final:null});
 const hist=(before=99)=>st.history.filter(x=>x.round<before).flatMap(x=>x.selected.map(y=>y.text));
