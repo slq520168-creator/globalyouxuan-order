@@ -11,13 +11,15 @@ function init(){const input=$('#problemInput'),form=$('#problemForm'),stage=$('.
  const panel=document.createElement('div');panel.id='gyxSearchCategoryPanel';panel.className='gyx-search-category-panel hidden';panel.hidden=true;stage.appendChild(panel);
  const chip=document.createElement('button');chip.type='button';chip.className='gyx-search-category-chip';form.appendChild(chip);
  let selected='',clearTimer=0;
+ function installRpcScope(){const db=window.gyxSupabase;if(!db||db.__gyxCategoryScopedRpc)return;const raw=db.rpc.bind(db);db.rpc=(name,args,...rest)=>{if(name==='search_product_answers_hybrid_v2'&&selected&&args&&typeof args.query_text==='string'){return raw(name,{...args,query_text:`[GYXCAT:${selected}] ${args.query_text}`},...rest)}return raw(name,args,...rest)};db.__gyxCategoryScopedRpc=true}
+ installRpcScope();
  function stopTimer(){if(clearTimer){clearTimeout(clearTimer);clearTimer=0}}
  function startTimer(){stopTimer();clearTimer=setTimeout(()=>clearSelection(false),15000)}
  function renderAll(){const c=copy[locale()];panel.innerHTML=Object.entries(c).map(([key,v])=>`<div class="gyx-search-category-item${selected===key?' is-selected':''}" data-category-item="${key}"><button type="button" class="gyx-search-category-button" data-search-category="${key}">${v[0]}</button><p class="gyx-search-category-note">${v[1]}</p></div>`).join('');panel.querySelectorAll('[data-search-category]').forEach(btn=>btn.onclick=()=>choose(btn.dataset.searchCategory))}
  function renderChip(){if(!selected){chip.textContent='';chip.classList.remove('show');form.classList.remove('gyx-category-selected');return}chip.textContent=copy[locale()][selected][0];chip.classList.add('show');form.classList.add('gyx-category-selected')}
  function open(){renderAll();panel.hidden=false;panel.classList.remove('hidden')}
  function close(){panel.classList.add('hidden');panel.hidden=true}
- function choose(key){selected=key;window.GYX_SEARCH_CATEGORY=key;form.dataset.searchCategory=key;input.readOnly=false;renderChip();close();startTimer();setTimeout(()=>input.focus(),0);window.dispatchEvent(new CustomEvent('gyx:search-category',{detail:{category:key}}))}
+ function choose(key){selected=key;window.GYX_SEARCH_CATEGORY=key;form.dataset.searchCategory=key;input.readOnly=false;renderChip();close();startTimer();installRpcScope();setTimeout(()=>input.focus(),0);window.dispatchEvent(new CustomEvent('gyx:search-category',{detail:{category:key}}))}
  function clearSelection(reopen=true){stopTimer();selected='';window.GYX_SEARCH_CATEGORY='';delete form.dataset.searchCategory;input.value='';input.readOnly=true;renderChip();if(reopen)open();else close()}
  chip.onclick=()=>clearSelection(true);
  input.readOnly=true;
