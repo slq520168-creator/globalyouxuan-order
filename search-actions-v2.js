@@ -96,3 +96,25 @@ document.querySelector('#resultPanel')?.addEventListener('pointerdown',()=>{if(w
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setPlaceholder,{once:true});else setPlaceholder();
 labels();syncOrder();
 })();
+
+(()=>{'use strict';
+const HAN=/[\u3400-\u9fff\uf900-\ufaff]/,KHMER=/[\u1780-\u17ff]/;
+const selectors=['#quizQuestion','#quizOptions .kd-option strong','#resultTitle','#resultSummary','#resultQuestion','#deliveryList li','#resultSelections li'];
+const cache=new Map();let timer=null,working=false;
+const locale=()=>{const v=String(window.GYXI18N?.locale||'zh').toLowerCase();return v.startsWith('km')?'km':v.startsWith('en')?'en':'zh'};
+const dynamicNodes=()=>[...document.querySelectorAll(selectors.join(','))];
+function shouldTranslate(value,loc){const s=String(value||'').trim();if(!s||loc==='zh'||s==='—')return false;if(HAN.test(s))return true;if(loc==='en')return KHMER.test(s);if(loc==='km'){if(KHMER.test(s))return false;if(/^[-+\d\s.,:%/()]+$/.test(s))return false;if(/^(?:AI|API|USDT|TRC20|Groq|Gemini|GlobalYouXuan)(?:\s|$)/i.test(s)&&!/[A-Za-z]{8,}/.test(s.replace(/GlobalYouXuan/gi,'')))return false;return /[A-Za-z]{3}/.test(s)}return false}
+function markPending(){const loc=locale();if(loc==='zh')return;for(const node of dynamicNodes()){const s=String(node.textContent||'').trim();if(shouldTranslate(s,loc)&&node.dataset.gyxLocalizedSource!==s){node.style.visibility='hidden'}}}
+async function translateBatch(entries,loc){const unique=[...new Set(entries.map(x=>x.source))],missing=unique.filter(s=>!cache.has(loc+'|'+s));
+  if(missing.length){const db=window.gyxSupabase;if(!db?.functions?.invoke)throw new Error('SUPABASE_FUNCTIONS_UNAVAILABLE');for(let i=0;i<missing.length;i+=8){const part=missing.slice(i,i+8);const{data,error}=await db.functions.invoke('search-result-translate',{body:{locale:loc,texts:part}});if(error)throw error;const out=Array.isArray(data?.translations)?data.translations:[];if(out.length!==part.length)throw new Error('TRANSLATION_COUNT_MISMATCH');part.forEach((s,j)=>cache.set(loc+'|'+s,String(out[j]||'').trim()))}}
+  for(const item of entries){const translated=cache.get(loc+'|'+item.source);if(!translated)continue;item.node.dataset.gyxLocalizedSource=translated;item.node.dataset.gyxLocalizedLocale=loc;item.node.textContent=translated;item.node.style.visibility='visible'}
+}
+async function flush(){if(working)return;const loc=locale();if(loc==='zh'){for(const n of dynamicNodes())n.style.visibility='visible';return}const entries=[];for(const node of dynamicNodes()){const s=String(node.textContent||'').trim();if(!shouldTranslate(s,loc)){node.style.visibility='visible';continue}node.style.visibility='hidden';entries.push({node,source:s})}if(!entries.length)return;working=true;try{await translateBatch(entries,loc)}catch(err){console.error('[GYX search i18n]',err);setTimeout(schedule,700)}finally{working=false}}
+function schedule(){clearTimeout(timer);markPending();timer=setTimeout(flush,120)}
+const observer=new MutationObserver(schedule);
+function init(){const root=document.getElementById('matchAssistant')||document.body;observer.observe(root,{subtree:true,childList:true,characterData:true});schedule()}
+window.addEventListener('gyx:raw-result-ready',schedule);
+window.addEventListener('gyx:languagechange',()=>{cache.clear();schedule()});
+window.addEventListener('gyx:localechange',schedule);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
+})();
