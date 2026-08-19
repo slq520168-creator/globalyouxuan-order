@@ -23,8 +23,5 @@
   window.gyxSupabase=client;window.gyxGetVerifiedUser=getVerifiedUser;window.gyxSafeNext=safeNext;window.gyxInvokeFunction=invokeFunction;window.gyxIsKnownMember=isKnownMember;window.gyxAuthEntryUrl=authEntryUrl;
   if(currentPath.endsWith('/community.html')){
     setTimeout(()=>{getVerifiedUser().then(u=>{if(!u)location.replace(authEntryUrl('community.html'))}).catch(()=>location.replace(authEntryUrl('community.html')))},0);
-    let secureReadyResolve;const secureReady=new Promise(r=>secureReadyResolve=r);
-    document.addEventListener('click',e=>{const b=e.target.closest?.('.download[data-download],.download[data-claim-id]');if(!b||b.disabled)return;e.preventDefault();e.stopImmediatePropagation();const id=b.dataset.claimId||b.dataset.download||'';secureReady.then(()=>window.gyxCommunitySecureClaim?.(b,id)).catch(()=>{})},true);
-    const s=document.createElement('script');s.src='community-download-claim.js?v=20260819-community-i18n-1';s.async=true;s.onload=()=>secureReadyResolve();document.head.appendChild(s)
   }
 })();

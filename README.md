@@ -19,11 +19,11 @@ GlobalYouXuan 当前为真实线上业务架构，核心由 GitHub 前端、Supa
 - Edge Function `create-order`：创建真实订单
 - Edge Function `submit-payment`：提交 TXID
 - Edge Function `verify-payments`：核验 TRON USDT-TRC20 链上交易、金额、合约和收款地址
-- Edge Function `get-purchased-answer`：会员读取已购买方案交付内容
+- Edge Function `claim-answer-download`：校验会员身份并一次性领取已购买方案交付内容
+- Edge Function `answer-auto-translate`：仅为缺少审核译文的订单生成交付译文
 - Edge Function `download-order`：文件型产品交付
 - Edge Function `notification-worker`：Telegram 通知队列处理
 - Edge Function `wealth-search-lab`：AI 五轮搜索主链
-- Edge Function `translate-ui`：中/英/柬全站运行时翻译与缓存
 
 ## 支付规则
 
@@ -43,7 +43,9 @@ AI 搜索执行 5 轮选择并生成最终方案；后台回归测试要求每�
 - English `en`
 - ភាសាខ្មែរ `km`
 
-统一翻译底座为 `global-locale.js` + `translate-ui` + `translation_cache`。旧的 stage2 零散翻译文件保留为历史文件，但公共 UI 不再加载它们。
+所有固定可见文案只由 `i18n.js` 与 `i18n-member.js` 两份主词表负责，并通过 `GYXI18N` 读取；缺少当前语言的 key 时回退中文并记录日志。页面和业务脚本不得维护内联中/英/柬对象或第二套翻译函数。
+
+方案交付内容以 `product_answer_options` 为唯一审核数据源。已有完整合格译文时直接使用；缺少译文时由 `answer-auto-translate` 写入 `order_delivery_translation_cache`，最终不可用时由 `claim-answer-download` 记录日志并交付中文回退，不得因缺译中断页面。交流天地的动态项目原文也只由 `answer-auto-translate` 翻译，结果缓存到对应兑换记录，不再维护独立翻译函数或翻译表。
 
 ## 安全原则
 
