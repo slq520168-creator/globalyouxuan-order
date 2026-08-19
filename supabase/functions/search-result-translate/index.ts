@@ -11,7 +11,7 @@ const HEADERS = {
 };
 const HAN = /[\u3400-\u9fff\uf900-\ufaff]/;
 const KHMER = /[\u1780-\u17ff]/;
-const VERSION = "search-ui-v1";
+const VERSION = "search-ui-v2";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: HEADERS });
@@ -36,7 +36,7 @@ async function sha256(value: string) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 function cleanModelText(value: string) {
-  return value.replace(/^```(?:text|markdown)?\s*/i, "").replace(/```\s*$/, "").trim();
+  return value.replace(/^```(?:json|text|markdown)?\s*/i, "").replace(/```\s*$/, "").trim();
 }
 function extractModelText(raw: string) {
   if (/^data:/m.test(raw)) {
@@ -63,6 +63,18 @@ function extractModelText(raw: string) {
   } catch {}
   return raw.trim();
 }
+function parseTranslation(value: string) {
+  const cleaned = cleanModelText(value);
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (typeof parsed?.translation === "string") return parsed.translation.trim();
+  } catch {}
+  const match = cleaned.match(/\"translation\"\s*:\s*(\"(?:\\.|[^\"\\])*\")/s);
+  if (match) {
+    try { return String(JSON.parse(match[1])).trim(); } catch {}
+  }
+  throw new Error("INVALID_TRANSLATION_JSON");
+}
 function validate(source: string, translated: string, locale: "en" | "km") {
   if (!translated) throw new Error("EMPTY_TRANSLATION");
   if (HAN.test(translated)) throw new Error("SOURCE_LANGUAGE_REMAINS");
@@ -70,10 +82,14 @@ function validate(source: string, translated: string, locale: "en" | "km") {
   if (locale === "km" && (HAN.test(source) || /[A-Za-z]{3}/.test(source)) && !KHMER.test(translated)) {
     throw new Error("KHMER_TEXT_MISSING");
   }
+  const multiplier = locale === "km" ? 8 : 5;
+  const maxLength = Math.max(120, source.length * multiplier + 120);
+  if (translated.length > maxLength) throw new Error("TRANSLATION_TOO_LONG");
+  if (!source.includes("\n") && translated.split("\n").length > 3) throw new Error("TRANSLATION_STRUCTURE_CHANGED");
 }
 async function translateOne(source: string, locale: "en" | "km") {
-  const target = locale === "km" ? "natural Khmer" : "natural English";
-  const system = `Translate this customer-facing search option or search-result text from Simplified Chinese into ${target}. Preserve numbers, URLs, API, AI, Groq, Gemini, GlobalYouXuan and other established brand or technical identifiers. Translate every ordinary-language phrase. Do not explain, summarize, add labels, or wrap the answer in quotes. Output only the translation.`;
+  const target = locale === "km" ? "standard natural Khmer" : "natural English";
+  const system = `You are a literal UI localization translator. This is a TRANSLATION task, never a question-answering task. Translate the exact value of the JSON field \"source\" from its current language into ${target}. If the source is a question, translate the question only; NEVER answer it. Preserve numbers, URLs, API, AI, Groq, Gemini, GlobalYouXuan and established technical identifiers. Preserve meaning and approximate length and structure. Do not add examples, advice, explanations, lists, introductions, conclusions, or facts. Output strict JSON only in exactly this shape: {\"translation\":\"...\"}.`;
   let lastError: unknown = new Error("TRANSLATION_FAILED");
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     const controller = new AbortController();
@@ -82,17 +98,22 @@ async function translateOne(source: string, locale: "en" | "km") {
       const response = await fetch(AI_ENDPOINT, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ messages: [{ role: "system", content: system }, { role: "user", content: source }] }),
+        body: JSON.stringify({
+          messages: [
+            { role: "system", content: system },
+            { role: "user", content: JSON.stringify({ source }) },
+          ],
+        }),
         signal: controller.signal,
       });
       const raw = await response.text();
       if (!response.ok) throw new Error(`AI_${response.status}`);
-      const translated = cleanModelText(extractModelText(raw));
+      const translated = parseTranslation(extractModelText(raw));
       validate(source, translated, locale);
       return translated;
     } catch (error) {
       lastError = error;
-      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 350));
+      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 400));
     } finally {
       clearTimeout(timeout);
     }
@@ -109,7 +130,7 @@ Deno.serve(async (request: Request) => {
     const serviceKey = envKey("SUPABASE_SECRET_KEYS", "SUPABASE_SERVICE_ROLE_KEY");
     const apiKey = request.headers.get("apikey") || "";
     const auth = request.headers.get("Authorization") || "";
-    if (apiKey !== publishableKey && auth !== `Bearer ${publishableKey}` && !auth.startsWith("Bearer ")) {
+    if (apiKey !== publishableKey && auth !== `Bearer ${publishableKey}`) {
       return json({ error: "FORBIDDEN" }, 403);
     }
     const body = await request.json().catch(() => ({})) as Record<string, unknown>;
@@ -133,7 +154,7 @@ Deno.serve(async (request: Request) => {
       const hit = cached.get(item.hash);
       if (hit) return hit;
       const translated = await translateOne(item.source, locale);
-      await db.from("translation_cache").upsert({
+      const { error: cacheError } = await db.from("translation_cache").upsert({
         source_hash: item.hash,
         target_locale: locale,
         source_text: item.source,
@@ -141,6 +162,7 @@ Deno.serve(async (request: Request) => {
         source_version: VERSION,
         updated_at: new Date().toISOString(),
       }, { onConflict: "source_hash,target_locale" });
+      if (cacheError) throw cacheError;
       return translated;
     }));
     return json({ ok: true, locale, translations: results });
