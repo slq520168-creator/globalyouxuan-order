@@ -19,9 +19,11 @@
 <script src="i18n.js?v=20260819-sitewide-copy-2"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script><script src="supabase-client.js?v=20260819-community-i18n-1"></script><script src="core-foundation.js?v=20260815-nav-lifecycle-3"></script>
 <script>(()=>{'use strict';
 
-const I=window.GYXI18N,lang=I.locale,db=()=>window.gyxSupabase,esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&','<':'<','>':'>','"':'&quot',"'":'&#39;'}[m])),bjDate=()=>new Intl.DateTimeFormat(lang==='zh'?'zh-CN':lang==='km'?'km-KH':'en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'long',day:'numeric'}).format(new Date());let me=null,rows=[],titles={},active='A',redeemItem=null;
+const I=window.GYXI18N,lang=I.locale,db=()=>window.gyxSupabase,esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&','<':'<','>':'>','"':'&quot',"'":'&#39;'}[m])),bjDate=()=>new Intl.DateTimeFormat(lang==='zh'?'zh-CN':lang==='km'?'km-KH':'en-US',{timeZone:'Asia/Shanghai',year:'numeric',month:'long',day:'numeric'}).format(new Date());let me=null,rows=[],titles={},active='A',redeemItem=null,tickerOn=false;
+const TITLE_STORE='gyx_community_titles_zh';
 document.documentElement.lang=lang==='zh'?'zh-CN':lang;document.title=I.t('communityTitle')+' · GlobalYouXuan';I.render(document);document.getElementById('todayDate').textContent=bjDate();
 function cleanTitle(v){return String(v||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim()}
+function hasHan(v){return /[\u3400-\u9fff]/.test(v||'')}
 function opportunityTitle(x){
   const fallback=I.t('communityOpportunityFallback');
   const raw=cleanTitle(x?.title);
@@ -32,15 +34,32 @@ function opportunityTitle(x){
   const cached=cleanTitle(titles[x?.id]);
   if(cached) return cached;
   if(lang==='km'&&/[\u1780-\u17ff]/.test(raw)) return raw;
-  if(lang!=='en'&&/[\u3400-\u9fff]/.test(raw)) return raw;
+  if(hasHan(raw)) return raw;
   return fallback;
 }
 function row(x){const code=(x.batch_code||'A')+String(x.opportunity_no||0),closed=x.opportunity_status==='closed',title=opportunityTitle(x);return `<article class="row${closed?' closed':''}"><span class="num">${esc(code)}</span><div class="title" title="${esc(title)}">${esc(title)}</div><button class="take" data-take="${x.id}"${closed?' disabled':''}>${esc(I.t('communityTake'))}</button></article>`}
 function render(){const list=rows.filter(x=>x.batch_code===active).sort((a,b)=>(a.opportunity_no||0)-(b.opportunity_no||0));document.getElementById('feedList').innerHTML=list.length?list.map(row).join(''):`<div class="empty">${esc(I.t('communityBatchLoading').replace('{{batch}}',active))}</div>`;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.batch===active))}
-function ticker(){const box=document.getElementById('tickerTrack');if(!rows.length){box.innerHTML=`<div class="empty">${esc(I.t('communityLoading'))}</div>`;return}const list=[...rows,...rows.slice(0,5)];box.innerHTML=list.map(x=>`<div class="tick"><i></i><b>${esc((x.batch_code||'A')+String(x.opportunity_no||0))} · ${esc(opportunityTitle(x))}</b></div>`).join('');let i=0;setInterval(()=>{i++;box.style.transition='transform .4s ease';box.style.transform=`translateY(${-i*25}px)`;if(i>=rows.length)setTimeout(()=>{i=0;box.style.transition='none';box.style.transform='translateY(0)'},420)},2600)}
+function ticker(){const box=document.getElementById('tickerTrack');if(!rows.length){box.innerHTML=`<div class="empty">${esc(I.t('communityLoading'))}</div>`;return}const list=[...rows,...rows.slice(0,5)];box.innerHTML=list.map(x=>`<div class="tick"><i></i><b>${esc((x.batch_code||'A')+String(x.opportunity_no||0))} · ${esc(opportunityTitle(x))}</b></div>`).join('');if(tickerOn)return;tickerOn=true;let i=0;setInterval(()=>{i++;box.style.transition='transform .4s ease';box.style.transform=`translateY(${-i*25}px)`;if(i>=rows.length)setTimeout(()=>{i=0;box.style.transition='none';box.style.transform='translateY(0)'},420)},2600)}
 async function stats(){const {data}=await db().rpc('community_opportunity_public_stats_v3');const s=data?.[0]||{};document.getElementById('publishedCount').textContent=s.today_published||0;document.getElementById('takenCount').textContent=s.today_taken||0;document.getElementById('remainingCount').textContent=s.remaining||0;document.getElementById('cumulativeCount').textContent=s.cumulative_taken||0}
+function readTitleStore(){try{return JSON.parse(sessionStorage.getItem(TITLE_STORE)||'{}')}catch{return{}}}
+function writeTitleStore(){try{sessionStorage.setItem(TITLE_STORE,JSON.stringify(titles))}catch{}}
+async function translateTitle(text){
+  const r=await fetch('https://api.mymemory.translated.net/get?q='+encodeURIComponent(text.slice(0,160))+'&langpair=en|zh-CN');
+  const j=await r.json();
+  const out=cleanTitle(j?.responseData?.translatedText);
+  return hasHan(out)?out:'';
+}
+async function fillZhTitles(){
+  if(lang!=='zh')return;
+  Object.assign(titles,readTitleStore());
+  const need=rows.filter(x=>x.id&&!titles[x.id]&&!hasHan(cleanTitle(x.title)));
+  for(const x of need){
+    if(document.hidden)break;
+    try{const zh=await translateTitle(cleanTitle(x.title));if(zh){titles[x.id]=zh;writeTitleStore();render()}}catch{}
+  }
+}
 async function loadTranslations(ids){if(lang==='en'||!ids.length)return;const cacheLang=lang==='km'?'km':'zh';try{const {data}=await db().from('community_opportunity_translation_cache').select('opportunity_id,title').eq('lang',cacheLang).in('opportunity_id',ids);(data||[]).forEach(x=>{if(x?.opportunity_id&&x.title)titles[x.opportunity_id]=x.title})}catch{}}
-async function load(){try{me=await window.gyxGetVerifiedUser?.()}catch{}if(!me){location.replace('login.html?next=community.html');return}const {data,error}=await db().from('community_external_feed').select('id,title,body,source_url,batch_code,opportunity_no,batch_key,opportunity_status').order('batch_code',{ascending:true}).order('opportunity_no',{ascending:true}).limit(40);if(error){document.getElementById('feedList').innerHTML=`<div class="empty">${esc(I.t('communityFailed'))}</div>`;return}rows=data||[];await loadTranslations(rows.map(x=>x.id).filter(Boolean));if(!rows.some(x=>x.batch_code==='A')&&rows.some(x=>x.batch_code==='B'))active='B';render();ticker();await stats()}
+async function load(){try{me=await window.gyxGetVerifiedUser?.()}catch{}if(!me){location.replace('login.html?next=community.html');return}const {data,error}=await db().from('community_external_feed').select('id,title,body,source_url,batch_code,opportunity_no,batch_key,opportunity_status').order('batch_code',{ascending:true}).order('opportunity_no',{ascending:true}).limit(40);if(error){document.getElementById('feedList').innerHTML=`<div class="empty">${esc(I.t('communityFailed'))}</div>`;return}rows=data||[];if(lang==='zh')Object.assign(titles,readTitleStore());await loadTranslations(rows.map(x=>x.id).filter(Boolean));if(!rows.some(x=>x.batch_code==='A')&&rows.some(x=>x.batch_code==='B'))active='B';render();ticker();await stats();await fillZhTitles();ticker()}
 function closeRedeem(){document.getElementById('redeemMask').hidden=true;redeemItem=null}
 function successRedeem(text){document.getElementById('redeemBody').innerHTML=`<p class="redeem-success">${esc(text)}</p>`;document.getElementById('redeemActions').innerHTML=`<button class="redeem-cancel" type="button" data-close-redeem>${esc(I.t('communityCancel'))}</button><a class="redeem-downloads" href="member.html#downloads">${esc(I.t('communityDownloads'))}</a>`}
 async function openRedeem(x){redeemItem=x;const mask=document.getElementById('redeemMask'),body=document.getElementById('redeemBody'),actions=document.getElementById('redeemActions');mask.hidden=false;body.innerHTML='<p class="redeem-note">…</p>';actions.innerHTML='';const {data:a}=await db().from('member_point_accounts').select('balance').eq('user_id',me.id).maybeSingle();const balance=Number(a?.balance||0),short=Math.max(0,2000-balance);body.innerHTML=`<div class="redeem-cost">2000</div><p>${esc(opportunityTitle(x))}</p><p class="redeem-note">${esc(I.t('communityCurrentBalance',{balance}))}</p>${short?`<p class="redeem-short">${esc(I.t('communityShort',{n:String(short)}))}</p>`:''}`;actions.innerHTML=`<button class="redeem-cancel" type="button" data-close-redeem>${esc(I.t('communityCancel'))}</button><button class="redeem-confirm" type="button" data-confirm-redeem${short?' disabled':''}>${esc(I.t('communityConfirm'))}</button>`}
