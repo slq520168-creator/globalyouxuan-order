@@ -1,0 +1,8 @@
+grant select on public.community_opportunity_translation_cache to authenticated;
+
+drop policy if exists community_opportunity_translation_cache_read on public.community_opportunity_translation_cache;
+create policy community_opportunity_translation_cache_read
+on public.community_opportunity_translation_cache
+for select
+to authenticated
+using (true);
