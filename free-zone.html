@@ -39,16 +39,8 @@ html[data-theme="dark"] .free-zone-panel{background:rgba(12,24,42,.96);border-co
 <script defer src="i18n.js?v=20260819-sitewide-copy-2"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
 <script defer src="supabase-client.js?v=20260822-community-smooth-1"></script>
-<script defer src="core-foundation.js?v=20260822-reload-home-1"></script>
+<script defer src="core-foundation.js?v=20260822-daily-views-1"></script>
 <script defer src="site-ui.js?v=20260815-runtime-clean-1"></script>
 <script defer src="free-zone-tools.js?v=20260822-software-20-1"></script>
-<script>
-document.addEventListener('DOMContentLoaded',async()=>{
-  let u=null;try{u=await window.gyxGetVerifiedUser?.()}catch{}
-  if(u)return;
-  let known=false;try{known=localStorage.getItem('gyx_known_member')==='1'}catch{}
-  location.replace(`login.html?mode=${known?'login':'register'}&next=${encodeURIComponent('free-zone.html')}`);
-});
-</script>
 </body>
 </html>

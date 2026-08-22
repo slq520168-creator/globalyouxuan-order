@@ -1,15 +1,16 @@
 (()=>{'use strict';
 let bypass=false;
-const protectedSelector='#saveSearchButton,#favoriteButton,#orderAnswerButton,#fixedDetailFavorite,#fixedDetailOrder,#homeRegisterSupportAction,.gyx-extra-strip,a[href^="member.html"],a[href^="community.html"],a[href^="free-zone.html"]';
+const protectedSelector='#saveSearchButton,#favoriteButton,#orderAnswerButton,#fixedDetailFavorite,#fixedDetailOrder,#homeRegisterSupportAction,.gyx-extra-strip,a[href^="member.html"]';
 async function user(){try{return await window.gyxGetVerifiedUser?.()||null}catch{return null}}
 function knownMember(){try{return localStorage.getItem('gyx_known_member')==='1'}catch{return false}}
 function authUrl(next='shop.html'){if(typeof window.gyxAuthEntryUrl==='function')return window.gyxAuthEntryUrl(next);return `login.html?mode=${knownMember()?'login':'register'}&next=${encodeURIComponent(next)}`}
 async function openGuestRegister(){if(typeof window.GYX_OPEN_REGISTER_INLINE==='function'){await window.GYX_OPEN_REGISTER_INLINE();return true}if(typeof window.GYX_ENTRY_AUTH?.open==='function'){window.GYX_ENTRY_AUTH.open('register');return true}return false}
 function isHome(href){return !href||href==='#'||/^shop\.html(?:[?#].*)?$/i.test(href)}
+function isPublicBrowse(href){return /^(community|free-zone)\.html(?:[?#].*)?$/i.test(href)}
 document.addEventListener('click',async e=>{
  const target=e.target.closest?.(protectedSelector);if(!target||bypass)return;
  const href=target.getAttribute?.('href')||'';
- const next=href&&/^(member|community|free-zone)\.html/i.test(href)?href:'shop.html';
+ const next=href&&/^member\.html/i.test(href)?href:'shop.html';
  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
  const u=await user();
  if(!u){
@@ -24,7 +25,7 @@ document.addEventListener('click',async e=>{
 document.addEventListener('click',async e=>{
  const a=e.target.closest?.('.mobile-bottom-nav a');if(!a||bypass)return;
  const href=a.getAttribute('href')||'';
- if(isHome(href))return;
+ if(isHome(href)||isPublicBrowse(href))return;
  const u=await user();if(u)return;
  e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
  if(await openGuestRegister())return;
