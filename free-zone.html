@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#f4f8ff">
 <title>GlobalYouXuan</title>
-<script>try{document.documentElement.dataset.theme=localStorage.getItem('gyx_theme')==='dark'?'dark':'light'}catch{document.documentElement.dataset.theme='light'}</script>
+<script>try{var t=localStorage.getItem('gyx_theme')==='dark'?'dark':'light';document.documentElement.dataset.theme=t;var m=document.querySelector('meta[name=theme-color]');if(m)m.content=t==='dark'?'#06101d':'#f4f8ff'}catch{document.documentElement.dataset.theme='light'}</script>
 <link rel="stylesheet" href="site.css">
 <link rel="stylesheet" href="member-page.css?v=20260811-member-security-3">
 <style>
@@ -16,6 +16,9 @@ body.free-zone-page{background:var(--bg,#f4f8ff);color:var(--text,#142033)}
 .free-zone-head h1{margin:0;font-size:26px;font-weight:950}
 .free-zone-panel{padding:14px;border:1px solid var(--line,#dbe5f1);border-radius:18px;background:var(--panel,#fff);box-shadow:0 5px 18px rgba(31,70,120,.06)}
 @media(max-width:600px){.free-zone-main{padding-top:12px}.free-zone-head h1{font-size:23px}.free-zone-panel{padding:12px}}
+html[data-theme="dark"] body.free-zone-page{background:#06101d;color:#f3f8fc}
+html[data-theme="dark"] .free-zone-head h1{color:#f8fafc}
+html[data-theme="dark"] .free-zone-panel{background:rgba(12,24,42,.96);border-color:rgba(168,207,231,.15);box-shadow:0 8px 28px rgba(0,0,0,.28)}
 </style>
 </head>
 <body class="free-zone-page">
@@ -35,6 +38,6 @@ body.free-zone-page{background:var(--bg,#f4f8ff);color:var(--text,#142033)}
 <script>(async()=>{let u=null;try{u=await window.gyxGetVerifiedUser?.()}catch{}if(u)return;let known=false;try{known=localStorage.getItem('gyx_known_member')==='1'}catch{}location.replace(`login.html?mode=${known?'login':'register'}&next=${encodeURIComponent('free-zone.html')}`)})();</script>
 <script src="core-foundation.js?v=20260822-reload-home-1"></script>
 <script src="site-ui.js?v=20260815-runtime-clean-1"></script>
-<script src="free-zone-tools.js?v=20260822-stable-enter-1"></script>
+<script src="free-zone-tools.js?v=20260822-dark-1"></script>
 </body>
 </html>
