@@ -1,6 +1,18 @@
 (()=>{
 'use strict';
 if(window.GYXFoundation)return;
+// Reload rule: browser refresh on any normal page must return to homepage.
+(function forceHomeOnReload(){
+  try{
+    const nav=performance.getEntriesByType&&performance.getEntriesByType('navigation');
+    const type=nav&&nav[0]?nav[0].type:(performance.navigation&&performance.navigation.type===1?'reload':'');
+    if(type!=='reload')return;
+    const p=(location.pathname||'').toLowerCase();
+    if(p.endsWith('/shop')||p.endsWith('/shop.html')||p==='/'||p.endsWith('/index.html'))return;
+    if(p.includes('login')||p.includes('reset-password')||p.includes('admin'))return;
+    location.replace('shop.html');
+  }catch{}
+})();
 const state={navRestoreTimer:null};
 const isIOS=(()=>{const ua=navigator.userAgent||'';return /iPad|iPhone|iPod/.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)})();
 const isChromeIOS=/CriOS/i.test(navigator.userAgent||'');
