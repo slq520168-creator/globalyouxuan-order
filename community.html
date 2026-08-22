@@ -79,8 +79,25 @@ async function ensureCache(){
   try{await window.gyxInvokeFunction('community-opportunity-translate',{})}catch{}
   await loadTranslations(rows.map(x=>x.id).filter(Boolean));
 }
-function reveal(){}
-async function load(){try{me=await window.gyxGetVerifiedUser?.()}catch{}if(!me){location.replace('login.html?next=community.html');return}const feedP=db().from('community_external_feed').select('id,title,body,source_url,batch_code,opportunity_no,batch_key,opportunity_status').order('batch_code',{ascending:true}).order('opportunity_no',{ascending:true}).limit(40);const statsP=db().rpc('community_opportunity_public_stats_v3').then(r=>r?.data?.[0]||{}).catch(()=>({}));try{const [{data,error},s]=await Promise.all([feedP,statsP]);if(error){document.getElementById('feedList').innerHTML=`<div class="empty">${esc(I.t('communityFailed'))}</div>`;reveal();return}rows=data||[];const ids=rows.map(x=>x.id).filter(Boolean);await loadTranslations(ids);if(!rows.some(x=>x.batch_code==='A')&&rows.some(x=>x.batch_code==='B'))active='B';applyStats(s);render();ticker();reveal();ensureCache().catch(()=>{})}catch(e){reveal()}}
+async function load(){
+  const authP=window.gyxGetVerifiedUser?.()||Promise.resolve(null);
+  const feedP=db().from('community_external_feed').select('id,title,body,source_url,batch_code,opportunity_no,batch_key,opportunity_status').order('batch_code',{ascending:true}).order('opportunity_no',{ascending:true}).limit(40);
+  const statsP=db().rpc('community_opportunity_public_stats_v3').then(r=>r?.data?.[0]||{}).catch(()=>({}));
+  try{me=await authP}catch{me=null}
+  if(!me){location.replace('login.html?next=community.html');return}
+  try{
+    const [{data,error},s]=await Promise.all([feedP,statsP]);
+    if(error){document.getElementById('feedList').innerHTML=`<div class="empty">${esc(I.t('communityFailed'))}</div>`;return}
+    rows=data||[];
+    if(!rows.some(x=>x.batch_code==='A')&&rows.some(x=>x.batch_code==='B'))active='B';
+    applyStats(s);
+    render();
+    ticker();
+    const ids=rows.map(x=>x.id).filter(Boolean);
+    loadTranslations(ids).catch(()=>{});
+    ensureCache().catch(()=>{});
+  }catch(e){}
+}
 function closeRedeem(){document.getElementById('redeemMask').hidden=true;redeemItem=null}
 function successRedeem(text){document.getElementById('redeemBody').innerHTML=`<p class="redeem-success">${esc(text)}</p>`;document.getElementById('redeemActions').innerHTML=`<button class="redeem-cancel" type="button" data-close-redeem>${esc(I.t('communityCancel'))}</button><a class="redeem-downloads" href="member.html#downloads">${esc(I.t('communityDownloads'))}</a>`}
 async function openRedeem(x){redeemItem=x;const mask=document.getElementById('redeemMask'),body=document.getElementById('redeemBody'),actions=document.getElementById('redeemActions');mask.hidden=false;body.innerHTML='<p class="redeem-note">…</p>';actions.innerHTML='';const {data:a}=await db().from('member_point_accounts').select('balance').eq('user_id',me.id).maybeSingle();const balance=Number(a?.balance||0),short=Math.max(0,2000-balance);body.innerHTML=`<div class="redeem-cost">2000</div><p>${esc(opportunityTitle(x))}</p><p class="redeem-note">${esc(I.t('communityCurrentBalance',{balance}))}</p>${short?`<p class="redeem-short">${esc(I.t('communityShort',{n:String(short)}))}</p>`:''}`;actions.innerHTML=`<button class="redeem-cancel" type="button" data-close-redeem>${esc(I.t('communityCancel'))}</button><button class="redeem-confirm" type="button" data-confirm-redeem${short?' disabled':''}>${esc(I.t('communityConfirm'))}</button>`}
