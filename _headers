@@ -8,6 +8,10 @@
   Cache-Control: no-cache, must-revalidate
 /admin-reporting.js
   Cache-Control: no-cache, must-revalidate
+/admin-visit-analytics.js
+  Cache-Control: no-cache, must-revalidate
+/supabase-client.js
+  Cache-Control: no-cache, must-revalidate
 /*.js
   Cache-Control: public, max-age=604800, immutable
 /*.css
