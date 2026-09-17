@@ -119,6 +119,30 @@
     return Array.isArray(r.data) ? r.data : [];
   }
 
+  function ensureAppPanel() {
+    let panel = document.getElementById("appPanel");
+    if (panel) return panel;
+    const main = document.querySelector(".admin-card-v2");
+    if (!main) return null;
+    panel = document.createElement("section");
+    panel.id = "appPanel";
+    panel.className = "admin-panel-v2 hidden";
+    panel.innerHTML = `
+      <div class="admin-section-title"><h2>APP</h2><p>网站 APP 独立入口，与系统通知分开管理。</p></div>
+      <div style="display:grid;gap:14px;border:1px solid #dce8fb;background:#fff;border-radius:14px;padding:14px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <img src="assets/member-logo.webp" alt="GlobalYouXuan" style="width:72px;height:72px;border-radius:16px;object-fit:cover;border:1px solid #e2e8f0;background:#fff">
+          <div style="min-width:0"><strong style="display:block;font-size:17px">GlobalYouXuan</strong><small style="display:block;margin-top:5px;color:#667085;line-height:1.45">会员可在会员中心添加到手机桌面并开启平台通知。</small></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">
+          <a class="refresh-btn" href="member.html#gyxPwaPanel" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">查看会员 APP</a>
+          <a class="refresh-btn" href="shop.html" target="_blank" rel="noopener" style="text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center">打开网站</a>
+        </div>
+      </div>`;
+    main.appendChild(panel);
+    return panel;
+  }
+
   function ensureSystemNotificationsPanel() {
     let panel = document.getElementById("systemNotificationsPanel");
     if (panel) return panel;
@@ -128,9 +152,9 @@
     panel.id = "systemNotificationsPanel";
     panel.className = "admin-panel-v2 hidden";
     panel.innerHTML = `
-      <div class="admin-section-title"><h2>APP / 系统通知</h2><p>向已开启系统通知的会员设备发送平台通知。</p></div>
+      <div class="admin-section-title"><h2>系统通知</h2><p>向已开启系统通知的会员设备发送平台通知。</p></div>
       <div style="display:grid;gap:9px;border:1px solid #dce8fb;background:#fff;border-radius:12px;padding:10px;margin-bottom:9px">
-        <div style="display:flex;align-items:center;gap:9px"><img src="assets/member-logo.webp" alt="GlobalYouXuan" style="width:46px;height:46px;border-radius:11px;object-fit:cover;border:1px solid #e2e8f0"><div><b>GlobalYouXuan</b><div id="systemPushSubscriptionCount" style="font-size:11px;color:#667085;margin-top:3px">正在读取已订阅设备…</div></div></div>
+        <div id="systemPushSubscriptionCount" style="font-size:11px;color:#667085">正在读取已订阅设备…</div>
         <label style="font-size:11px;font-weight:800">发送对象<select id="systemPushTarget" style="display:block;width:100%;min-height:38px;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:7px;background:#fff"><option value="all">全部已订阅设备</option><option value="user">指定会员</option></select></label>
         <label id="systemPushMemberWrap" style="display:none;font-size:11px;font-weight:800">指定会员<select id="systemPushMember" style="display:block;width:100%;min-height:38px;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:7px;background:#fff"><option value="">请选择会员</option></select></label>
         <label style="font-size:11px;font-weight:800">通知标题<input id="systemPushTitle" maxlength="120" placeholder="例如：全球优选系统通知" style="display:block;width:100%;min-height:38px;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:8px"></label>
@@ -204,7 +228,7 @@
         title,
         body,
         click_url: clickUrl,
-        icon_url: "assets/member-logo.webp"
+        icon_url: "https://globalyouxuan-order.pages.dev/assets/member-logo.webp"
       });
       if (result) result.textContent = `发送完成：订阅 ${Number(j.subscriptions || 0)}，成功 ${Number(j.sent || 0)}，失败 ${Number(j.failed || 0)}`;
       await Promise.all([loadSystemNotifications(), refreshSystemPushCount()]);
@@ -249,19 +273,32 @@
   function installSystemNav() {
     const messages = document.querySelector('.admin-nav-v2 button[data-panel="messages"]');
     if (!messages) return;
-    let app = document.querySelector('[data-admin-system-notify]');
+
+    let app = document.querySelector('.admin-nav-v2 button[data-panel="app"]');
     if (!app) {
       app = document.createElement("button");
       app.type = "button";
-      app.dataset.adminSystemNotify = "1";
-      app.textContent = "APP / 系统通知";
+      app.dataset.panel = "app";
+      app.textContent = "APP";
       messages.insertAdjacentElement("afterend", app);
     }
-    app.onclick = (e) => {
+
+    let notifyBtn = document.querySelector('[data-admin-system-notify]');
+    if (!notifyBtn) {
+      notifyBtn = document.createElement("button");
+      notifyBtn.type = "button";
+      notifyBtn.dataset.adminSystemNotify = "1";
+      notifyBtn.textContent = "系统通知";
+      app.insertAdjacentElement("afterend", notifyBtn);
+    } else {
+      notifyBtn.textContent = "系统通知";
+    }
+    notifyBtn.onclick = (e) => {
       e.preventDefault();
       e.stopPropagation();
       openSystemNotifications();
     };
+    ensureAppPanel();
     ensureSystemNotificationsPanel();
   }
 
@@ -333,6 +370,7 @@
     const name = location.hash.slice(1);
     if (name === "notifications") { openSystemNotifications(); return; }
     if (name === "members") { document.querySelector("[data-admin-members-nav]")?.click(); return; }
+    if (name === "app") { showPanel("app"); return; }
     const reporting = document.querySelector(`[data-reporting="${name}"]`);
     if (reporting) reporting.click();
   }
