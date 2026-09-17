@@ -1,3 +1,13 @@
+/admin-panel-lock.js
+  Cache-Control: no-cache, must-revalidate
+/admin-panel-lock.css
+  Cache-Control: no-cache, must-revalidate
+/admin-mobile-repair.js
+  Cache-Control: no-cache, must-revalidate
+/admin-member-security.js
+  Cache-Control: no-cache, must-revalidate
+/admin-reporting.js
+  Cache-Control: no-cache, must-revalidate
 /*.js
   Cache-Control: public, max-age=604800, immutable
 /*.css
