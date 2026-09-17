@@ -19,6 +19,7 @@
     "admin-reporting.js?v=20260822-daily-views-1",
     "admin-security-center.js?v=20260817-security-1",
     "admin-mobile-repair.js?v=20260917-mobile-admin-closeout-1",
+    "admin-visit-analytics.js?v=20260917-detailed-visits-1",
   ];
 
   function loadScript(src) {
