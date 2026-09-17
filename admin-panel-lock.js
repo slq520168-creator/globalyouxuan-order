@@ -5,13 +5,13 @@
   window.__GYX_ADMIN_BOOTSTRAP__ = 1;
 
   const CORE_SCRIPTS = [
+    "admin-member-security.js?v=20260917-member-overview-fix-1",
     "admin.js?v=20260917-admin-mobile-shell-1",
     "admin-priority.js?v=20260819-payment-admin-repair-1",
   ];
 
   const SECONDARY_SCRIPTS = [
     "admin-freezone-upload.js?v=20260813-freezone-upload-2",
-    "admin-member-security.js?v=20260917-member-overview-fix-1",
     "admin-profile-requests.js?v=20260917-profile-review-fix-1",
     "admin-data.js?v=20260816-growth-human-3",
     "admin-business-growth.js?v=20260816-growth-records-1",
