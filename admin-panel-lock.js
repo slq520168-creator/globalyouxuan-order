@@ -53,8 +53,7 @@
       if (!db?.rpc) return null;
       const r = await db.rpc("gyx_admin_badge_counts");
       if (r.error) return null;
-      const x = Array.isArray(r.data) ? r.data[0] : r.data;
-      return x || null;
+      return (Array.isArray(r.data) ? r.data[0] : r.data) || null;
     } catch { return null; }
   }
 
@@ -96,14 +95,14 @@
     menu.className = 'admin-account-menu';
     menu.hidden = true;
     const email = String(user?.email || '').trim();
-    menu.innerHTML = `<div class="admin-account-email">${email.replace(/[&<>"']/g,'')}</div><button type="button" id="adminFormalLogout">退出登录</button>`;
+    menu.innerHTML = `<div class="admin-account-email">${email.replace(/[&<>"']/g,'')}</div><button type="button" id="adminLogout">退出登录</button>`;
     account.addEventListener('click', (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
     document.addEventListener('click', () => { menu.hidden = true; });
     menu.addEventListener('click', e => e.stopPropagation());
     accountWrap.append(account, menu);
-
     head.append(notify, accountWrap);
-    const logout = menu.querySelector('#adminFormalLogout');
+
+    const logout = menu.querySelector('#adminLogout');
     logout.addEventListener('click', async () => {
       try { if (email) localStorage.setItem('gyx_admin_saved_email', email); } catch {}
       try { await window.gyxSupabase?.auth?.signOut(); } catch {}
@@ -139,12 +138,10 @@
         location.replace("admin-login.html");
         return;
       }
-
       document.documentElement.classList.add("gyx-admin-unlocked");
       await setupAdminChrome(user);
       normalizeNavigation();
       await loadGroup(CORE_SCRIPTS);
-
       const loadSecondary = async () => {
         try {
           await loadGroup(SECONDARY_SCRIPTS);
@@ -153,7 +150,6 @@
           console.error("ADMIN_SECONDARY_LOAD_FAILED", e);
         }
       };
-
       if ("requestIdleCallback" in window) requestIdleCallback(() => loadSecondary(), { timeout: 900 });
       else setTimeout(loadSecondary, 150);
     } catch (e) {
