@@ -65,23 +65,58 @@
     }
   }
 
-  async function adminApi(body) {
+  async function getSessionToken() {
     const db = window.gyxSupabase;
     if (!db?.auth) throw new Error("后台连接未就绪");
     const { data } = await db.auth.getSession();
     const token = data?.session?.access_token;
     if (!token) throw new Error("登录已失效");
+    return token;
+  }
+
+  async function adminApi(body) {
+    const token = await getSessionToken();
     const res = await fetch("https://afzcohtnljnmucrkgcaz.supabase.co/functions/v1/admin-api", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token,
-      },
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
       body: JSON.stringify(body),
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok || json.error) throw new Error(json.message || json.error || "请求失败");
     return json;
+  }
+
+  async function systemPush(body) {
+    const token = await getSessionToken();
+    const res = await fetch("https://afzcohtnljnmucrkgcaz.supabase.co/functions/v1/system-web-push", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.message || json.error || "系统通知发送失败");
+    return json;
+  }
+
+  async function pushSubscriptions(userId = null) {
+    const db = window.gyxSupabase;
+    const r = await db.rpc("gyx_admin_push_subscriptions", { p_user_id: userId });
+    if (r.error) throw r.error;
+    return Array.isArray(r.data) ? r.data : [];
+  }
+
+  async function pushHistory() {
+    const db = window.gyxSupabase;
+    const r = await db.rpc("gyx_admin_system_push_history", { p_limit: 100 });
+    if (r.error) throw r.error;
+    return Array.isArray(r.data) ? r.data : [];
+  }
+
+  async function memberOptions() {
+    const db = window.gyxSupabase;
+    const r = await db.rpc("gyx_admin_members_overview", { p_limit: 300 });
+    if (r.error) throw r.error;
+    return Array.isArray(r.data) ? r.data : [];
   }
 
   function ensureSystemNotificationsPanel() {
@@ -93,12 +128,91 @@
     panel.id = "systemNotificationsPanel";
     panel.className = "admin-panel-v2 hidden";
     panel.innerHTML = `
-      <div class="admin-section-title"><h2>APP / 系统通知</h2><p>查看系统通知发送状态与失败记录。</p></div>
-      <div class="panel-tools"><button type="button" class="refresh-btn" id="systemNotificationsRefresh">刷新</button></div>
-      <div id="systemNotificationsBody" class="loading">正在读取系统通知…</div>`;
+      <div class="admin-section-title"><h2>APP / 系统通知</h2><p>向已开启系统通知的会员设备发送平台通知。</p></div>
+      <div style="display:grid;gap:9px;border:1px solid #dce8fb;background:#fff;border-radius:12px;padding:10px;margin-bottom:9px">
+        <div style="display:flex;align-items:center;gap:9px"><img src="assets/member-logo.webp" alt="GlobalYouXuan" style="width:46px;height:46px;border-radius:11px;object-fit:cover;border:1px solid #e2e8f0"><div><b>GlobalYouXuan</b><div id="systemPushSubscriptionCount" style="font-size:11px;color:#667085;margin-top:3px">正在读取已订阅设备…</div></div></div>
+        <label style="font-size:11px;font-weight:800">发送对象<select id="systemPushTarget" style="display:block;width:100%;min-height:38px;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:7px;background:#fff"><option value="all">全部已订阅设备</option><option value="user">指定会员</option></select></label>
+        <label id="systemPushMemberWrap" style="display:none;font-size:11px;font-weight:800">指定会员<select id="systemPushMember" style="display:block;width:100%;min-height:38px;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:7px;background:#fff"><option value="">请选择会员</option></select></label>
+        <label style="font-size:11px;font-weight:800">通知标题<input id="systemPushTitle" maxlength="120" placeholder="例如：全球优选系统通知" style="display:block;width:100%;min-height:38px;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:8px"></label>
+        <label style="font-size:11px;font-weight:800">通知正文<textarea id="systemPushBody" maxlength="500" rows="4" placeholder="输入要发送给会员的内容" style="display:block;width:100%;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:8px;resize:vertical"></textarea></label>
+        <label style="font-size:11px;font-weight:800">点击通知打开<input id="systemPushUrl" value="member.html" maxlength="500" style="display:block;width:100%;min-height:38px;margin-top:4px;border:1px solid #d9e1ec;border-radius:9px;padding:8px"></label>
+        <button id="systemPushSend" type="button" class="primary-btn" style="width:100%">发送系统通知</button>
+        <div id="systemPushResult" style="font-size:11px;color:#667085;min-height:16px"></div>
+      </div>
+      <div class="panel-tools"><button type="button" class="refresh-btn" id="systemNotificationsRefresh">刷新发送记录</button></div>
+      <div id="systemNotificationsBody" class="loading">正在读取发送记录…</div>`;
     main.appendChild(panel);
+
+    const target = panel.querySelector("#systemPushTarget");
+    target?.addEventListener("change", () => {
+      const userMode = target.value === "user";
+      const wrap = panel.querySelector("#systemPushMemberWrap");
+      if (wrap) wrap.style.display = userMode ? "block" : "none";
+      refreshSystemPushCount();
+    });
+    panel.querySelector("#systemPushMember")?.addEventListener("change", refreshSystemPushCount);
+    panel.querySelector("#systemPushSend")?.addEventListener("click", sendSystemPush);
     panel.querySelector("#systemNotificationsRefresh")?.addEventListener("click", () => loadSystemNotifications());
     return panel;
+  }
+
+  async function refreshSystemPushCount() {
+    const panel = ensureSystemNotificationsPanel();
+    if (!panel) return;
+    const target = panel.querySelector("#systemPushTarget")?.value || "all";
+    const member = panel.querySelector("#systemPushMember")?.value || "";
+    const label = panel.querySelector("#systemPushSubscriptionCount");
+    try {
+      const rows = await pushSubscriptions(target === "user" ? member || null : null);
+      if (label) label.textContent = `当前可接收设备：${rows.length}`;
+    } catch (e) {
+      if (label) label.textContent = "订阅设备读取失败";
+    }
+  }
+
+  async function loadSystemPushMembers() {
+    const panel = ensureSystemNotificationsPanel();
+    const select = panel?.querySelector("#systemPushMember");
+    if (!select) return;
+    try {
+      const rows = await memberOptions();
+      select.innerHTML = '<option value="">请选择会员</option>' + rows.map((r) => `<option value="${esc(r.user_id)}">${esc(r.display_name || r.email || r.user_id)}${r.email ? ` · ${esc(r.email)}` : ""}</option>`).join("");
+    } catch {
+      select.innerHTML = '<option value="">会员列表读取失败</option>';
+    }
+  }
+
+  async function sendSystemPush() {
+    const panel = ensureSystemNotificationsPanel();
+    if (!panel) return;
+    const btn = panel.querySelector("#systemPushSend");
+    const result = panel.querySelector("#systemPushResult");
+    const targetType = panel.querySelector("#systemPushTarget")?.value === "user" ? "user" : "all";
+    const targetUserId = targetType === "user" ? String(panel.querySelector("#systemPushMember")?.value || "").trim() : null;
+    const title = String(panel.querySelector("#systemPushTitle")?.value || "").trim();
+    const body = String(panel.querySelector("#systemPushBody")?.value || "").trim();
+    const clickUrl = String(panel.querySelector("#systemPushUrl")?.value || "member.html").trim() || "member.html";
+    if (!title) { if (result) result.textContent = "请填写通知标题"; return; }
+    if (!body) { if (result) result.textContent = "请填写通知正文"; return; }
+    if (targetType === "user" && !targetUserId) { if (result) result.textContent = "请选择会员"; return; }
+    if (btn) btn.disabled = true;
+    if (result) result.textContent = "正在发送…";
+    try {
+      const j = await systemPush({
+        target_type: targetType,
+        target_user_id: targetUserId,
+        title,
+        body,
+        click_url: clickUrl,
+        icon_url: "assets/member-logo.webp"
+      });
+      if (result) result.textContent = `发送完成：订阅 ${Number(j.subscriptions || 0)}，成功 ${Number(j.sent || 0)}，失败 ${Number(j.failed || 0)}`;
+      await Promise.all([loadSystemNotifications(), refreshSystemPushCount()]);
+    } catch (e) {
+      if (result) result.textContent = e?.message || "发送失败";
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   }
 
   async function loadSystemNotifications() {
@@ -106,32 +220,18 @@
     const box = panel?.querySelector("#systemNotificationsBody");
     if (!box) return;
     box.className = "loading";
-    box.textContent = "正在读取系统通知…";
+    box.textContent = "正在读取发送记录…";
     try {
-      const j = await adminApi({ action: "list", resource: "notifications", limit: 100 });
-      const rows = Array.isArray(j.data) ? j.data : [];
+      const rows = await pushHistory();
       box.className = "";
       if (!rows.length) {
-        box.innerHTML = '<div class="empty">暂无系统通知记录</div>';
+        box.innerHTML = '<div class="empty">暂无系统通知发送记录</div>';
         return;
       }
-      box.innerHTML = `<div class="table-wrap"><table class="data-table"><thead><tr><th>类型</th><th>订单</th><th>状态</th><th>尝试</th><th>发送时间</th><th>错误</th><th>操作</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r.event_type)}</td><td>${esc(r.order_id)}</td><td>${esc(r.status)}</td><td>${esc(r.attempt_count)}</td><td>${esc(r.telegram_sent_at || r.sent_at)}</td><td>${esc(r.last_error)}</td><td>${String(r.status || "").toLowerCase() === "sent" ? "—" : `<button type="button" class="edit-btn" data-system-retry="${esc(r.id)}">重试</button>`}</td></tr>`).join("")}</tbody></table></div>`;
-      box.querySelectorAll("[data-system-retry]").forEach((btn) => {
-        btn.addEventListener("click", async () => {
-          btn.disabled = true;
-          try {
-            await adminApi({ action: "retry_notification", id: Number(btn.dataset.systemRetry) });
-            await loadSystemNotifications();
-          } catch (e) {
-            alert(e?.message || "重试失败");
-          } finally {
-            btn.disabled = false;
-          }
-        });
-      });
+      box.innerHTML = `<div style="display:grid;gap:7px">${rows.map((r) => `<article style="border:1px solid #e2e8f0;border-radius:10px;background:#fff;padding:9px"><div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:12px">${esc(r.title)}</b><small style="font-size:9px;color:#667085">${esc(r.created_at ? new Date(r.created_at).toLocaleString() : "—")}</small></div><div style="font-size:10px;color:#475467;margin-top:5px;white-space:pre-wrap;word-break:break-word">${esc(r.body)}</div><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:7px;font-size:9px;color:#667085"><span>订阅 ${esc(r.subscription_count)}</span><span>成功 ${esc(r.sent_count)}</span><span>失败 ${esc(r.failed_count)}</span></div></article>`).join("")}</div>`;
     } catch (e) {
       box.className = "empty";
-      box.textContent = e?.message || "系统通知读取失败";
+      box.textContent = e?.message || "发送记录读取失败";
     }
   }
 
@@ -142,10 +242,8 @@
     panel.classList.remove("hidden");
     document.querySelectorAll(".admin-nav-v2 button").forEach((b) => b.classList.remove("active"));
     document.querySelector("[data-admin-system-notify]")?.classList.add("active");
-    try {
-      history.replaceState(null, "", "#notifications");
-    } catch {}
-    loadSystemNotifications();
+    try { history.replaceState(null, "", "#notifications"); } catch {}
+    Promise.all([loadSystemNotifications(), refreshSystemPushCount(), loadSystemPushMembers()]);
   }
 
   function installSystemNav() {
@@ -196,25 +294,16 @@
     menu.hidden = true;
     const email = String(user?.email || "").trim();
     menu.innerHTML = `<div class="admin-account-email">${email.replace(/[&<>"']/g, "")}</div><button type="button" id="adminLogout">退出登录</button>`;
-    account.addEventListener("click", (e) => {
-      e.stopPropagation();
-      menu.hidden = !menu.hidden;
-    });
-    document.addEventListener("click", () => {
-      menu.hidden = true;
-    });
+    account.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+    document.addEventListener("click", () => { menu.hidden = true; });
     menu.addEventListener("click", (e) => e.stopPropagation());
     accountWrap.append(account, menu);
     head.append(notify, accountWrap);
 
     const logout = menu.querySelector("#adminLogout");
     logout.addEventListener("click", async () => {
-      try {
-        if (email) localStorage.setItem("gyx_admin_saved_email", email);
-      } catch {}
-      try {
-        await window.gyxSupabase?.auth?.signOut();
-      } catch {}
+      try { if (email) localStorage.setItem("gyx_admin_saved_email", email); } catch {}
+      try { await window.gyxSupabase?.auth?.signOut(); } catch {}
       location.replace("admin-login.html");
     });
 
@@ -229,9 +318,7 @@
       badge.hidden = n < 1;
     };
     refreshBadge();
-    setInterval(() => {
-      if (!document.hidden) refreshBadge();
-    }, 30000);
+    setInterval(() => { if (!document.hidden) refreshBadge(); }, 30000);
   }
 
   function normalizeNavigation() {
@@ -244,14 +331,8 @@
 
   function restoreRequestedPanel() {
     const name = location.hash.slice(1);
-    if (name === "notifications") {
-      openSystemNotifications();
-      return;
-    }
-    if (name === "members") {
-      document.querySelector("[data-admin-members-nav]")?.click();
-      return;
-    }
+    if (name === "notifications") { openSystemNotifications(); return; }
+    if (name === "members") { document.querySelector("[data-admin-members-nav]")?.click(); return; }
     const reporting = document.querySelector(`[data-reporting="${name}"]`);
     if (reporting) reporting.click();
   }
@@ -264,21 +345,14 @@
   async function boot() {
     try {
       const user = await window.gyxGetVerifiedUser?.();
-      if (!user) {
-        location.replace("admin-login.html");
-        return;
-      }
-
+      if (!user) { location.replace("admin-login.html"); return; }
       document.documentElement.classList.add("gyx-admin-unlocked");
       await setupAdminChrome(user);
       normalizeNavigation();
-
       await loadGroup(CORE_SCRIPTS);
       await loadGroup(SECONDARY_SCRIPTS);
-
       normalizeNavigation();
       restoreRequestedPanel();
-
       await settle(650);
       normalizeNavigation();
       restoreRequestedPanel();
