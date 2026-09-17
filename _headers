@@ -1,15 +1,19 @@
+/admin.html
+  Cache-Control: no-store, max-age=0
+/admin
+  Cache-Control: no-store, max-age=0
 /admin-panel-lock.js
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store, max-age=0
 /admin-panel-lock.css
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store, max-age=0
 /admin-member-security.js
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store, max-age=0
 /admin-profile-requests.js
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store, max-age=0
 /admin-reporting.js
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store, max-age=0
 /admin-visit-analytics.js
-  Cache-Control: no-cache, must-revalidate
+  Cache-Control: no-store, max-age=0
 /member-checkout.js
   Cache-Control: no-cache, must-revalidate
 /member-payment.js
