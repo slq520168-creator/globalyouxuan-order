@@ -1,4 +1,6 @@
 /* Administrator account authentication remains the only login gate. */
+html.gyx-admin-booting .admin-shell{visibility:hidden!important}
+html.gyx-admin-booting body::before{content:'后台加载中…';position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#f7f9fc;color:#667085;font:700 14px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;z-index:2147483647}
 .admin-mobile-primary,.admin-mobile-more-toggle{display:none!important}
 #adminIdentity{display:none!important}
 .admin-account-wrap{position:relative;margin-left:auto}
