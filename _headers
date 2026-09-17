@@ -2,13 +2,17 @@
   Cache-Control: no-cache, must-revalidate
 /admin-panel-lock.css
   Cache-Control: no-cache, must-revalidate
-/admin-mobile-repair.js
-  Cache-Control: no-cache, must-revalidate
 /admin-member-security.js
+  Cache-Control: no-cache, must-revalidate
+/admin-profile-requests.js
   Cache-Control: no-cache, must-revalidate
 /admin-reporting.js
   Cache-Control: no-cache, must-revalidate
 /admin-visit-analytics.js
+  Cache-Control: no-cache, must-revalidate
+/member-checkout.js
+  Cache-Control: no-cache, must-revalidate
+/member-payment.js
   Cache-Control: no-cache, must-revalidate
 /supabase-client.js
   Cache-Control: no-cache, must-revalidate
