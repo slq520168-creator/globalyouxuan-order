@@ -9,6 +9,8 @@ html.gyx-admin-booting body::before{content:'后台加载中…';position:fixed;
 .admin-account-menu{position:absolute;right:0;top:46px;z-index:1000;width:min(260px,80vw);padding:8px;background:#fff;border:1px solid #dfe6f0;border-radius:12px;box-shadow:0 12px 30px rgba(15,23,42,.18)}
 .admin-account-menu[hidden]{display:none!important}.admin-account-email{font-size:12px;line-height:1.4;color:#475467;word-break:break-all;padding:6px 8px 9px}.admin-account-menu button{width:100%;min-height:40px;border:0;border-radius:9px;background:#fff0ee;color:#b42318;font-weight:900}
 .admin-head-notify{position:relative;display:inline-flex;align-items:center;gap:6px;border:0;background:transparent;color:#344054;font-weight:900;min-height:40px;padding:6px 8px;border-radius:10px}.admin-head-notify:active{background:#eef4ff}.admin-bell{font-size:14px;color:#1767e8}.admin-head-notify i{position:absolute;left:19px;top:1px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:#ef4444;color:#fff;font-style:normal;font-size:10px;line-height:18px;text-align:center}
+#systemNotificationsPanel img[alt="GlobalYouXuan"]{width:72px!important;height:72px!important;border-radius:16px!important;object-fit:cover!important;display:block!important;flex:0 0 72px!important;box-shadow:0 0 0 1px #d7e2f2 inset,0 4px 12px rgba(15,23,42,.08)!important}
+#systemNotificationsPanel img[alt="GlobalYouXuan"]+div>b{font-size:15px!important;line-height:1.2!important;display:block!important}
 
 @media (max-width:780px){
   html,body{max-width:100%!important;overflow-x:hidden!important}
