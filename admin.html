@@ -6,90 +6,50 @@
 <meta name="theme-color" content="#f4f8ff" />
 <title data-i18n="adminAuto185"></title>
 <link rel="stylesheet" href="site.css" />
-<link rel="stylesheet" href="admin-panel-lock.css?v=20260817-v2" />
+<link rel="stylesheet" href="admin-panel-lock.css?v=20260917-admin-mobile-shell-2" />
 <style>
-:root{color-scheme:light}
-*{box-sizing:border-box}
-.admin-body{margin:0;background:#f4f8ff!important;color:#172033!important;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.admin-shell{width:min(1480px,calc(100% - 28px));margin:auto;padding:18px 0 48px}
-.admin-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:16px;padding:16px 18px;background:#fff;border:1px solid #dfe6f0;border-radius:18px}
-.admin-head h1{margin:0;font-size:25px;letter-spacing:-.02em}.admin-head p{margin:5px 0 0;color:#667085;font-size:13px}.admin-head>a{background:#eef5ff;color:#1767e8;border:1px solid #d9e6fb;border-radius:12px;padding:11px 14px;text-decoration:none;font-weight:800;white-space:nowrap}
-.admin-layout-v2{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}
-.admin-nav-v2,.admin-card-v2{background:#fff!important;color:#172033!important;border:1px solid #dfe6f0;border-radius:18px;box-shadow:0 8px 28px rgba(31,55,88,.05)}
-.admin-nav-v2{padding:12px;height:max-content;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}
-.admin-nav-group{padding:5px 0 12px}.admin-nav-group+.admin-nav-group{border-top:1px solid #edf1f6;padding-top:13px}.admin-nav-title{padding:0 10px 7px;color:#98a2b3;font-size:11px;font-weight:900;letter-spacing:.08em}
-.admin-nav-group-buttons{display:grid;gap:4px}
-.admin-nav-v2 button{width:100%;min-height:44px;border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:11px;font-weight:800;color:#344054;font-size:14px}
-.admin-nav-v2 button:hover{background:#f5f8fc}.admin-nav-v2 button.active{background:#eaf2ff;color:#1767e8;box-shadow:inset 3px 0 0 #1767e8}
-.admin-card-v2{padding:22px;min-height:680px;min-width:0}.hidden{display:none!important}
-.admin-section-title{margin-bottom:18px}.admin-section-title h2{margin:0;font-size:23px;letter-spacing:-.02em}.admin-section-title p{margin:7px 0 0;color:#667085;font-size:14px;line-height:1.65}
-.status-grid{display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:12px}.status-card{padding:17px;border:1px solid #e2e8f0;border-radius:15px;background:#fff;min-height:96px}.status-card span{font-size:13px;color:#667085;font-weight:700}.status-card strong{display:block;font-size:27px;margin-top:8px;color:#101828;line-height:1.1}
-.table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:14px;background:#fff;-webkit-overflow-scrolling:touch}.data-table{width:100%;min-width:780px;border-collapse:collapse;font-size:14px}.data-table th,.data-table td{padding:13px 11px;border-bottom:1px solid #e8edf4;text-align:left;vertical-align:top;color:#344054;line-height:1.5}.data-table th{font-size:13px;color:#667085;background:#f8fafc;position:sticky;top:0;z-index:2}.data-table tr:last-child td{border-bottom:0}
-.loading,.empty{padding:32px 20px;text-align:center;color:#667085;font-size:14px}
-.refresh-btn,.primary-btn,.danger-btn{border:1px solid #d9e1ec;background:#fff;color:#1767e8;border-radius:11px;padding:10px 14px;font-weight:800;min-height:42px}.primary-btn{background:#1767e8;color:#fff;border-color:#1767e8;min-height:44px}.danger-btn{color:#b42318;border-color:#f3b7b1;min-height:44px}.edit-btn{border:0;background:#edf4ff;color:#1767e8;border-radius:9px;padding:9px 11px;font-weight:800;margin:3px;min-height:40px;min-width:72px}.action-danger{background:#fff0ee;color:#b42318}
-.panel-tools{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:14px}.manage-strip{display:flex;gap:9px;flex-wrap:wrap;padding:14px;margin:0 0 16px;background:#f8fbff;border:1px solid #dce8fb;border-radius:14px}.manage-strip small{width:100%;color:#667085}
-.admin-body [data-approve],.admin-body [data-papprove],.admin-body [data-member-confirm],.admin-body button[type="submit"].primary-btn{min-width:128px;min-height:46px;font-size:15px}.admin-body [data-reject],.admin-body [data-preject],.admin-body [data-member-ban],.admin-body [data-member-unban]{min-width:92px;min-height:44px}
-.modal-mask{position:fixed;inset:0;background:rgba(16,24,40,.46);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}.modal-card{background:#fff;width:min(820px,100%);max-height:90vh;overflow:auto;border-radius:20px;padding:22px;box-sizing:border-box}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:13px;color:#667085;font-weight:800}.field input,.field textarea,.field select{width:100%;box-sizing:border-box;border:1px solid #d9e1ec;border-radius:10px;padding:11px;background:#fff;color:#172033;font:inherit;font-size:15px}.modal-actions{display:flex;gap:9px;justify-content:flex-end;align-items:center;flex-wrap:wrap;margin-top:16px}.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2000;background:#101828;color:#fff;padding:11px 15px;border-radius:12px;font-size:14px}
-.notice{padding:13px;border-radius:12px;background:#fff7e6;color:#7a4b00;font-size:14px}.freezone-upload-card{border:1px solid #dce8fb;background:#f8fbff;border-radius:16px;padding:16px}.freezone-upload-card input{width:100%;box-sizing:border-box;margin-bottom:12px}.freezone-preview{margin-top:12px}.freezone-preview img,.freezone-preview video,.freezone-media-item img,.freezone-media-item video{display:block;width:100%;max-height:360px;object-fit:contain;border-radius:12px;background:#0b1220}.freezone-url{margin-top:10px;padding:10px;border-radius:10px;background:#fff;border:1px solid #e2e8f0;word-break:break-all;font-size:12px;color:#475467}.freezone-library-title{margin:20px 0 10px;font-size:17px}.freezone-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.freezone-media-item{border:1px solid #e2e8f0;border-radius:14px;background:#fff;padding:11px;min-width:0}.freezone-media-meta{display:grid;gap:7px;margin-top:8px}.freezone-media-meta strong{font-size:13px;word-break:break-all}.freezone-media-meta small{color:#667085}.freezone-media-meta a{color:#1767e8;font-weight:700;text-decoration:none;font-size:13px}.freezone-media-meta button{justify-self:start}
-@media(max-width:980px){.admin-layout-v2{grid-template-columns:210px minmax(0,1fr)}.status-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:780px){
- .admin-shell{width:calc(100% - 16px);padding-top:8px}.admin-head{padding:13px 14px;margin-bottom:9px;border-radius:15px}.admin-head h1{font-size:20px}.admin-head p{font-size:12px}.admin-head>a{font-size:12px;padding:9px 10px}
- .admin-layout-v2{grid-template-columns:1fr;gap:9px}.admin-nav-v2{position:static;max-height:none;padding:8px;border-radius:15px;overflow:visible}.admin-nav-group{padding:4px 0 9px}.admin-nav-group+.admin-nav-group{padding-top:10px}.admin-nav-title{padding:0 6px 5px}.admin-nav-group-buttons{display:flex;gap:6px;overflow-x:auto;padding:1px 1px 5px;scrollbar-width:none}.admin-nav-group-buttons::-webkit-scrollbar{display:none}.admin-nav-v2 button{width:auto;min-width:max-content;min-height:44px;padding:10px 13px}.admin-nav-v2 button.active{box-shadow:inset 0 -3px 0 #1767e8}
- .admin-card-v2{padding:15px;min-height:540px;border-radius:15px}.admin-section-title{margin-bottom:14px}.admin-section-title h2{font-size:21px}.status-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.status-card{min-height:88px;padding:14px}.status-card strong{font-size:24px}
- .data-table{min-width:760px;font-size:14px}.data-table th,.data-table td{padding:12px 10px}.field-grid{grid-template-columns:1fr}.modal-mask{padding:0;align-items:flex-end}.modal-card{width:100%;max-height:92vh;border-radius:20px 20px 0 0;padding:18px}.freezone-media-grid{grid-template-columns:1fr}.manage-strip{padding:12px}.manage-strip .primary-btn,.modal-actions .primary-btn,.modal-actions .danger-btn{min-height:46px}
-}
+:root{color-scheme:light}*{box-sizing:border-box}.admin-body{margin:0;background:#f4f8ff!important;color:#172033!important;min-height:100vh;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.admin-shell{width:min(1480px,calc(100% - 28px));margin:auto;padding:18px 0 48px}.admin-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;padding:12px 14px;background:#fff;border:1px solid #dfe6f0;border-radius:16px}.admin-layout-v2{display:grid;grid-template-columns:250px minmax(0,1fr);gap:16px;align-items:start}.admin-nav-v2,.admin-card-v2{background:#fff;border:1px solid #dfe6f0;border-radius:18px;box-shadow:0 8px 28px rgba(31,55,88,.05)}.admin-nav-v2{padding:12px;height:max-content;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}.admin-nav-group{padding:5px 0 12px}.admin-nav-group+.admin-nav-group{border-top:1px solid #edf1f6;padding-top:13px}.admin-nav-title{padding:0 10px 7px;color:#98a2b3;font-size:11px;font-weight:900}.admin-nav-group-buttons{display:grid;gap:4px}.admin-nav-v2 button{width:100%;min-height:44px;border:0;background:transparent;text-align:left;padding:10px 12px;border-radius:11px;font-weight:800;color:#344054;font-size:14px}.admin-nav-v2 button.active{background:#eaf2ff;color:#1767e8}.admin-card-v2{padding:22px;min-height:680px;min-width:0}.hidden{display:none!important}.admin-section-title{margin-bottom:14px}.admin-section-title h2{margin:0;font-size:22px}.admin-section-title p{margin:6px 0 0;color:#667085;font-size:13px}.status-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}.status-card{padding:14px;border:1px solid #e2e8f0;border-radius:14px;background:#fff;min-height:82px}.status-card span{font-size:12px;color:#667085;font-weight:700}.status-card strong{display:block;font-size:24px;margin-top:6px;color:#101828}.table-wrap{overflow:auto;border:1px solid #e2e8f0;border-radius:14px;background:#fff}.data-table{width:100%;min-width:780px;border-collapse:collapse;font-size:13px}.data-table th,.data-table td{padding:11px 9px;border-bottom:1px solid #e8edf4;text-align:left;vertical-align:top}.loading,.empty{padding:26px 18px;text-align:center;color:#667085}.refresh-btn,.primary-btn,.danger-btn,.edit-btn{border:1px solid #d9e1ec;background:#fff;color:#1767e8;border-radius:10px;padding:9px 12px;font-weight:800;min-height:40px}.primary-btn{background:#1767e8;color:#fff;border-color:#1767e8}.danger-btn{color:#b42318;border-color:#f3b7b1}.panel-tools,.manage-strip{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.manage-strip{padding:12px;background:#f8fbff;border:1px solid #dce8fb;border-radius:13px}.modal-mask{position:fixed;inset:0;background:rgba(16,24,40,.46);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}.modal-card{background:#fff;width:min(820px,100%);max-height:90vh;overflow:auto;border-radius:20px;padding:20px}.modal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field input,.field textarea,.field select{width:100%;border:1px solid #d9e1ec;border-radius:10px;padding:10px;background:#fff}.modal-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2000;background:#101828;color:#fff;padding:10px 14px;border-radius:12px}.freezone-upload-card{border:1px solid #dce8fb;background:#f8fbff;border-radius:14px;padding:14px}.freezone-media-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+@media(max-width:780px){.admin-shell{width:100%;padding:0 0 16px}.admin-head{margin:0;border-radius:0;border-width:0 0 1px;padding:8px 10px;min-height:46px}.admin-layout-v2{display:block}.admin-nav-v2{position:static;max-height:none;width:calc(100% - 12px);margin:6px;padding:7px;border-radius:12px}.admin-nav-title{font-size:10px;padding:2px 2px 4px}.admin-nav-group{padding:0 0 6px}.admin-nav-group+.admin-nav-group{padding-top:6px}.admin-nav-group-buttons{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.admin-nav-v2 button{min-width:0;min-height:36px;padding:5px 2px;text-align:center;justify-content:center;font-size:10.5px;line-height:1.15}.admin-card-v2{width:calc(100% - 12px);margin:0 6px;padding:9px;border-radius:12px;min-height:0;overflow:hidden}.admin-section-title{margin-bottom:7px}.admin-section-title h2{font-size:17px}.admin-section-title p{font-size:10.5px;line-height:1.3}.manage-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px;padding:7px;margin-bottom:7px}.manage-strip>*{width:100%;min-width:0;min-height:34px;padding:5px 4px;font-size:10.5px}.status-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.status-card{min-width:0;min-height:56px;padding:7px 5px;border-radius:9px}.status-card span{font-size:9px;line-height:1.15}.status-card strong{font-size:17px;margin-top:3px}.panel-tools{margin-bottom:6px}.panel-tools button{min-height:34px;padding:5px 7px;font-size:10.5px}.table-wrap{width:100%;max-width:100%;overflow:auto}.data-table{min-width:560px;font-size:10.5px}.data-table th,.data-table td{padding:6px 5px}.field-grid{grid-template-columns:1fr}.modal-mask{padding:0;align-items:flex-end}.modal-card{width:100%;max-height:92vh;border-radius:20px 20px 0 0;padding:14px}.freezone-media-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body class="admin-body">
 <div class="admin-shell">
-<header class="admin-head">
-  <div><h1><span data-i18n="adminAuto583"></span></h1><p><span data-i18n="adminAuto584"></span></p></div>
-  <a href="shop.html"><span data-i18n="adminAuto585"></span></a>
-</header>
+<header class="admin-head"></header>
 <div class="admin-layout-v2">
 <nav class="admin-nav-v2" data-i18n-aria="adminAuto582">
-  <div class="admin-nav-group">
-    <div class="admin-nav-title"><span data-i18n="adminAuto586"></span></div>
-    <div class="admin-nav-group-buttons">
-      <button class="active" data-panel="dashboard"><span data-i18n="adminAuto587"></span></button>
-      <button data-panel="orders"><span data-i18n="orders"></span></button>
-      <button data-panel="members"><span data-i18n="member"></span></button>
-      <button data-panel="services"><span data-i18n="adminAuto588"></span></button>
-    </div>
-  </div>
-  <div class="admin-nav-group">
-    <div class="admin-nav-title"><span data-i18n="adminAuto589"></span></div>
-    <div class="admin-nav-group-buttons">
-      <button data-panel="products"><span data-i18n="adminAuto590"></span></button>
-      <button data-panel="fixed"><span data-i18n="adminAuto124"></span></button>
-      <button data-panel="answers"><span data-i18n="adminAuto591"></span></button>
-      <button data-panel="freezone"><span data-i18n="navFreeZone"></span></button>
-      <button data-panel="assets"><span data-i18n="adminAuto592"></span></button>
-      <button data-panel="delivery"><span data-i18n="adminAuto593"></span></button>
-      <button data-panel="messages"><span data-i18n="adminAuto125"></span></button>
-    </div>
-  </div>
-  <div class="admin-nav-group">
-    <div class="admin-nav-title"><span data-i18n="adminAuto539"></span></div>
-    <div class="admin-nav-group-buttons">
-      <button data-panel="security"><span data-i18n="adminAuto594"></span></button>
-      <button data-panel="settings"><span data-i18n="adminAuto121"></span></button>
-    </div>
-  </div>
+  <div class="admin-nav-group"><div class="admin-nav-title"><span data-i18n="adminAuto586"></span></div><div class="admin-nav-group-buttons">
+    <button class="active" data-panel="dashboard"><span data-i18n="adminAuto587"></span></button>
+    <button data-panel="orders"><span data-i18n="orders"></span></button>
+    <button data-panel="members"><span data-i18n="member"></span></button>
+    <button data-panel="services"><span data-i18n="adminAuto588"></span></button>
+  </div></div>
+  <div class="admin-nav-group"><div class="admin-nav-title"><span data-i18n="adminAuto589"></span></div><div class="admin-nav-group-buttons">
+    <button data-panel="products"><span data-i18n="adminAuto590"></span></button>
+    <button data-panel="fixed"><span data-i18n="adminAuto124"></span></button>
+    <button data-panel="answers"><span data-i18n="adminAuto591"></span></button>
+    <button data-panel="freezone"><span data-i18n="navFreeZone"></span></button>
+    <button data-panel="assets"><span data-i18n="adminAuto592"></span></button>
+    <button data-panel="delivery"><span data-i18n="adminAuto593"></span></button>
+    <button data-panel="messages"><span data-i18n="adminAuto125"></span></button>
+  </div></div>
+  <div class="admin-nav-group"><div class="admin-nav-title"><span data-i18n="adminAuto539"></span></div><div class="admin-nav-group-buttons">
+    <button data-panel="security"><span data-i18n="adminAuto594"></span></button>
+    <button data-panel="settings"><span data-i18n="adminAuto121"></span></button>
+  </div></div>
 </nav>
 <main class="admin-card-v2">
 <section id="dashboardPanel" class="admin-panel-v2">
   <div class="admin-section-title"><h2><span data-i18n="adminAuto587"></span></h2><p><span data-i18n="adminAuto595"></span></p></div>
   <div class="manage-strip"><button class="primary-btn" data-publish><span data-i18n="adminAuto596"></span></button><button class="refresh-btn" data-service="verify-payments"><span data-i18n="adminAuto597"></span></button><button class="refresh-btn" data-service="notification-worker"><span data-i18n="adminAuto598"></span></button></div>
   <div class="status-grid">
-    <div class="status-card"><span><span data-i18n="member"></span></span><strong data-stat="members"><span data-i18n="adminAuto599"></span></strong></div>
-    <div class="status-card"><span><span data-i18n="orders"></span></span><strong data-stat="orders"><span data-i18n="adminAuto599"></span></strong></div>
-    <div class="status-card"><span><span data-i18n="adminAuto600"></span></span><strong data-stat="payments"><span data-i18n="adminAuto599"></span></strong></div>
-    <div class="status-card"><span><span data-i18n="adminAuto126"></span></span><strong data-stat="delivery"><span data-i18n="adminAuto599"></span></strong></div>
-    <div class="status-card"><span><span data-i18n="adminAuto590"></span></span><strong data-stat="products"><span data-i18n="adminAuto599"></span></strong></div>
-    <div class="status-card"><span><span data-i18n="adminAuto601"></span></span><strong data-stat="answers"><span data-i18n="adminAuto599"></span></strong></div>
-    <div class="status-card"><span><span data-i18n="adminAuto125"></span></span><strong data-stat="messages"><span data-i18n="adminAuto599"></span></strong></div>
-    <div class="status-card"><span><span data-i18n="adminAuto602"></span></span><strong data-stat="audit"><span data-i18n="adminAuto599"></span></strong></div>
+    <div class="status-card"><span data-i18n="member"></span><strong data-stat="members">—</strong></div>
+    <div class="status-card"><span data-i18n="orders"></span><strong data-stat="orders">—</strong></div>
+    <div class="status-card"><span data-i18n="adminAuto600"></span><strong data-stat="payments">—</strong></div>
+    <div class="status-card"><span data-i18n="adminAuto126"></span><strong data-stat="delivery">—</strong></div>
+    <div class="status-card"><span data-i18n="adminAuto590"></span><strong data-stat="products">—</strong></div>
+    <div class="status-card"><span data-i18n="adminAuto601"></span><strong data-stat="answers">—</strong></div>
+    <div class="status-card"><span data-i18n="adminAuto125"></span><strong data-stat="messages">—</strong></div>
+    <div class="status-card"><span data-i18n="adminAuto602"></span><strong data-stat="audit">—</strong></div>
   </div>
 </section>
 <section id="settingsPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="adminAuto121"></span></h2><p><span data-i18n="adminAuto603"></span></p></div><div class="manage-strip"><button class="refresh-btn" data-refresh="settings"><span data-i18n="refresh"></span></button><button class="primary-btn" data-publish><span data-i18n="adminAuto604"></span></button></div><div data-table="settings" class="loading"><span data-i18n="adminAuto237"></span></div></section>
@@ -99,7 +59,7 @@
 <section id="productsPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="adminAuto590"></span></h2></div><div class="manage-strip"><button class="primary-btn" data-add="products"><span data-i18n="adminAuto120"></span></button><button class="refresh-btn" data-refresh="products"><span data-i18n="refresh"></span></button></div><div data-table="products" class="loading"><span data-i18n="adminAuto237"></span></div></section>
 <section id="answersPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="adminAuto591"></span></h2></div><div class="manage-strip"><button class="primary-btn" data-add="answers"><span data-i18n="adminAuto120"></span></button><button class="refresh-btn" data-refresh="answers"><span data-i18n="refresh"></span></button></div><div data-table="answers" class="loading"><span data-i18n="adminAuto237"></span></div></section>
 <section id="fixedPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="adminAuto124"></span></h2></div><div class="manage-strip"><button class="primary-btn" data-add="fixed"><span data-i18n="adminAuto120"></span></button><button class="refresh-btn" data-refresh="fixed"><span data-i18n="refresh"></span></button></div><div data-table="fixed" class="loading"><span data-i18n="adminAuto237"></span></div></section>
-<section id="freezonePanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="navFreeZone"></span></h2><p><span data-i18n="adminAuto610"></span></p></div><div class="freezone-upload-card"><input id="freeZoneMediaFile" type="file" accept="image/*,video/*,.mov,.mp4,.m4v,.webm"><button id="freeZoneUploadBtn" class="primary-btn" type="button"><span data-i18n="adminAuto611"></span></button><a class="refresh-btn" href="free-zone.html" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none;margin-left:6px"><span data-i18n="adminAuto612"></span></a><div id="freeZoneUploadStatus"></div></div><h3 class="freezone-library-title"><span data-i18n="adminAuto613"></span></h3><div id="freeZoneMediaList" class="loading"><span data-i18n="adminAuto614"></span></div></section>
+<section id="freezonePanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="navFreeZone"></span></h2><p><span data-i18n="adminAuto610"></span></p></div><div class="freezone-upload-card"><input id="freeZoneMediaFile" type="file" accept="image/*,video/*,.mov,.mp4,.m4v,.webm"><button id="freeZoneUploadBtn" class="primary-btn" type="button"><span data-i18n="adminAuto611"></span></button><a class="refresh-btn" href="free-zone.html" target="_blank" rel="noopener"><span data-i18n="adminAuto612"></span></a><div id="freeZoneUploadStatus"></div></div><h3 class="freezone-library-title"><span data-i18n="adminAuto613"></span></h3><div id="freeZoneMediaList" class="loading"><span data-i18n="adminAuto614"></span></div></section>
 <section id="assetsPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="adminAuto592"></span></h2></div><div class="manage-strip"><input id="assetFile" type="file" accept="image/*,.pdf,.zip,.txt,.md,.docx,.xlsx,.pptx"><button id="assetUploadBtn" class="primary-btn" type="button"><span data-i18n="adminAuto615"></span></button><button class="primary-btn" data-add="assets"><span data-i18n="adminAuto120"></span></button><button class="refresh-btn" data-refresh="assets"><span data-i18n="refresh"></span></button></div><div id="assetUploadStatus"></div><div data-table="assets" class="loading"><span data-i18n="adminAuto237"></span></div></section>
 <section id="messagesPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="adminAuto125"></span></h2></div><div class="manage-strip"><button class="primary-btn" data-add="messages"><span data-i18n="adminAuto616"></span></button><button class="refresh-btn" data-refresh="messages"><span data-i18n="refresh"></span></button></div><div data-table="messages" class="loading"><span data-i18n="adminAuto237"></span></div></section>
 <section id="deliveryPanel" class="admin-panel-v2 hidden"><div class="admin-section-title"><h2><span data-i18n="adminAuto593"></span></h2><p><span data-i18n="adminAuto617"></span></p></div><div class="panel-tools"><button class="refresh-btn" data-refresh="delivery"><span data-i18n="refresh"></span></button></div><div data-table="delivery" class="loading"><span data-i18n="adminAuto237"></span></div></section>
@@ -108,8 +68,9 @@
 </div>
 </div>
 <div id="editModal" class="modal-mask hidden"><div class="modal-card"><div class="modal-head"><h3 id="editTitle"><span data-i18n="adminAuto620"></span></h3><button id="editClose" class="refresh-btn" type="button"><span data-i18n="close"></span></button></div><form id="editForm"><div id="editFields" class="field-grid"></div><div class="modal-actions"><button id="deleteRowBtn" class="danger-btn hidden" type="button"><span data-i18n="delete"></span></button><input id="editorAssetFile" type="file" accept="image/*,.pdf,.zip,.txt,.md,.docx,.xlsx,.pptx"/><button id="editorUploadBtn" class="refresh-btn" type="button"><span data-i18n="adminAuto621"></span></button><button class="primary-btn" type="submit"><span data-i18n="adminAuto432"></span></button></div></form></div></div>
-<script src="i18n.js?v=20260822-daily-views-1"></script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
+<script src="i18n.js?v=20260822-daily-views-1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.0/dist/umd/supabase.js"></script>
 <script src="admin-client.js?v=20260817-v3-single-owner"></script>
-<script src="admin-panel-lock.js?v=20260822-daily-views-1"></script>
+<script src="admin-panel-lock.js?v=20260917-admin-mobile-shell-2"></script>
 </body>
 </html>
