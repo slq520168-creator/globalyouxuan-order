@@ -213,7 +213,7 @@
     button.disabled = true;
     try {
       if (mode === 'recover') {
-        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://globalyouxuan-order.pages.dev/reset-password.html' });
+        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://globalyouxuan-order.pages.dev/reset-password' });
         if (error) throw error;
         showMessage('找回密码邮件已发送，请查看邮箱。', 'success');
       } else if (mode === 'register') {
