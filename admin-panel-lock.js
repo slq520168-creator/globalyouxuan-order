@@ -40,6 +40,13 @@
   }
 
   const settle = (ms = 0) => new Promise((resolve) => setTimeout(resolve, ms));
+  const esc = (v) => String(v ?? "—").replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;",
+  })[m]);
 
   function showPanel(name) {
     const src = document.querySelector(`.admin-nav-v2 button[data-panel="${name}"]`);
@@ -58,15 +65,106 @@
     }
   }
 
+  async function adminApi(body) {
+    const db = window.gyxSupabase;
+    if (!db?.auth) throw new Error("后台连接未就绪");
+    const { data } = await db.auth.getSession();
+    const token = data?.session?.access_token;
+    if (!token) throw new Error("登录已失效");
+    const res = await fetch("https://afzcohtnljnmucrkgcaz.supabase.co/functions/v1/admin-api", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token,
+      },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok || json.error) throw new Error(json.message || json.error || "请求失败");
+    return json;
+  }
+
+  function ensureSystemNotificationsPanel() {
+    let panel = document.getElementById("systemNotificationsPanel");
+    if (panel) return panel;
+    const main = document.querySelector(".admin-card-v2");
+    if (!main) return null;
+    panel = document.createElement("section");
+    panel.id = "systemNotificationsPanel";
+    panel.className = "admin-panel-v2 hidden";
+    panel.innerHTML = `
+      <div class="admin-section-title"><h2>APP / 系统通知</h2><p>查看系统通知发送状态与失败记录。</p></div>
+      <div class="panel-tools"><button type="button" class="refresh-btn" id="systemNotificationsRefresh">刷新</button></div>
+      <div id="systemNotificationsBody" class="loading">正在读取系统通知…</div>`;
+    main.appendChild(panel);
+    panel.querySelector("#systemNotificationsRefresh")?.addEventListener("click", () => loadSystemNotifications());
+    return panel;
+  }
+
+  async function loadSystemNotifications() {
+    const panel = ensureSystemNotificationsPanel();
+    const box = panel?.querySelector("#systemNotificationsBody");
+    if (!box) return;
+    box.className = "loading";
+    box.textContent = "正在读取系统通知…";
+    try {
+      const j = await adminApi({ action: "list", resource: "notifications", limit: 100 });
+      const rows = Array.isArray(j.data) ? j.data : [];
+      box.className = "";
+      if (!rows.length) {
+        box.innerHTML = '<div class="empty">暂无系统通知记录</div>';
+        return;
+      }
+      box.innerHTML = `<div class="table-wrap"><table class="data-table"><thead><tr><th>类型</th><th>订单</th><th>状态</th><th>尝试</th><th>发送时间</th><th>错误</th><th>操作</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${esc(r.event_type)}</td><td>${esc(r.order_id)}</td><td>${esc(r.status)}</td><td>${esc(r.attempt_count)}</td><td>${esc(r.telegram_sent_at || r.sent_at)}</td><td>${esc(r.last_error)}</td><td>${String(r.status || "").toLowerCase() === "sent" ? "—" : `<button type="button" class="edit-btn" data-system-retry="${esc(r.id)}">重试</button>`}</td></tr>`).join("")}</tbody></table></div>`;
+      box.querySelectorAll("[data-system-retry]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          try {
+            await adminApi({ action: "retry_notification", id: Number(btn.dataset.systemRetry) });
+            await loadSystemNotifications();
+          } catch (e) {
+            alert(e?.message || "重试失败");
+          } finally {
+            btn.disabled = false;
+          }
+        });
+      });
+    } catch (e) {
+      box.className = "empty";
+      box.textContent = e?.message || "系统通知读取失败";
+    }
+  }
+
+  function openSystemNotifications() {
+    const panel = ensureSystemNotificationsPanel();
+    if (!panel) return;
+    document.querySelectorAll(".admin-panel-v2").forEach((p) => p.classList.add("hidden"));
+    panel.classList.remove("hidden");
+    document.querySelectorAll(".admin-nav-v2 button").forEach((b) => b.classList.remove("active"));
+    document.querySelector("[data-admin-system-notify]")?.classList.add("active");
+    try {
+      history.replaceState(null, "", "#notifications");
+    } catch {}
+    loadSystemNotifications();
+  }
+
   function installSystemNav() {
     const messages = document.querySelector('.admin-nav-v2 button[data-panel="messages"]');
-    if (!messages || document.querySelector('[data-admin-system-notify]')) return;
-    const app = document.createElement("button");
-    app.type = "button";
-    app.dataset.adminSystemNotify = "1";
-    app.textContent = "APP / 系统通知";
-    app.addEventListener("click", () => showPanel("services"));
-    messages.insertAdjacentElement("afterend", app);
+    if (!messages) return;
+    let app = document.querySelector('[data-admin-system-notify]');
+    if (!app) {
+      app = document.createElement("button");
+      app.type = "button";
+      app.dataset.adminSystemNotify = "1";
+      app.textContent = "APP / 系统通知";
+      messages.insertAdjacentElement("afterend", app);
+    }
+    app.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openSystemNotifications();
+    };
+    ensureSystemNotificationsPanel();
   }
 
   async function setupAdminChrome(user) {
@@ -146,6 +244,10 @@
 
   function restoreRequestedPanel() {
     const name = location.hash.slice(1);
+    if (name === "notifications") {
+      openSystemNotifications();
+      return;
+    }
     if (name === "members") {
       document.querySelector("[data-admin-members-nav]")?.click();
       return;
@@ -177,8 +279,6 @@
       normalizeNavigation();
       restoreRequestedPanel();
 
-      // Several legacy owners install their existing DOM blocks with short timers.
-      // Keep the shell hidden until those installs have completed so the user sees one stable layout.
       await settle(650);
       normalizeNavigation();
       restoreRequestedPanel();
