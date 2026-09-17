@@ -112,8 +112,8 @@
     const refreshBadge = async () => {
       const d = await getBadgeCounts();
       if (!d) return;
-      const values = Object.values(d).filter(v => Number.isFinite(Number(v))).map(Number);
-      const n = values.reduce((a,b)=>a+b,0);
+      const fallback = Number(d.messages || 0) + Number(d.notifications || 0) + Number(d.profile_requests || 0);
+      const n = Number.isFinite(Number(d.total)) ? Number(d.total) : fallback;
       const badge = document.getElementById('adminNotifyBadge');
       if (!badge) return;
       badge.textContent = n > 99 ? '99+' : String(n);
