@@ -1,0 +1,18 @@
+{
+  "name": "GlobalYouXuan",
+  "short_name": "优选",
+  "description": "GlobalYouXuan member app",
+  "start_url": "./shop.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f8ff",
+  "theme_color": "#f4f8ff",
+  "icons": [
+    {
+      "src": "assets/member-logo.webp",
+      "sizes": "any",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
+}
