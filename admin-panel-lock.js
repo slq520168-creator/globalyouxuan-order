@@ -18,6 +18,7 @@
     "admin-fixed-card-answers.js?v=20260816-fixed-card-schemes-2",
     "admin-reporting.js?v=20260822-daily-views-1",
     "admin-security-center.js?v=20260817-security-1",
+    "admin-mobile-repair.js?v=20260917-mobile-admin-closeout-1",
   ];
 
   function loadScript(src) {
