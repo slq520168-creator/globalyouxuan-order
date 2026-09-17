@@ -1,13 +1,52 @@
 (()=>{
 'use strict';
-const db=window.gyxSupabase,I=window.GYXI18N;if(!db||!I)return;const $=id=>document.getElementById(id),t=k=>I.t(k);let recoveryReady=false;
+const db=window.gyxSupabase,I=window.GYXI18N;if(!db||!I)return;
+const $=id=>document.getElementById(id);
+const tr=(key,fallback)=>{try{const v=I.t(key);return(!v||v===key)?fallback:v}catch{return fallback}};
+let recoveryReady=false;
 function showMessage(message,kind='error'){const e=$('resetPasswordMessage');if(!e)return;e.textContent=message;e.className=`form-message show ${kind}`}
-function setReady(ready){if(ready&&recoveryReady)return;recoveryReady=ready;const b=$('resetPasswordSubmit');if(b)b.disabled=!ready;if(ready){showMessage(t('resetLinkReady'),'success');try{sessionStorage.removeItem('gyx_reset_jump')}catch{}}}
-db.auth.onAuthStateChange((event,session)=>{if(event==='PASSWORD_RECOVERY'||session?.user)setReady(true)});
-function extractRecoveryFromText(text){const raw=String(text||'').trim();if(!raw)return null;try{let url;try{url=new URL(raw)}catch{try{url=new URL(raw.replace(/^\/\//,'https://'))}catch{url=null}}if(url){const p=url.searchParams,h=new URLSearchParams((url.hash||'').replace(/^#/,''));return{tokenHash:p.get('token_hash')||p.get('token')||h.get('token_hash')||h.get('token'),type:(p.get('type')||h.get('type')||'recovery').toLowerCase(),code:p.get('code')||h.get('code'),accessToken:h.get('access_token')||p.get('access_token'),refreshToken:h.get('refresh_token')||p.get('refresh_token')}}}catch{}const th=raw.match(/token_hash=([^&\s#]+)/)||raw.match(/[?&]token=([^&\s#]+)/),tp=raw.match(/[?&]type=([^&\s#]+)/),cd=raw.match(/[?&]code=([^&\s#]+)/);return{tokenHash:th?decodeURIComponent(th[1]):null,type:tp?decodeURIComponent(tp[1]):'recovery',code:cd?decodeURIComponent(cd[1]):null,accessToken:null,refreshToken:null}}
-async function verifyExtracted(parts){if(!parts){showMessage(t('pasteFullLink'));return false}const {tokenHash,type,code,accessToken,refreshToken}=parts;try{if(tokenHash){const {data,error}=await db.auth.verifyOtp({token_hash:tokenHash,type:(type==='recovery'||type==='email')?type:'recovery'});if(error)throw error;if(data?.session?.user||data?.user){setReady(true);return true}}if(accessToken&&refreshToken){const {data,error}=await db.auth.setSession({access_token:accessToken,refresh_token:refreshToken});if(error)throw error;if(data?.session?.user){setReady(true);return true}}if(code){const {data,error}=await db.auth.exchangeCodeForSession(code);if(error)throw error;if(data?.session?.user||data?.user){setReady(true);return true}}showMessage(t('invalidResetParams'));return false}catch(e){const m=String(e?.message||e||'');showMessage(/code verifier|pkce/i.test(m)?t('sameBrowserRequired'):t('resetLinkInvalid'));return false}}
-async function inspectRecovery(){const trySession=async()=>{try{const {data}=await db.auth.getSession();return data?.session?.user||null}catch{return null}};if(await trySession()){setReady(true);return}const p=new URLSearchParams((location.search||'').replace(/^\?/,'')),h=new URLSearchParams((location.hash||'').replace(/^#/,''));const parts={tokenHash:p.get('token_hash')||h.get('token_hash'),type:(p.get('type')||h.get('type')||'recovery').toLowerCase(),code:p.get('code')||h.get('code'),accessToken:h.get('access_token')||p.get('access_token'),refreshToken:h.get('refresh_token')||p.get('refresh_token')};if(parts.tokenHash||parts.accessToken||parts.code){if(await verifyExtracted(parts))return}let tries=0;const timer=setInterval(async()=>{tries++;if(await trySession()){clearInterval(timer);setReady(true);return}if(tries>=10){clearInterval(timer);if(!recoveryReady)showMessage(t('resetLinkInvalid'))}},400)}
-async function submitNewPassword(event){event.preventDefault();if(!recoveryReady){showMessage(t('resetLinkInvalid'));return}const password=String($('newPassword').value||''),confirm=String($('confirmNewPassword').value||'');if(password.length<8||password.length>20){showMessage(t('passwordLength'));return}if(password!==confirm){showMessage(t('passwordMismatch'));return}const b=$('resetPasswordSubmit');b.disabled=true;b.textContent=t('savingNewPassword');try{const {error}=await db.auth.updateUser({password});if(error)throw error;showMessage(t('passwordChanged'),'success');setTimeout(()=>location.replace('member.html'),500)}catch(error){const raw=String(error?.message||error||''),lower=raw.toLowerCase();let tip=t('errorGeneric');if(lower.includes('same')||lower.includes('different'))tip=t('newPasswordDifferent');else if(lower.includes('session')||lower.includes('expired')||lower.includes('token'))tip=t('resetLinkInvalid');else if(lower.includes('weak')||lower.includes('strength'))tip=t('weakPassword');else if(lower.includes('at least')||lower.includes('characters')||lower.includes('length'))tip=t('passwordLength');showMessage(tip);b.disabled=false;b.textContent=t('saveNewPassword')}}
-function init(){document.querySelectorAll('[data-toggle-password]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();const input=$(btn.getAttribute('data-toggle-password'));if(!input)return;const show=input.type==='password';input.type=show?'text':'password';btn.textContent=show?t('hidePassword'):t('showPassword')}));$('resetPasswordForm')?.addEventListener('submit',submitNewPassword);$('pasteLinkButton')?.addEventListener('click',async()=>{const b=$('pasteLinkButton');b.disabled=true;b.textContent=t('verifying');const ok=await verifyExtracted(extractRecoveryFromText($('pasteResetLink')?.value||''));b.disabled=false;b.textContent=t('verifyPastedLink');if(ok)showMessage(t('resetLinkReady'),'success')});inspectRecovery();setTimeout(()=>{if(!recoveryReady)showMessage(t('manualVerifyHelp'))},4000)}
+function setReady(ready){recoveryReady=!!ready;const b=$('resetPasswordSubmit');if(b)b.disabled=!recoveryReady;if(recoveryReady)showMessage(tr('resetLinkReady','链接验证成功，请设置新密码。'),'success')}
+async function currentSession(){try{const{data}=await db.auth.getSession();return data?.session||null}catch{return null}}
+async function establishRecoverySession(){
+  if(await currentSession()){setReady(true);return true}
+  const p=new URLSearchParams(location.search||''),h=new URLSearchParams((location.hash||'').replace(/^#/,''));
+  const tokenHash=p.get('token_hash')||h.get('token_hash');
+  const type=(p.get('type')||h.get('type')||'recovery').toLowerCase();
+  const code=p.get('code')||h.get('code');
+  const accessToken=h.get('access_token')||p.get('access_token');
+  const refreshToken=h.get('refresh_token')||p.get('refresh_token');
+  try{
+    if(code){const{error}=await db.auth.exchangeCodeForSession(code);if(error)throw error}
+    else if(tokenHash){const{error}=await db.auth.verifyOtp({token_hash:tokenHash,type:type==='email'?'email':'recovery'});if(error)throw error}
+    else if(accessToken&&refreshToken){const{error}=await db.auth.setSession({access_token:accessToken,refresh_token:refreshToken});if(error)throw error}
+    else{showMessage('找回密码链接无效或已过期，请重新发送邮件。');return false}
+    if(await currentSession()){setReady(true);try{history.replaceState(null,'',location.pathname)}catch{}return true}
+  }catch(e){console.error('PASSWORD_RECOVERY_FAILED',e)}
+  showMessage('找回密码链接无效或已过期，请重新发送邮件。');
+  return false
+}
+async function submitNewPassword(event){
+  event.preventDefault();
+  if(!recoveryReady){showMessage('请重新打开找回密码邮件里的链接。');return}
+  const password=String($('newPassword')?.value||''),confirm=String($('confirmNewPassword')?.value||'');
+  if(password.length<8||password.length>20){showMessage('新密码请输入 8–20 位。');return}
+  if(password!==confirm){showMessage('两次输入的密码不一致。');return}
+  const b=$('resetPasswordSubmit');b.disabled=true;b.textContent='正在保存…';
+  try{
+    const{error}=await db.auth.updateUser({password});if(error)throw error;
+    showMessage('密码已修改，请重新登录。','success');
+    setTimeout(async()=>{try{await db.auth.signOut({scope:'local'})}catch{}location.replace('login.html')},700)
+  }catch(error){
+    console.error('PASSWORD_UPDATE_FAILED',error);
+    showMessage('密码修改失败，请重新打开找回密码邮件里的链接。');
+    b.disabled=false;b.textContent='保存新密码'
+  }
+}
+function init(){
+  document.querySelectorAll('[data-toggle-password]').forEach(btn=>btn.addEventListener('click',e=>{e.preventDefault();const input=$(btn.getAttribute('data-toggle-password'));if(!input)return;const show=input.type==='password';input.type=show?'text':'password';btn.textContent=show?tr('hidePassword','隐藏密码'):tr('showPassword','显示密码')}));
+  $('resetPasswordForm')?.addEventListener('submit',submitNewPassword);
+  const b=$('resetPasswordSubmit');if(b)b.textContent='保存新密码';
+  establishRecoverySession();
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
 })();
