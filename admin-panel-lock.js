@@ -11,7 +11,7 @@
 
   const SECONDARY_SCRIPTS = [
     "admin-freezone-upload.js?v=20260813-freezone-upload-2",
-    "admin-member-security.js?v=20260817-members-unified-1",
+    "admin-member-security.js?v=20260917-member-overview-fix-1",
     "admin-profile-requests.js?v=20260917-profile-review-fix-1",
     "admin-data.js?v=20260816-growth-human-3",
     "admin-business-growth.js?v=20260816-growth-records-1",
