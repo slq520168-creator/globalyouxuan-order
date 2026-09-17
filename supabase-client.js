@@ -21,6 +21,19 @@
   client.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_OUT'){verifiedUser=null;verifiedAt=0;verifiedPromise=null;return}if(session?.user){markKnownMember();verifiedUser=session.user;verifiedAt=Date.now()}});
   async function invokeFunction(name,body){const {data,error}=await client.functions.invoke(name,{body});if(!error)return data;let code='';try{const payload=await error.context?.clone?.().json();code=payload?.error||payload?.message||''}catch{}const wrapped=new Error(code||error.message||'FUNCTION_REQUEST_FAILED');wrapped.code=code||'FUNCTION_REQUEST_FAILED';throw wrapped}
   window.gyxSupabase=client;window.gyxGetVerifiedUser=getVerifiedUser;window.gyxSafeNext=safeNext;window.gyxInvokeFunction=invokeFunction;window.gyxIsKnownMember=isKnownMember;window.gyxAuthEntryUrl=authEntryUrl;
+
+  function analyticsDevice(){const ua=navigator.userAgent||'';if(/iPad|Tablet|PlayBook|Silk/i.test(ua)||(/Android/i.test(ua)&&!/Mobile/i.test(ua)))return'tablet';if(/Mobi|iPhone|iPod|Android/i.test(ua))return'mobile';return'desktop'}
+  function analyticsBrowser(){const ua=navigator.userAgent||'';if(/Edg\//i.test(ua))return'Edge';if(/OPR\//i.test(ua))return'Opera';if(/SamsungBrowser/i.test(ua))return'Samsung Internet';if(/CriOS|Chrome/i.test(ua))return'Chrome';if(/FxiOS|Firefox/i.test(ua))return'Firefox';if(/Safari/i.test(ua))return'Safari';return'Other'}
+  function analyticsOS(){const ua=navigator.userAgent||'';if(/iPhone|iPad|iPod/i.test(ua))return'iOS';if(/Android/i.test(ua))return'Android';if(/Windows/i.test(ua))return'Windows';if(/Macintosh|Mac OS X/i.test(ua))return'macOS';if(/Linux/i.test(ua))return'Linux';return'Other'}
+  async function recordDetailedVisit(){
+    if(currentPath.includes('/admin')||currentPath.includes('admin-'))return;
+    try{
+      const body={page_path:(location.pathname||'/')+(location.search||''),page_title:document.title||'',referrer:document.referrer||'',user_agent:navigator.userAgent||'',device_type:analyticsDevice(),browser_name:analyticsBrowser(),os_name:analyticsOS(),language:navigator.language||'',timezone:Intl.DateTimeFormat().resolvedOptions().timeZone||'',screen_size:`${screen.width}x${screen.height}`};
+      await client.functions.invoke('site-visit-track',{body});
+    }catch{}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(recordDetailedVisit,0),{once:true});else setTimeout(recordDetailedVisit,0);
+
   // shop.html already loads home-search-category.js — no duplicate inject
   // community auth is handled in community.html load() — avoid double gate/jank
 })();
