@@ -27,7 +27,7 @@ function registerSW(){
 
 function warmNextPage(){
   const here=location.pathname.split("/").pop()||"shop.html";
-  const order=["shop.html","member.html","community.html","free-zone.html"].filter(p=>p!==here);
+  const order=["shop.html","member.html","community.html","free-zone.html","face-translate.html"].filter(p=>p!==here);
   order.forEach(p=>warmPage(p));
   if(here!=="member.html"){
     ["member-accordion.js?v=20260819-unified-copy-1","member.js?v=20260818-single-order-entry-1","member-payment.js?v=20260822-payment-fresh-1","member-bootstrap.js?v=20260917-web-push-1","member-points.js?v=20260819-delivery-i18n-1","member-checkout.js?v=20260917-member-order-unblock-1"].forEach(u=>prefetchURL(u,"script"));
