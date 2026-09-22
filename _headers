@@ -27,6 +27,10 @@
   Cache-Control: no-cache, must-revalidate
 /supabase-client.js
   Cache-Control: no-cache, must-revalidate
+/sw.js
+  Cache-Control: no-cache, must-revalidate
+/speed-boost.js
+  Cache-Control: no-cache, must-revalidate
 /*.js
   Cache-Control: public, max-age=604800, immutable
 /*.css
