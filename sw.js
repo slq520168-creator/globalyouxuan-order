@@ -1,5 +1,5 @@
 /* GlobalYouXuan service worker: push notifications + instant navigation */
-const VERSION = 'gyx-sw-v20260921-speed-2';
+const VERSION = 'gyx-sw-v20260921-speed-3';
 const CORE_ASSETS = [
   './',
   'shop.html',
@@ -9,10 +9,8 @@ const CORE_ASSETS = [
   'login.html',
   'index.html',
   'face-translate.html',
-  'i18n.js?v=20260819-home-order-cleanup-1',
-  'i18n.js?v=20260819-sitewide-copy-2',
-  'i18n.js?v=20260822-daily-views-1',
-  'i18n-member.js?v=20260819-delivery-i18n-1',
+  'i18n.js?v=20260921-face-2',
+  'i18n-member.js?v=20260921-face-2',
   'site.css',
   'home.css?v=20260822-card-title-1',
   'member-page.css?v=20260811-member-security-3',
@@ -22,7 +20,7 @@ const CORE_ASSETS = [
   'member-points.css?v=20260817-delivery-reader-2',
   'member-accordion.css?v=20260813-no-content-flash-1',
   'admin-panel-lock.css',
-  'face-translate.js?v=20260921-face-1',
+  'face-translate.js?v=20260921-face-2',
   'manifest.webmanifest',
   'assets/member-logo.webp'
 ];

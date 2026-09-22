@@ -1430,7 +1430,7 @@ Object.assign(R.zh,{
   "navCommunity": "交流天地",
   "navFreeZone": "免费专区",
 "ftTitle": "面对面翻译","ftLanguage": "选择语言","ftSwap": "交换语言","ftTalk": "按住说话","ftHintVoice": "点麦克风说话，松开后自动翻译并播放对方语言的语音","ftHintType": "此浏览器不支持语音识别，可直接输入文字后点发送（翻译后自动播放语音）","ftListening": "正在听…","ftTranslating": "翻译中…","ftPlayAgain": "重播语音","ftNoSpeech": "此浏览器不支持语音识别，请用文字输入","ftMicDenied": "麦克风权限被拒绝，请在浏览器设置中允许","ftNoSpeechHeard": "没有听到内容，请再试一次","ftSpeechError": "语音识别出错，请重试","ftBusy": "正在翻译上一句，请稍候","ftTimeout": "翻译超时，请检查网络后重试","ftFailed": "翻译失败，请重试",  "dayLabel": "第 {{count}} 天",
-  "daysUnit": "天",
+"ftTtsFailed": "语音播报失败，请重播一次","ftNoVoiceForLang": "此设备缺少{lang}发音包，无法播报","ftInstallVoice": "可在系统设置-语言与输入-文字转语音中安装",  "daysUnit": "天",
   "goLogin": "去登录"
 });
 Object.assign(R.en,{
@@ -1495,7 +1495,7 @@ Object.assign(R.en,{
   "navCommunity": "Community",
   "navFreeZone": "Free Zone",
 "ftTitle": "Face-to-Face Translate","ftLanguage": "Select language","ftSwap": "Swap languages","ftTalk": "Tap to talk","ftHintVoice": "Tap the mic, speak, then it auto-translates and plays the other language aloud","ftHintType": "Voice input is unsupported in this browser. Type text and send — the translation will play aloud","ftListening": "Listening…","ftTranslating": "Translating…","ftPlayAgain": "Play again","ftNoSpeech": "Speech recognition is unavailable here; please type instead","ftMicDenied": "Microphone permission denied. Allow it in browser settings","ftNoSpeechHeard": "Nothing heard, try again","ftSpeechError": "Speech recognition error, retry","ftBusy": "Still translating the previous line","ftTimeout": "Translation timed out. Check your network","ftFailed": "Translation failed, retry",  "dayLabel": "Day {{count}}",
-  "daysUnit": "days",
+"ftTtsFailed": "Playback failed, tap play again","ftNoVoiceForLang": "This device lacks a {lang} voice; playback unavailable","ftInstallVoice": "Install it via system settings > language & input > text-to-speech",  "daysUnit": "days",
   "goLogin": "Sign in"
 });
 Object.assign(R.km,{
@@ -1560,7 +1560,7 @@ Object.assign(R.km,{
   "navCommunity": "សហគមន៍",
   "navFreeZone": "តំបន់ឥតគិតថ្លៃ",
 "ftTitle": "បកប្រែផ្ទាល់មុខ","ftLanguage": "ជ្រើសរើសភាសា","ftSwap": "ប្ដូរភាសា","ftTalk": "ចុចដើម្បីនិយាយ","ftHintVoice": "ចុចមីក្រូហូន និយាយ បន្ទាប់មកវានឹងបកប្រែ និងបញ្ចូលសំឡេងភាសាម្ខាងទៀតដោយស្វ័យប្រវត្តិ","ftHintType": "កម្មវិធីរុករកនេះមិនគាំទ្រការស្គាល់សំឡេងទេ សូមបញ្ចូលអត្ថបទ បន្ទាប់មកបកប្រែនឹងបញ្ចូលសំឡេងដោយស្វ័យប្រវត្តិ","ftListening": "កំពុងស្តាប់…","ftTranslating": "កំពុងបកប្រែ…","ftPlayAgain": "លេងសំឡេងម្ដងទៀត","ftNoSpeech": "ការស្គាល់សំឡេងមិនដំណើរការទេ សូមបញ្ចូលអត្ថបទ","ftMicDenied": "ការអនុញ្ញាតមីក្រូហូនត្រូវបានបដិសេធ សូមអនុញ្ញាតក្នុងការកំណត់របស់កម្មវិធីរុករក","ftNoSpeechHeard": "មិនឮអ្វីទេ សូមព្យាយាមម្ដងទៀត","ftSpeechError": "កំហុសការស្គាល់សំឡេង សូមព្យាយាមម្ដងទៀត","ftBusy": "កំពុងបកប្រែប្រយោគមុន សូមរង់ចាំ","ftTimeout": "អស់ពេលបកប្រែ សូមពិនិត្យបណ្ដាញ","ftFailed": "បកប្រែបរាជ័យ សូមព្យាយាមម្ដងទៀត",  "dayLabel": "ថ្ងៃទី {{count}}",
-  "daysUnit": "ថ្ងៃ",
+"ftTtsFailed": "ការបញ្ចូលសំឡេងបរាជ័យ សូមចុចលេងម្ដងទៀត","ftNoVoiceForLang": "ឧបករណ៍នេះខ្វះសំឡេង{lang} មិនអាចបញ្ចូលបានទេ","ftInstallVoice": "ដំឡើងតាមការកំណត់ប្រព័ន្ធ > ភាសា និងការបញ្ចូល > អក្សរទៅសំឡេង",  "daysUnit": "ថ្ងៃ",
   "goLogin": "ចូលគណនី"
 });
 Object.assign(R.zh,{

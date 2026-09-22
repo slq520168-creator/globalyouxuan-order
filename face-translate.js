@@ -65,18 +65,46 @@ function addBubble(side,src,dst,autoTTS){
   if(autoTTS)speak(dst,side==='a'?sideA:sideB);
 }
 
-function speak(text,lang){
-  if(!ttsSupported()||!text)return;
+let voiceUnlocked=false;
+
+function unlockTTS(){
+  if(voiceUnlocked||!ttsSupported())return;
+  try{
+    const u=new SpeechSynthesisUtterance(' ');
+    u.volume=0;u.lang='zh-CN';
+    speechSynthesis.speak(u);
+    voiceUnlocked=true;
+  }catch(e){console.warn('TTS unlock failed',e)}
+}
+
+function speak(text,lang,onFail){
+  if(!ttsSupported()||!text){if(onFail)onFail('unsupported');return}
   try{
     speechSynthesis.cancel();
     const u=new SpeechSynthesisUtterance(String(text).slice(0,600));
     const codes=LANGS[lang]?.speech||[lang];
     const voices=speechSynthesis.getVoices();
-    let v=voices.find(v=>codes.includes(v.lang))||voices.find(v=>v.lang.replace('_','-').startsWith(codes[0].split('-')[0]));
+    const base=codes[0].split('-')[0];
+    let v=voices.find(v=>codes.includes(v.lang)||codes.includes(v.lang.replace('_','-')))
+        ||voices.find(v=>(v.lang||'').replace('_','-').startsWith(base+'-')||(v.lang||'').replace('_','-')===base);
     if(v)u.voice=v;
     u.lang=codes[0];u.rate=1;u.pitch=1;
+    let started=false;
+    u.onstart=()=>{started=true};
+    u.onerror=e=>{
+      console.warn('TTS error',e);
+      if(onFail)onFail(e.error||'error');
+      else toast(I.t('ftTtsFailed'));
+    };
+    const hadVoice=!!v;
     speechSynthesis.speak(u);
-  }catch(e){console.warn('TTS failed',e)}
+    setTimeout(()=>{
+      if(!started&&(!speechSynthesis.speaking&&!speechSynthesis.pending)){
+        const msg=hadVoice?I.t('ftTtsFailed'):I.t('ftNoVoiceForLang').replace('{lang}',LANGS[lang]?.name()||lang);
+        if(onFail)onFail('nostart');else toast(msg);
+      }
+    },1500);
+  }catch(e){console.warn('TTS failed',e);if(onFail)onFail('exception')}
 }
 
 function stopRec(){
@@ -89,6 +117,7 @@ function stopRec(){
 function startRec(side){
   if(recSide===side){stopRec();return}
   stopRec();
+  unlockTTS();
   if(!srSupported()){toast(I.t('ftNoSpeech'));return}
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   const rec=new SR();
@@ -122,6 +151,12 @@ async function submit(side,text){
   try{
     const dst=await translate(text,from,to);
     addBubble(side,text,dst,true);
+    const toLang=to;
+    setTimeout(()=>{
+      if(!speechSynthesis?.speaking&&!speechSynthesis?.pending){
+        toast(I.t('ftNoVoiceForLang').replace('{lang}',LANGS[toLang]?.name()||toLang)+' '+I.t('ftInstallVoice'));
+      }
+    },2600);
   }catch(e){
     console.warn('translate failed',e);
     toast(e.name==='AbortError'?I.t('ftTimeout'):I.t('ftFailed'));
@@ -147,7 +182,14 @@ function bind(){
   for(const [form,side,input] of [['formA','a','inputA'],['formB','b','inputB']]){
     $(form).addEventListener('submit',e=>{e.preventDefault();const v=$(input).value;$(input).value='';submit(side,v)});
   }
-  if(ttsSupported()){try{speechSynthesis.getVoices();speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices()}catch{}}
+  if(ttsSupported()){
+    try{
+      speechSynthesis.getVoices();
+      speechSynthesis.onvoiceschanged=()=>speechSynthesis.getVoices();
+      document.addEventListener('click',unlockTTS,{once:true,capture:true});
+      document.addEventListener('touchstart',unlockTTS,{once:true,capture:true});
+    }catch{}
+  }
   window.addEventListener('gyx:languagechange',()=>{fillLangSelects();refreshHeadings()});
 }
 
