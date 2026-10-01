@@ -154,7 +154,7 @@
     const cutoff = new Date(Date.now() - MAX_AGE_MS).toISOString();
     const feedPromise = db()
       .from('community_external_feed')
-      .select('id,title,body,source_url,batch_code,opportunity_no,batch_key,opportunity_status')
+      .select('id,title,batch_code,opportunity_no,batch_key,opportunity_status')
       .eq('opportunity_status', 'open')
       .is('claimed_by', null)
       .gte('created_at', cutoff)

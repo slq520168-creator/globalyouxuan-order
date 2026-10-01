@@ -16,7 +16,7 @@
     "admin-profile-requests.js?v=20260917-profile-review-fix-1",
     "admin-data.js?v=20260816-growth-human-3",
     "admin-business-growth.js?v=20260816-growth-records-1",
-    "admin-fixed-card-answers.js?v=20260816-fixed-card-schemes-2",
+    "admin-fixed-card-answers.js?v=20261002-sec-1",
     "admin-reporting.js?v=20260822-daily-views-1",
     "admin-security-center.js?v=20260817-security-1",
     "admin-visit-analytics.js?v=20260917-detailed-visits-1",

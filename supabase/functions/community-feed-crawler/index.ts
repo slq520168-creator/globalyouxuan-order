@@ -87,15 +87,31 @@ async function recheck(db:any,cutoff:string){
   });
 }
 
+// Internal-only endpoint: the pg_cron job sends x-cron-secret (stored in Supabase Vault as gyx_crawler_secret).
+let cachedSecret='';
+async function sha256(value:string){return new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))}
+async function safeEqual(a:string,b:string){const [x,y]=await Promise.all([sha256(a),sha256(b)]);let diff=a.length===b.length?0:1;for(let i=0;i<x.length;i++)diff|=x[i]^y[i];return diff===0}
+async function cronSecret(db:any){
+  if(cachedSecret)return cachedSecret;
+  const envSecret=Deno.env.get('CRAWLER_SECRET')||'';
+  if(envSecret){cachedSecret=envSecret;return cachedSecret}
+  const {data,error}=await db.rpc('gyx_internal_secret',{p_name:'gyx_crawler_secret'});
+  if(error||typeof data!=='string'||data.length<32)return '';
+  cachedSecret=data;return cachedSecret;
+}
+
 Deno.serve(async(req:Request)=>{
   if(req.method!=='POST')return new Response('method not allowed',{status:405});
+  const db=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
+  const provided=req.headers.get('x-cron-secret')||'';
+  const expected=await cronSecret(db).catch(()=>'');
+  if(!expected||!provided||!(await safeEqual(provided,expected)))return Response.json({ok:false,error:'unauthorized'},{status:401});
   try{
-    const db=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false,autoRefreshToken:false}});
     const cutoff=new Date(Date.now()-36*60*60*1000).toISOString();
     await recheck(db,cutoff);
     await cleanup(db,cutoff);
 
-    const {data:current,error:currentError}=await db.from('community_external_feed').select('id,source_url,batch_code,batch_key,opportunity_status,created_at,claimed_by').order('created_at',{ascending:false});
+    const {data:current,error:currentError}=await db.from('community_external_feed').select('id,source_url,batch_code,batch_key,opportunity_status,created_at,claimed_by').order('created_at',{ascending:false}).limit(5000);
     if(currentError)throw currentError;
     const visible=(current||[]).filter((x:any)=>x.opportunity_status==='open'&&!x.claimed_by&&Date.parse(x.created_at)>=Date.parse(cutoff));
     const newest=(code:string)=>visible.filter((x:any)=>x.batch_code===code).sort((a:any,b:any)=>Date.parse(b.created_at)-Date.parse(a.created_at))[0]||null;
@@ -129,11 +145,12 @@ Deno.serve(async(req:Request)=>{
     if(insertError)throw insertError;
     await db.from('community_external_feed').delete().eq('batch_code',code).neq('batch_key',batch).is('claimed_by',null);
     const now=new Date().toISOString();
-    for(const item of inserted||[])await db.from('community_opportunity_status_history').upsert({source_url:item.source_url,title:item.title,status:'open',last_checked_at:now,last_batch_key:item.batch_key},{onConflict:'source_url'});
+    if((inserted||[]).length)await db.from('community_opportunity_status_history').upsert((inserted||[]).map((item:any)=>({source_url:item.source_url,title:item.title,status:'open',last_checked_at:now,last_batch_key:item.batch_key})),{onConflict:'source_url'});
     await cleanup(db,cutoff);
     return Response.json({ok:true,rotated:true,batch,count:(inserted||[]).length,next_refresh_continues:true,advanced:advancedCount});
   }catch(error){
-    return Response.json({ok:false,error:String((error as Error)?.message||error),next_refresh_continues:true},{status:500});
+    console.error('[community-feed-crawler]',error);
+    return Response.json({ok:false,error:'internal_error',next_refresh_continues:true},{status:500});
   }
 });
 

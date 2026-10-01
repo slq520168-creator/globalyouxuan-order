@@ -12,7 +12,7 @@ const FIXED_IDS=[...new Set(CARDS.flatMap(c=>c.schemes.map(x=>x[1])))];
 let settings=[],answers=[],editing=null,opened='web',loading=false;
 async function api(body){const{data}=await window.gyxSupabase.auth.getSession();const s=data?.session;if(!s){location.replace('admin-login.html');throw new Error(tr("adminAuto083"))}const r=await fetch('https://afzcohtnljnmucrkgcaz.supabase.co/functions/v1/admin-api',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+s.access_token},body:JSON.stringify(body)});const j=await r.json().catch(()=>({}));if(!r.ok||j.error)throw new Error(j.message||j.error||tr("adminAuto086"));return j}
 async function loadFixedAnswers(){
-  const q=await window.gyxSupabase.from('product_answer_options').select('*').in('id',FIXED_IDS);
+  const q=await window.gyxSupabase.rpc('gyx_admin_answer_options',{p_ids:FIXED_IDS});
   if(q.error)throw q.error;
   return q.data||[];
 }
