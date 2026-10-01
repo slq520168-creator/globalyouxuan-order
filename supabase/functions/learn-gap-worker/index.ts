@@ -1,0 +1,55 @@
+// learn-gap-worker 入口：鉴权 + 批处理。逻辑在 learn-core.ts。
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
+import { createClient } from 'npm:@supabase/supabase-js@2.112.0';
+import { buildVocab, genericTerms, handleSearchGap, handleSupportGap, setting, withTimeout, type Gap, type Material } from './learn-core.ts';
+
+const SB_URL = Deno.env.get('SUPABASE_URL') || '';
+const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+const DEADLINE_MS = 48_000;
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+
+Deno.serve(async (req: Request) => {
+  if (req.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405);
+  if (!SB_URL || !SERVICE) return json({ error: 'NOT_CONFIGURED' }, 500);
+  const db = createClient(SB_URL, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { data: okSecret } = await db.rpc('learn_check_worker_secret', { p: req.headers.get('x-learn-secret') || '' });
+  if (okSecret !== true) return json({ error: 'UNAUTHORIZED' }, 401);
+
+  const started = Date.now();
+  const refreshed = await db.rpc('learn_refresh_gaps');
+  const mined = await db.rpc('learn_mine_synonyms');
+  const batch = Math.max(1, Math.min(20, Number(await setting(db, 'worker_batch', 8)) || 8));
+  const aiOn = (await setting(db, 'ai_enabled', true)) === true;
+  const webOn = (await setting(db, 'web_lookup_enabled', true)) === true;
+  const autoSyn = (await setting(db, 'auto_activate_synonyms', false)) === true;
+  const autoKb = (await setting(db, 'auto_activate_support_answers', false)) === true;
+
+  const { data: gaps, error } = await db.from('learn_gaps').select('id,kind,normalized,sample,channel,locale,hits,attempts')
+    .eq('status', 'open').lt('attempts', 5).order('hits', { ascending: false }).order('last_seen', { ascending: false }).limit(batch);
+  if (error) return json({ error: 'GAP_READ', detail: error.message }, 500);
+
+  let vocab: string[] = [], generic = new Set<string>();
+  if ((gaps || []).some((g: Gap) => g.kind === 'search')) {
+    const { data: mats } = await db.from('product_answer_options').select('id,title,keywords,keywords_en,search_category,search_subcategory').eq('is_active', true).like('product_id', 'answer-%').limit(2000);
+    vocab = buildVocab((mats || []) as Material[]);
+    generic = genericTerms((mats || []) as Material[]);
+  }
+  const vocabSet = new Set(vocab);
+  const results: unknown[] = [];
+  for (const gap of (gaps || []) as Gap[]) {
+    if (Date.now() - started > DEADLINE_MS) break;
+    await db.from('learn_gaps').update({ status: 'working', attempts: gap.attempts + 1, updated_at: new Date().toISOString() }).eq('id', gap.id).eq('status', 'open');
+    try {
+      const r = gap.kind === 'search'
+        ? await withTimeout(handleSearchGap(db, gap, { vocab, vocabSet, generic, aiOn, webOn, autoOn: autoSyn }), 30_000)
+        : await withTimeout(handleSupportGap(db, gap, { aiOn, autoOn: autoKb }), 25_000);
+      await db.from('learn_gaps').update({ status: r.status, resolution: r.resolution, last_error: null, updated_at: new Date().toISOString() }).eq('id', gap.id);
+      results.push({ id: gap.id, kind: gap.kind, status: r.status });
+    } catch (e) {
+      const msg = String((e as Error)?.message || e).slice(0, 300);
+      await db.from('learn_gaps').update({ status: gap.attempts + 1 >= 5 ? 'needs_human' : 'open', last_error: msg, updated_at: new Date().toISOString() }).eq('id', gap.id);
+      results.push({ id: gap.id, kind: gap.kind, error: msg });
+    }
+  }
+  return json({ ok: true, refreshed: refreshed.data ?? refreshed.error?.message, mined: mined.data ?? mined.error?.message, processed: results.length, results, ms: Date.now() - started });
+});
