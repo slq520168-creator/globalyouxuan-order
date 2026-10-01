@@ -5,7 +5,7 @@ import { buildVocab, genericTerms, handleSearchGap, handleSupportGap, setting, w
 
 const SB_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-const DEADLINE_MS = 48_000;
+const DEADLINE_MS = 20_000; // 最后一个缺口最晚在 20s 开始，单个缺口上限 32s → 整体 < pg_net 55s 超时
 // 鉴权：Vault 密钥 gyx_learn_worker_secret（经 service_role-only RPC gyx_internal_secret 读取），常量时间比较
 let cachedSecret = '';
 async function sha256(v: string) { return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))); }
@@ -50,11 +50,13 @@ Deno.serve(async (req: Request) => {
   const results: unknown[] = [];
   for (const gap of (gaps || []) as Gap[]) {
     if (Date.now() - started > DEADLINE_MS) break;
-    await db.from('learn_gaps').update({ status: 'working', attempts: gap.attempts + 1, updated_at: new Date().toISOString() }).eq('id', gap.id).eq('status', 'open');
+    // 原子认领：并发的两次调用（cron + 手动）不会处理同一个缺口
+    const { data: claimed } = await db.from('learn_gaps').update({ status: 'working', attempts: gap.attempts + 1, updated_at: new Date().toISOString() }).eq('id', gap.id).eq('status', 'open').select('id');
+    if (!claimed?.length) continue;
     try {
       const r = gap.kind === 'search'
-        ? await withTimeout(handleSearchGap(db, gap, { vocab, vocabSet, generic, aiOn, webOn, autoOn: autoSyn }), 30_000)
-        : await withTimeout(handleSupportGap(db, gap, { aiOn, autoActivate: autoSupport }), 25_000);
+        ? await withTimeout(handleSearchGap(db, gap, { vocab, vocabSet, generic, aiOn, webOn, autoOn: autoSyn }), 32_000)
+        : await withTimeout(handleSupportGap(db, gap, { aiOn, autoActivate: autoSupport }), 32_000);
       await db.from('learn_gaps').update({ status: r.status, resolution: r.resolution, last_error: null, updated_at: new Date().toISOString() }).eq('id', gap.id);
       results.push({ id: gap.id, kind: gap.kind, status: r.status });
     } catch (e) {

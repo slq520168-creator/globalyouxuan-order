@@ -67,7 +67,7 @@ export async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 }
 
 async function askAi(system: string, user: unknown): Promise<any> {
-  const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 18_000);
+  const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 26_000);
   try {
     const r = await fetch(AI_URL, { method: 'POST', signal: ctrl.signal, headers: { 'content-type': 'application/json', accept: 'application/json, text/event-stream', origin: 'https://globalyouxuan-order.pages.dev', referer: 'https://globalyouxuan-order.pages.dev/' },
       body: JSON.stringify({ messages: [{ role: 'system', content: system }, { role: 'user', content: typeof user === 'string' ? user : JSON.stringify(user) }] }) });
