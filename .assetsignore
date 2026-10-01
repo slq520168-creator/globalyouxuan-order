@@ -1,1 +1,12 @@
 _worker.js
+.git
+.monkeycode
+supabase
+workers
+functions
+_routes.json
+*.md
+wrangler.jsonc
+vercel.json
+.gitignore
+HOME_LAYOUT_LOCK.txt

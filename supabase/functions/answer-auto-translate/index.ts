@@ -9,13 +9,41 @@ const NEXT_DELAY_MS = 600;
 const HAN = /[\u3400-\u9fff\uf900-\ufaff]/;
 const KHMER = /[\u1780-\u17ff]/;
 const FORBIDDEN_KHMER_ENGLISH = /\b(?:agents?|agentic|prompts?|portfolios?|workflows?|clouds?|cloud-based)\b/i;
-const HEADERS = {
+const HEADERS: Record<string, string> = {
   "content-type": "application/json; charset=utf-8",
-  "access-control-allow-origin": "*",
-  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, x-internal-service",
+  "access-control-allow-headers": "authorization, x-client-info, apikey, content-type",
   "access-control-allow-methods": "POST, OPTIONS",
   "cache-control": "no-store",
+  "vary": "Origin",
 };
+// #16 CORS 只允许本站（正式域名 + Cloudflare Pages 预览子域 + 本地调试）；服务端内部调用不带 Origin，不受影响
+const ALLOWED_ORIGIN = /^(https:\/\/([a-z0-9-]+\.)?globalyouxuan-order\.pages\.dev|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
+function withCors(request: Request, response: Response) {
+  const origin = request.headers.get("Origin") || "";
+  const headers = new Headers(response.headers);
+  if (ALLOWED_ORIGIN.test(origin)) headers.set("access-control-allow-origin", origin);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
+
+// #8 内部自调用 / claim-answer-download 调用使用 Vault 专用密钥 gyx_translate_internal_secret（不再传 service_role 密钥），常量时间比较
+let cachedInternalSecret = "";
+// deno-lint-ignore no-explicit-any
+async function internalSecret(db: any) {
+  if (cachedInternalSecret) return cachedInternalSecret;
+  const { data, error } = await db.rpc("gyx_internal_secret", { p_name: "gyx_translate_internal_secret" });
+  if (error || typeof data !== "string" || data.length < 32) throw new Error("INTERNAL_SECRET_UNAVAILABLE");
+  cachedInternalSecret = data;
+  return cachedInternalSecret;
+}
+async function digest(value: string) {
+  return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)));
+}
+async function safeEqual(a: string, b: string) {
+  const [x, y] = await Promise.all([digest(a), digest(b)]);
+  let diff = a.length === b.length ? 0 : 1;
+  for (let i = 0; i < x.length; i++) diff |= x[i] ^ y[i];
+  return diff === 0;
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: HEADERS });
@@ -64,6 +92,24 @@ function cleanModelText(value: string) {
 }
 
 function extractModelText(raw: string) {
+  if (/^data:/m.test(raw)) {
+    const parts: string[] = [];
+    for (const line of raw.replace(/\r/g, "").split("\n")) {
+      if (!line.startsWith("data:")) continue;
+      const payload = line.slice(5).trimStart();
+      if (!payload || payload === "[DONE]") continue;
+      try {
+        const event = JSON.parse(payload);
+        const value = typeof event?.response === "string"
+          ? event.response
+          : event?.choices?.[0]?.delta?.content;
+        if (typeof value === "string") parts.push(value);
+      } catch {
+        // Ignore malformed keep-alive events without corrupting translated text.
+      }
+    }
+    if (parts.length) return parts.join("").trim();
+  }
   try {
     const parsed = JSON.parse(raw);
     const candidates = [
@@ -157,6 +203,12 @@ async function translateChunk(
     ? " Translate generic terms such as agent, prompt, portfolio, workflow and cloud into natural Khmer; do not leave those English words standing alone."
     : "";
   const system = `Translate this complete customer-facing delivery section from ${sourceLanguage} into ${target}. Translate every user-visible sentence and heading. Preserve structure, numbering, bullets, URLs, email addresses, prices, code identifiers, established product names and the brand name GlobalYouXuan.${khmerRule} Do not summarize, shorten, omit, add commentary, or expose internal processing details. Output only the translated section.`;
+  const translated = cleanModelText(await modelCompletion(system, source));
+  validateTranslation(source, translated, locale);
+  return translated;
+}
+
+async function modelCompletion(system: string, user: string) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 55_000);
   try {
@@ -166,16 +218,14 @@ async function translateChunk(
       body: JSON.stringify({
         messages: [
           { role: "system", content: system },
-          { role: "user", content: source },
+          { role: "user", content: user },
         ],
       }),
       signal: controller.signal,
     });
     const raw = await response.text();
     if (!response.ok) throw new Error(`AI_${response.status}`);
-    const translated = cleanModelText(extractModelText(raw));
-    validateTranslation(source, translated, locale);
-    return translated;
+    return extractModelText(raw);
   } finally {
     clearTimeout(timeout);
   }
@@ -382,16 +432,155 @@ async function communityDelivery(
   }
 }
 
-async function selfCall(
+type AnswerCatalogRow = {
+  id: number;
+  title: string | null;
+  title_en: string | null;
+  title_km: string | null;
+  answer_summary: string | null;
+  answer_summary_en: string | null;
+  answer_summary_km: string | null;
+  content_version: number | null;
+};
+
+function translationFromJson(value: string) {
+  const cleaned = cleanModelText(value);
+  try {
+    const parsed = JSON.parse(cleaned);
+    if (typeof parsed?.translation === "string") return parsed.translation.trim();
+  } catch {
+    const match = cleaned.match(/"translation"\s*:\s*("(?:\\.|[^"\\])*")/s);
+    if (match) {
+      try {
+        return String(JSON.parse(match[1])).trim();
+      } catch {
+        // A retry will handle malformed model output.
+      }
+    }
+  }
+  throw new Error("INVALID_TRANSLATION_JSON");
+}
+
+async function translateAnswerTitle(source: string, locale: "en" | "km") {
+  const target = locale === "km" ? "standard natural Khmer" : "natural English";
+  const glossary = locale === "km"
+    ? " Use របៀប for 'how to', ជ្រើសរើស for 'choose', ឥតគិតថ្លៃ for 'free', មាតិកា for 'content', វេទិកា for 'platform', ដោយស្វ័យប្រវត្តិ for 'automatically', លំហូរការងារ for 'workflow', ពាក្យបញ្ជា for 'prompt', សំណុំស្នាដៃ for 'portfolio', ភ្នាក់ងារឆ្លាតវៃ for 'AI agent', and សេវាពពក for 'cloud service'."
+    : "";
+  const system = `You are a professional UI localization translator. Translate the Simplified Chinese title faithfully and concisely into ${target}. Do not answer the title as a question. Preserve established brand names and technical identifiers such as API, AI, Groq and Gemini.${glossary} Output strict JSON only: {"translation":"..."}.`;
+  let lastError: unknown = new Error("TITLE_TRANSLATION_FAILED");
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const translated = translationFromJson(await modelCompletion(
+        system,
+        JSON.stringify({ source }),
+      ));
+      validateTranslation(source, translated, locale);
+      return translated;
+    } catch (error) {
+      lastError = error;
+      if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, attempt * 350));
+    }
+  }
+  throw lastError;
+}
+
+async function translateAnswerBody(source: string, locale: "en" | "km") {
+  if (!source.trim()) return "";
+  const chunks = chunkSource(source);
+  const translated = await Promise.all(
+    chunks.map((chunk) => translateWithRetry(chunk, locale, "Simplified Chinese")),
+  );
+  const value = translated.map(text).filter(Boolean).join("\n\n");
+  validateTranslation(source, value, locale);
+  return value;
+}
+
+function usableTranslation(source: string, candidate: unknown, locale: "en" | "km") {
+  const value = text(candidate);
+  if (!value) return false;
+  try {
+    validateTranslation(source, value, locale);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+// 公开的目录翻译：只处理标题和摘要（免费可见字段）。
+// 安全修复：付费正文 answer_detail_* 一律不读取、不翻译、不返回（此前 include_detail=true 可匿名拿到付费正文）。
+async function catalogContent(
+  request: Request,
+  body: Record<string, unknown>,
   supabaseUrl: string,
   serviceKey: string,
+) {
+  const publishableKey = envKey("SUPABASE_PUBLISHABLE_KEYS", "SUPABASE_ANON_KEY");
+  const authorization = request.headers.get("Authorization") || "";
+  const apiKey = request.headers.get("apikey") || "";
+  if (apiKey !== publishableKey && authorization !== `Bearer ${publishableKey}`) {
+    return json({ error: "FORBIDDEN" }, 403);
+  }
+  const locale = localeOf(body.locale);
+  if (!locale) return json({ error: "LOCALE_REQUIRED" }, 400);
+  const ids = [...new Set((Array.isArray(body.answer_ids) ? body.answer_ids : [])
+    .map(Number)
+    .filter((id) => Number.isSafeInteger(id) && id > 0))].slice(0, 8);
+  if (!ids.length) return json({ error: "ANSWER_IDS_REQUIRED" }, 400);
+  const includeSummary = body.include_detail === true || body.include_summary === true;
+  const db = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+  const { data, error } = await db
+    .from("product_answer_options")
+    .select("id,title,title_en,title_km,answer_summary,answer_summary_en,answer_summary_km,content_version")
+    .in("id", ids)
+    .eq("is_active", true);
+  if (error) throw error;
+
+  const rows = await Promise.all(((data || []) as AnswerCatalogRow[]).map(async (row) => {
+    const titleColumn = locale === "en" ? "title_en" : "title_km";
+    const summaryColumn = locale === "en" ? "answer_summary_en" : "answer_summary_km";
+    const update: Record<string, string> = {};
+    let fallback = false;
+    try {
+      if (!usableTranslation(text(row.title), row[titleColumn], locale)) {
+        update[titleColumn] = await translateAnswerTitle(text(row.title), locale);
+      }
+      if (includeSummary && text(row.answer_summary) && !usableTranslation(text(row.answer_summary), row[summaryColumn], locale)) {
+        update[summaryColumn] = await translateAnswerBody(text(row.answer_summary), locale);
+      }
+      if (Object.keys(update).length) {
+        const write = await db
+          .from("product_answer_options")
+          .update({ ...update, updated_at: new Date().toISOString() })
+          .eq("id", row.id)
+          .eq("content_version", Number(row.content_version || 1));
+        if (write.error) throw write.error;
+        Object.assign(row, update);
+      }
+    } catch (translationError) {
+      fallback = true;
+      console.warn("[GYXI18N catalog] translation failed; fallback=zh", {
+        answer_id: row.id,
+        locale,
+        error: text((translationError as Error)?.message || translationError),
+      });
+    }
+    return { ...row, fallback };
+  }));
+  return json({ ok: true, locale, rows });
+}
+
+async function selfCall(
+  supabaseUrl: string,
+  internal: string,
   body: Record<string, unknown>,
 ) {
   await fetch(`${supabaseUrl}/functions/v1/answer-auto-translate`, {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-internal-service": serviceKey,
+      "x-internal-service": internal,
     },
     body: JSON.stringify(body),
   }).catch((error) => console.error("[GYX delivery translation] worker call failed", error));
@@ -399,25 +588,27 @@ async function selfCall(
 
 async function delayedSelfCall(
   supabaseUrl: string,
-  serviceKey: string,
+  internal: string,
   body: Record<string, unknown>,
 ) {
   await new Promise((resolve) => setTimeout(resolve, NEXT_DELAY_MS));
-  await selfCall(supabaseUrl, serviceKey, body);
+  await selfCall(supabaseUrl, internal, body);
 }
 
 function launchWorkers(
   supabaseUrl: string,
-  serviceKey: string,
+  internal: string,
   body: Record<string, unknown>,
   count = WORKER_COUNT,
 ) {
   for (let index = 0; index < count; index += 1) {
-    EdgeRuntime.waitUntil(selfCall(supabaseUrl, serviceKey, body));
+    EdgeRuntime.waitUntil(selfCall(supabaseUrl, internal, body));
   }
 }
 
-Deno.serve(async (request: Request) => {
+Deno.serve(async (request: Request) => withCors(request, await handle(request)));
+
+async function handle(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: HEADERS });
   if (request.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
 
@@ -429,13 +620,17 @@ Deno.serve(async (request: Request) => {
     if (action === "community") {
       return await communityDelivery(request, body, supabaseUrl, serviceKey);
     }
-    if (request.headers.get("x-internal-service") !== serviceKey) {
-      return json({ error: "FORBIDDEN" }, 403);
+    if (action === "catalog") {
+      return await catalogContent(request, body, supabaseUrl, serviceKey);
     }
 
     const db = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    const internal = await internalSecret(db);
+    if (!(await safeEqual(request.headers.get("x-internal-service") || "", internal))) {
+      return json({ error: "FORBIDDEN" }, 403);
+    }
     const orderId = Number(body.order_id);
     const locale = localeOf(body.locale);
     const sourceHash = text(body.source_hash);
@@ -530,9 +725,9 @@ Deno.serve(async (request: Request) => {
           .eq("status", "pending")
           .select("order_id");
         if (startError) throw startError;
-        if ((started || []).length) launchWorkers(supabaseUrl, serviceKey, workerBody);
+        if ((started || []).length) launchWorkers(supabaseUrl, internal, workerBody);
       } else if (cache?.status === "processing") {
-        EdgeRuntime.waitUntil(selfCall(supabaseUrl, serviceKey, workerBody));
+        EdgeRuntime.waitUntil(selfCall(supabaseUrl, internal, workerBody));
       }
 
       return json({
@@ -620,7 +815,7 @@ Deno.serve(async (request: Request) => {
         if (retryable) {
           const availableWorkers = Math.max(0, WORKER_COUNT - activeCount);
           if (availableWorkers) {
-            launchWorkers(supabaseUrl, serviceKey, workerBody, availableWorkers);
+            launchWorkers(supabaseUrl, internal, workerBody, availableWorkers);
           }
           return json({ ok: true, status: "processing", locale });
         }
@@ -677,7 +872,7 @@ Deno.serve(async (request: Request) => {
           .eq("order_id", orderId)
           .eq("locale", locale)
           .eq("source_hash", sourceHash);
-        EdgeRuntime.waitUntil(delayedSelfCall(supabaseUrl, serviceKey, workerBody));
+        EdgeRuntime.waitUntil(delayedSelfCall(supabaseUrl, internal, workerBody));
         return json({ ok: true, status: "processing", completed_chunks: count || 0 });
       } catch (error) {
         const message = text(
@@ -699,7 +894,7 @@ Deno.serve(async (request: Request) => {
           attempt_count: part.attempt_count,
           error: message,
         });
-        EdgeRuntime.waitUntil(delayedSelfCall(supabaseUrl, serviceKey, workerBody));
+        EdgeRuntime.waitUntil(delayedSelfCall(supabaseUrl, internal, workerBody));
         return json({ ok: false, status: "processing", error: message });
       }
     }
@@ -707,6 +902,6 @@ Deno.serve(async (request: Request) => {
     return json({ error: "BAD_ACTION" }, 400);
   } catch (error) {
     console.error("[GYX delivery translation] failed", error);
-    return json({ error: "FAILED", message: text((error as Error)?.message || error) }, 500);
+    return json({ error: "FAILED" }, 500);
   }
-});
+}

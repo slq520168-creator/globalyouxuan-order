@@ -1,11 +1,19 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.0";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
+// #16 CORS 只允许本站（正式域名 + Cloudflare Pages 预览子域 + 本地调试）
+const ALLOWED_ORIGIN = /^(https:\/\/([a-z0-9-]+\.)?globalyouxuan-order\.pages\.dev|http:\/\/(localhost|127\.0\.0\.1)(:\d+)?)$/;
+const CORS: Record<string, string> = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Vary": "Origin",
 };
+function withCors(request: Request, response: Response) {
+  const origin = request.headers.get("Origin") || "";
+  const headers = new Headers(response.headers);
+  if (ALLOWED_ORIGIN.test(origin)) headers.set("Access-Control-Allow-Origin", origin);
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
+}
 
 const HAN = /[\u3400-\u9fff\uf900-\ufaff]/;
 const KHMER = /[\u1780-\u17ff]/;
@@ -42,21 +50,6 @@ function localeOf(value: unknown): "zh-CN" | "en" | "km" {
   if (valueNormalized === "en" || valueNormalized.startsWith("en-")) return "en";
   if (valueNormalized === "km" || valueNormalized.startsWith("km-")) return "km";
   return "zh-CN";
-}
-
-function jwtSubject(token: string) {
-  try {
-    const payload = token.split(".")[1];
-    if (!payload) return "";
-    const base64 = payload
-      .replace(/-/g, "+")
-      .replace(/_/g, "/")
-      .padEnd(Math.ceil(payload.length / 4) * 4, "=");
-    const parsed = JSON.parse(atob(base64));
-    return typeof parsed?.sub === "string" ? parsed.sub : "";
-  } catch {
-    return "";
-  }
 }
 
 function buildDelivery(
@@ -110,10 +103,21 @@ async function sha256(value: string) {
     .join("");
 }
 
+// #8 内部调用不再携带 service_role 密钥，改用 Vault 里的专用密钥 gyx_translate_internal_secret
+let cachedInternalSecret = "";
+// deno-lint-ignore no-explicit-any
+async function internalSecret(db: any) {
+  if (cachedInternalSecret) return cachedInternalSecret;
+  const { data, error } = await db.rpc("gyx_internal_secret", { p_name: "gyx_translate_internal_secret" });
+  if (error || typeof data !== "string" || data.length < 32) throw new Error("INTERNAL_SECRET_UNAVAILABLE");
+  cachedInternalSecret = data;
+  return cachedInternalSecret;
+}
+
 async function getTranslation(
-  db: ReturnType<typeof createClient>,
+  // deno-lint-ignore no-explicit-any
+  db: any,
   supabaseUrl: string,
-  serviceKey: string,
   orderId: number,
   locale: "en" | "km",
   sourceContent: string,
@@ -150,7 +154,7 @@ async function getTranslation(
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-internal-service": serviceKey,
+      "x-internal-service": await internalSecret(db),
     },
     body: JSON.stringify({
       action: "ensure",
@@ -163,22 +167,25 @@ async function getTranslation(
   return await response.json().catch(() => ({ error: "TRANSLATOR_BAD_RESPONSE" }));
 }
 
-Deno.serve(async (request: Request) => {
+Deno.serve(async (request: Request) => withCors(request, await handle(request)));
+
+async function handle(request: Request): Promise<Response> {
   if (request.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (request.method !== "POST") return json({ error: "METHOD_NOT_ALLOWED" }, 405);
 
   try {
     const authorization = request.headers.get("Authorization") || "";
     if (!authorization.startsWith("Bearer ")) return json({ error: "AUTH_REQUIRED" }, 401);
-    const userId = jwtSubject(authorization.slice(7));
-    if (!userId) return json({ error: "INVALID_SESSION" }, 401);
-
     const bodyPromise = request.json().catch(() => ({}));
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = envKey("SUPABASE_SECRET_KEYS", "SUPABASE_SERVICE_ROLE_KEY");
     const db = createClient(supabaseUrl, serviceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
+    // #7 用 Auth 服务校验会话（签名、过期、已登出），不再只解码 JWT 载荷
+    const { data: userData, error: userError } = await db.auth.getUser(authorization.slice(7));
+    const userId = userData?.user?.id || "";
+    if (userError || !userId) return json({ error: "INVALID_SESSION" }, 401);
     const body = await bodyPromise as Record<string, unknown>;
     const orderId = Number(body.order_id);
     const allowChineseFallback = body.fallback_to_zh === true;
@@ -326,7 +333,6 @@ Deno.serve(async (request: Request) => {
         const translated = await getTranslation(
           db,
           supabaseUrl,
-          serviceKey,
           order.id,
           requestedLocale,
           sourceContent,
@@ -394,4 +400,4 @@ Deno.serve(async (request: Request) => {
     console.error("[GYX delivery] claim failed", error);
     return json({ error: "INTERNAL_ERROR" }, 500);
   }
-});
+}

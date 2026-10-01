@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "include": [
+    "/.monkeycode/*",
+    "/.git/*",
+    "/supabase/*",
+    "/workers/*",
+    "/functions/*",
+    "/*.md",
+    "/SELF_LEARNING.md",
+    "/DEPLOYMENT_TARGETS.md",
+    "/SECURITY_RECOVERY.md",
+    "/README.md",
+    "/wrangler.jsonc",
+    "/wrangler.json",
+    "/wrangler.toml",
+    "/vercel.json",
+    "/.gitignore",
+    "/.assetsignore",
+    "/_routes.json",
+    "/HOME_LAYOUT_LOCK.txt",
+    "/package.json",
+    "/package-lock.json"
+  ],
+  "exclude": []
+}
