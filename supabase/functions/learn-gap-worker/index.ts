@@ -29,10 +29,12 @@ Deno.serve(async (req: Request) => {
   const started = Date.now();
   const refreshed = await db.rpc('learn_refresh_gaps');
   const mined = await db.rpc('learn_mine_synonyms');
+  await db.rpc('learn_requeue_unresolved'); // 无人工审核：未解决的缺口每 6 小时自动重试（最多 5 次）
   const batch = Math.max(1, Math.min(20, Number(await setting(db, 'worker_batch', 8)) || 8));
   const aiOn = (await setting(db, 'ai_enabled', true)) === true;
   const webOn = (await setting(db, 'web_lookup_enabled', true)) === true;
   const autoSyn = (await setting(db, 'auto_activate_synonyms', false)) === true;
+  const autoSupport = (await setting(db, 'auto_activate_support', false)) === true;
 
   const { data: gaps, error } = await db.from('learn_gaps').select('id,kind,normalized,sample,channel,locale,hits,attempts')
     .eq('status', 'open').lt('attempts', 5).order('hits', { ascending: false }).order('last_seen', { ascending: false }).limit(batch);
@@ -52,12 +54,12 @@ Deno.serve(async (req: Request) => {
     try {
       const r = gap.kind === 'search'
         ? await withTimeout(handleSearchGap(db, gap, { vocab, vocabSet, generic, aiOn, webOn, autoOn: autoSyn }), 30_000)
-        : await withTimeout(handleSupportGap(db, gap, { aiOn }), 25_000);
+        : await withTimeout(handleSupportGap(db, gap, { aiOn, autoActivate: autoSupport }), 25_000);
       await db.from('learn_gaps').update({ status: r.status, resolution: r.resolution, last_error: null, updated_at: new Date().toISOString() }).eq('id', gap.id);
       results.push({ id: gap.id, kind: gap.kind, status: r.status });
     } catch (e) {
       const msg = String((e as Error)?.message || e).slice(0, 300);
-      await db.from('learn_gaps').update({ status: gap.attempts + 1 >= 5 ? 'needs_human' : 'open', last_error: msg, updated_at: new Date().toISOString() }).eq('id', gap.id);
+      await db.from('learn_gaps').update({ status: gap.attempts + 1 >= 5 ? 'unresolved' : 'open', last_error: msg, updated_at: new Date().toISOString() }).eq('id', gap.id);
       results.push({ id: gap.id, kind: gap.kind, error: msg });
     }
   }

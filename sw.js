@@ -1,5 +1,5 @@
 /* GlobalYouXuan service worker: push notifications + instant navigation */
-const VERSION = 'gyx-sw-v20260921-speed-3';
+const VERSION = 'gyx-sw-v20261002-pay-1';
 const CORE_ASSETS = [
   './',
   'shop.html',

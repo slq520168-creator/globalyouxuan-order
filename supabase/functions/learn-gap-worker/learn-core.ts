@@ -1,6 +1,6 @@
 // learn-gap-worker：自我学习后台工人（由 pg_cron 每 30 分钟调用，verify_jwt=false + x-learn-secret 校验）
 // 做的事：处理 learn_gaps 里“没搜到 / 没答上”的问题 → 自己去找（站内资料 → 维基百科 → 免费 AI）
-//        → 写成 pending 的同义词 / 客服答案 / 资料草稿，等管理员审核（或按设置自动上线）。
+//        → 写成同义词 / 客服答案（按 learn_settings 自动上线，当前设置=全部自动上线，无人工审核）/ 资料草稿。
 // 不做的事：不改订单、付款、交付、商品价格；不写 product_answer_options；不在运行时替用户编答案。
 import type { SupabaseClient } from 'npm:@supabase/supabase-js@2.112.0';
 
@@ -134,7 +134,7 @@ export async function bestExpansion(db: SupabaseClient, query: string, terms: st
 
 export async function handleSearchGap(db: SupabaseClient, gap: Gap, ctx: { vocab: string[]; vocabSet: Set<string>; generic?: Set<string>; aiOn: boolean; webOn: boolean; autoOn: boolean }) {
   const q = stripContacts(gap.sample).slice(0, 120).trim();
-  if (q.length < 2 || q.includes('[已移除]')) return { status: 'needs_human', resolution: { type: 'contains_contact_or_link' } };
+  if (q.length < 2 || q.includes('[已移除]')) return { status: 'ignored', resolution: { type: 'contains_contact_or_link' } };
   const before = await verifyExpansion(db, q, [], 'expansion');
   // 1) 站内：错别字 / 近似词 → 已有关键词（不花钱，不用 AI）
   const local = ctx.vocab.map(k => ({ k, s: dice(q, k) })).filter(x => x.s >= 0.5 && norm(x.k) !== norm(q)).sort((a, b) => b.s - a.s).slice(0, 4).map(x => x.k);
@@ -143,7 +143,7 @@ export async function handleSearchGap(db: SupabaseClient, gap: Gap, ctx: { vocab
   // 2b) 百科摘要里直接出现的站内词（如“歌手”“演员”“餐厅”）——免费、确定
   const fromWeb = web ? ctx.vocab.filter(k => k.length >= 2 && !/^[a-z]{1,3}$/i.test(k) && web.extract.toLowerCase().includes(k.toLowerCase())).slice(0, 6) : [];
   // 3) 免费 AI：只允许从站内词表里挑词，杜绝编造
-  let ai: any = null;
+  let ai: any = null, aiFailed = '';
   if (ctx.aiOn) {
     const ctxText = q + ' ' + (web?.extract || '');
     const related = ctx.vocab.map(k => ({ k, s: dice(ctxText, k) })).sort((a, b) => b.s - a.s).slice(0, 120).map(x => x.k);
@@ -151,7 +151,7 @@ export async function handleSearchGap(db: SupabaseClient, gap: Gap, ctx: { vocab
     ai = await askAi(
       '你是搜索词典维护员。用户搜了一个词，站内资料没搜到。根据用户的词、可选的百科摘要，从“站内词表”里挑出最能代表用户意图的 1~6 个词，既要具体词（如 歌手、演员），也要上位类别词（如 明星、人物IP、餐饮、门店）。只能从词表里挑，禁止创造新词。只输出 JSON：{"expansions":["..."],"role":"core|expansion","category":"personal_income|business_help|content_monetization|null","missing_topic":"如果站内确实没有相关资料，用一句话写出应补充的资料主题，否则空字符串","translation_zh":"若用户词不是中文，给中文意思"}',
       { user_query: q, encyclopedia: web?.extract || '', site_vocabulary: shortlist },
-    ).catch(() => null);
+    ).catch((e: Error) => { aiFailed = String(e?.message || e); return null; });
   }
   const aiTerms: string[] = Array.isArray(ai?.expansions) ? ai.expansions.map((x: unknown) => String(x || '').trim()).filter((x: string) => ctx.vocabSet.has(x)) : [];
   const picked = [...new Set([...local, ...fromWeb, ...aiTerms])].filter(k => !ctx.generic?.has(k)).slice(0, 8);
@@ -160,23 +160,26 @@ export async function handleSearchGap(db: SupabaseClient, gap: Gap, ctx: { vocab
   const evidence = { before, after, local, from_web: fromWeb, ai_terms: aiTerms, web: web ? { title: web.title, url: web.url, extract: web.extract.slice(0, 240) } : null, translation_zh: ai?.translation_zh || null, at: new Date().toISOString() };
 
   if (terms.length && after > before && after >= 1) {
-    // #11：已上线 / 已停用 / 管理员录入的同义词一律不覆盖，交给人工
+    // #11：已上线 / 已停用 / 管理员录入的同义词一律不覆盖（保留现有，不进人工队列）
     const { data: existing, error: exErr } = await db.from('learn_synonyms').select('id,status,source,role').eq('term_norm', gap.normalized);
     if (exErr) throw new Error('SYN_READ ' + exErr.message);
     const conflict = (existing || []).find((x: any) => x.status === 'active' || x.status === 'disabled' || x.source === 'admin');
-    if (conflict) return { status: 'needs_human', resolution: { type: 'synonym_conflict', existing: conflict.id, existing_status: conflict.status, existing_source: conflict.source, proposed: terms, role, after, before } };
-    const status = ctx.autoOn && after >= 5 ? 'active' : 'pending';
+    if (conflict) return { status: 'ignored', resolution: { type: 'synonym_kept_existing', existing: conflict.id, existing_status: conflict.status, existing_source: conflict.source, proposed: terms, role, after, before } };
+    const status = ctx.autoOn ? 'active' : 'pending';
     const { error } = await db.from('learn_synonyms').upsert({ term: q, term_norm: gap.normalized, expansions: terms, role, category, source: aiTerms.length ? 'ai' : fromWeb.length ? 'web' : 'mined', evidence, verified_hits: after, status }, { onConflict: 'term_norm,role' });
     if (error) throw new Error('SYN_WRITE ' + error.message);
     return { status: status === 'active' ? 'resolved' : 'proposed', resolution: { type: 'synonym', terms, role, after, before, resolved_at: new Date().toISOString() } };
   }
-  // 站内确实缺资料 → 生成“资料草稿”给管理员，决定要不要补进资料库
+  // 站内确实缺资料 → 记录“缺资料主题”
   const topic = stripContacts(String(ai?.missing_topic || '').trim() || (web ? `${web.title}：${web.extract.slice(0, 80)}` : ''));
   if (topic) {
-    await db.from('learn_kb').insert({ kind: 'material_draft', question: q, q_norm: gap.normalized, answer_zh: topic.slice(0, 1200), source: web ? 'web' : 'ai', source_url: web?.url || null, evidence, status: 'pending', gap_id: gap.id });
-    return { status: 'needs_human', resolution: { type: 'material_draft', topic: topic.slice(0, 200), evidence } };
+    // 不做人工审核：缺资料主题直接记为 active 的“待补资料”记录（不会自动生成付费资料，也不会进搜索结果）
+    await db.from('learn_kb').insert({ kind: 'material_draft', question: q, q_norm: gap.normalized, answer_zh: topic.slice(0, 1200), source: web ? 'web' : 'ai', source_url: web?.url || null, evidence, status: 'active', gap_id: gap.id });
+    return { status: 'resolved', resolution: { type: 'material_draft', topic: topic.slice(0, 200), evidence, resolved_at: new Date().toISOString() } };
   }
-  return { status: 'needs_human', resolution: { type: 'nothing_found', evidence } };
+  // AI 临时不可用 → 抛错，自动重试（不进人工队列）
+  if (aiFailed) throw new Error('AI_UNAVAILABLE ' + aiFailed.slice(0, 120));
+  return { status: 'unresolved', resolution: { type: 'nothing_found', evidence } };
 }
 
 // ---------- 客服缺口 ----------
@@ -190,25 +193,30 @@ const SITE_FACTS = [
   '语言：中文、English、ភាសាខ្មែរ。',
 ].join('\n');
 
-export async function handleSupportGap(db: SupabaseClient, gap: Gap, ctx: { aiOn: boolean }) {
-  if (!ctx.aiOn) return { status: 'needs_human', resolution: { type: 'ai_disabled' } };
+export async function handleSupportGap(db: SupabaseClient, gap: Gap, ctx: { aiOn: boolean; autoActivate?: boolean }) {
+  if (!ctx.aiOn) return { status: 'unresolved', resolution: { type: 'ai_disabled' } };
   const question = stripContacts(gap.sample).slice(0, 300);
-  if (question.length < 2) return { status: 'needs_human', resolution: { type: 'empty_after_sanitize' } };
+  if (question.length < 2) return { status: 'ignored', resolution: { type: 'empty_after_sanitize' } };
   const { data: known } = await db.from('learn_kb').select('question,answer_zh').eq('kind', 'support').eq('status', 'active').limit(40);
   const related = (known || []).map((k: any) => ({ ...k, s: dice(gap.sample, k.question) })).sort((a: any, b: any) => b.s - a.s).slice(0, 5).map(({ question, answer_zh }: any) => ({ question, answer_zh }));
   const ai = await askAi(
     '你是 GlobalYouXuan 客服知识库编辑。只能依据“站点事实”和“已审核问答”写答案，不知道就 answerable=false，绝不编造到账、退款、审核、发货状态，不承诺收益。答案简短礼貌。只输出 JSON：{"answerable":true|false,"answer_zh":"...","answer_en":"...","answer_km":"...","tags":["..."],"reason":"..."}',
     { customer_question: question, site_facts: SITE_FACTS, approved_qa: related },
   ).catch((e: Error) => ({ error: e.message }));
-  if (!ai || ai.error || !ai.answerable || String(ai.answer_zh || '').trim().length < 6) {
-    return { status: 'needs_human', resolution: { type: 'support_unanswerable', reason: String(ai?.reason || ai?.error || 'no_answer').slice(0, 200) } };
+  // AI 临时不可用（超时/HTTP 错误）→ 抛错，自动重试
+  if (!ai || ai.error) throw new Error('AI_UNAVAILABLE ' + String(ai?.error || 'empty').slice(0, 120));
+  if (!ai.answerable || String(ai.answer_zh || '').trim().length < 6) {
+    return { status: 'unresolved', resolution: { type: 'support_unanswerable', reason: String(ai?.reason || ai?.error || 'no_answer').slice(0, 200) } };
   }
   const rawAnswers = [ai.answer_zh, ai.answer_en, ai.answer_km].map((x: unknown) => String(x || ''));
   const contactInAnswer = rawAnswers.some(hasForeignContact);
   const [answerZh, answerEn, answerKm] = rawAnswers.map((x) => stripContacts(x, true).slice(0, 1200));
-  const risk = contactInAnswer || MONEY.test(question) || MONEY.test(answerZh) ? 'high' : 'low';
-  // #12：AI 生成的客服答案永远进入人工审核（pending），没有自动上线开关
-  const status = 'pending';
+  const stripped = rawAnswers.some((x, i) => stripContacts(x, true) !== x) || [answerZh, answerEn, answerKm].some((x) => x.includes('[已移除]'));
+  const risk = contactInAnswer || stripped || MONEY.test(question) || MONEY.test(answerZh) || MONEY.test(answerEn) ? 'high' : 'low';
+  // 用户明确要求：不做人工审核，学到的客服答案直接上线（auto_activate_support=true）。
+  // 防骗过滤仍然保留：AI 输入/输出里的外部链接、TG、钱包、电话、邮箱等一律剥离（只保留站点官方联系方式）；
+  // 付款/价格类问题前端不走 AI 答案，而是直接打开站内已有的下单/付款弹窗。risk 字段仅作标记。
+  const status = ctx.autoActivate === true ? 'active' : 'pending';
   const { error } = await db.from('learn_kb').insert({
     kind: 'support', channel: gap.channel === 'member' ? 'member' : 'any', question, q_norm: gap.normalized,
     answer_zh: answerZh, answer_en: answerEn || null, answer_km: answerKm || null,
@@ -216,6 +224,6 @@ export async function handleSupportGap(db: SupabaseClient, gap: Gap, ctx: { aiOn
     evidence: { reason: stripContacts(String(ai.reason || '')).slice(0, 200), related: related.length, contact_stripped: contactInAnswer },
   });
   if (error) throw new Error('KB_WRITE ' + error.message);
-  return { status: 'proposed', resolution: { type: 'support_answer', risk, status, resolved_at: new Date().toISOString() } };
+  return { status: status === 'active' ? 'resolved' : 'proposed', resolution: { type: 'support_answer', risk, status, resolved_at: new Date().toISOString() } };
 }
 
