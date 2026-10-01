@@ -6,14 +6,25 @@ import { buildVocab, genericTerms, handleSearchGap, handleSupportGap, setting, w
 const SB_URL = Deno.env.get('SUPABASE_URL') || '';
 const SERVICE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
 const DEADLINE_MS = 48_000;
+// 鉴权：Vault 密钥 gyx_learn_worker_secret（经 service_role-only RPC gyx_internal_secret 读取），常量时间比较
+let cachedSecret = '';
+async function sha256(v: string) { return new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v))); }
+async function safeEqual(a: string, b: string) { const [x, y] = await Promise.all([sha256(a), sha256(b)]); let d = a.length === b.length ? 0 : 1; for (let i = 0; i < x.length; i++) d |= x[i] ^ y[i]; return d === 0; }
+async function workerSecret(db: any) {
+  if (cachedSecret) return cachedSecret;
+  const { data, error } = await db.rpc('gyx_internal_secret', { p_name: 'gyx_learn_worker_secret' });
+  if (error || typeof data !== 'string' || data.length < 32) return '';
+  cachedSecret = data; return cachedSecret;
+}
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'METHOD_NOT_ALLOWED' }, 405);
   if (!SB_URL || !SERVICE) return json({ error: 'NOT_CONFIGURED' }, 500);
   const db = createClient(SB_URL, SERVICE, { auth: { persistSession: false, autoRefreshToken: false } });
-  const { data: okSecret } = await db.rpc('learn_check_worker_secret', { p: req.headers.get('x-learn-secret') || '' });
-  if (okSecret !== true) return json({ error: 'UNAUTHORIZED' }, 401);
+  const provided = req.headers.get('x-learn-secret') || '';
+  const expected = await workerSecret(db).catch(() => '');
+  if (!expected || !provided || !(await safeEqual(provided, expected))) return json({ error: 'UNAUTHORIZED' }, 401);
 
   const started = Date.now();
   const refreshed = await db.rpc('learn_refresh_gaps');
@@ -22,7 +33,6 @@ Deno.serve(async (req: Request) => {
   const aiOn = (await setting(db, 'ai_enabled', true)) === true;
   const webOn = (await setting(db, 'web_lookup_enabled', true)) === true;
   const autoSyn = (await setting(db, 'auto_activate_synonyms', false)) === true;
-  const autoKb = (await setting(db, 'auto_activate_support_answers', false)) === true;
 
   const { data: gaps, error } = await db.from('learn_gaps').select('id,kind,normalized,sample,channel,locale,hits,attempts')
     .eq('status', 'open').lt('attempts', 5).order('hits', { ascending: false }).order('last_seen', { ascending: false }).limit(batch);
@@ -42,7 +52,7 @@ Deno.serve(async (req: Request) => {
     try {
       const r = gap.kind === 'search'
         ? await withTimeout(handleSearchGap(db, gap, { vocab, vocabSet, generic, aiOn, webOn, autoOn: autoSyn }), 30_000)
-        : await withTimeout(handleSupportGap(db, gap, { aiOn, autoOn: autoKb }), 25_000);
+        : await withTimeout(handleSupportGap(db, gap, { aiOn }), 25_000);
       await db.from('learn_gaps').update({ status: r.status, resolution: r.resolution, last_error: null, updated_at: new Date().toISOString() }).eq('id', gap.id);
       results.push({ id: gap.id, kind: gap.kind, status: r.status });
     } catch (e) {

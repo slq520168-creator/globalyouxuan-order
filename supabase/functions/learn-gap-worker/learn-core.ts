@@ -13,7 +13,29 @@ export type Gap = { id: number; kind: 'search' | 'support'; normalized: string; 
 export type Material = { id: number; title: string; keywords: string[] | null; keywords_en: string[] | null; search_category: string | null; search_subcategory: string | null };
 
 export const norm = (s: unknown) => String(s ?? '').toLowerCase().replace(/[\s，。！？、；：,.!?;:()（）【】\[\]"'“”‘’_\-\/\\]+/g, '').slice(0, 200);
-const MONEY = /(付款|支付|退款|到账|充值|提现|转账|钱包|地址|txid|usdt|trc20|价格|多少钱|费用|refund|payment|pay|wallet|price|withdraw|deposit)/i;
+const MONEY = /(付款|支付|退款|到账|充值|提现|转账|钱包|地址|txid|usdt|trc20|价格|多少钱|费用|refund|payment|pay|wallet|price|withdraw|deposit|联系|客服号|加我|私聊|telegram|whatsapp|微信)/i;
+
+// #12：喂给 AI 之前、AI 输出之后都去掉外链 / TG / 钱包 / 联系方式；只保留站点官方联系方式
+const OFFICIAL = /@qqyousubot|slq520168@gmail\.com|https?:\/\/globalyouxuan-order\.pages\.dev\S*/gi;
+const CONTACT_PATTERNS: RegExp[] = [
+  /https?:\/\/\S+/gi, /\bwww\.\S+/gi, /\b(?:t|telegram)\.me\/\S*/gi, /[\w.+-]+@[\w-]+\.[\w.-]+/g, /@[A-Za-z0-9_]{3,}/g,
+  /\bT[1-9A-HJ-NP-Za-km-z]{33}\b/g, /\b0x[a-fA-F0-9]{40}\b/g, /\b(?:bc1|[13])[a-zA-HJ-NP-Z0-9]{25,62}\b/g,
+  /\+?\d[\d\s()-]{6,}\d/g,
+  /(?:微信|威信|薇信|v信|电报|飞机号?)\s*(?:号|id)?\s*[:：]?\s*[A-Za-z0-9_.\-]{3,}/gi,
+  /\b(?:vx|wechat|whatsapp|telegram|tg|line|qq|skype|discord)\b\s*(?:id)?\s*[:：]\s*[A-Za-z0-9_.\-]{3,}/gi,
+];
+export function stripContacts(input: unknown, keepOfficial = false): string {
+  let s = String(input ?? '');
+  const kept: string[] = [];
+  if (keepOfficial) s = s.replace(OFFICIAL, (m) => { kept.push(m); return `\u0000${kept.length - 1}\u0000`; });
+  for (const re of CONTACT_PATTERNS) s = s.replace(re, '[已移除]');
+  if (keepOfficial) s = s.replace(/\u0000(\d+)\u0000/g, (_, i) => kept[Number(i)] || '');
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+export function hasForeignContact(input: unknown): boolean {
+  const s = String(input ?? '').replace(OFFICIAL, '');
+  return CONTACT_PATTERNS.some((re) => { re.lastIndex = 0; return re.test(s); });
+}
 
 export function bigrams(s: string) { const x = norm(s), a = new Set<string>(); if (x.length === 1) a.add(x); for (let i = 0; i < x.length - 1; i++) a.add(x.slice(i, i + 2)); return a; }
 export function dice(a: string, b: string) { const A = bigrams(a), B = bigrams(b); if (!A.size || !B.size) return 0; let h = 0; for (const x of A) if (B.has(x)) h++; return (2 * h) / (A.size + B.size); }
@@ -111,7 +133,8 @@ export async function bestExpansion(db: SupabaseClient, query: string, terms: st
 }
 
 export async function handleSearchGap(db: SupabaseClient, gap: Gap, ctx: { vocab: string[]; vocabSet: Set<string>; generic?: Set<string>; aiOn: boolean; webOn: boolean; autoOn: boolean }) {
-  const q = gap.sample.trim();
+  const q = stripContacts(gap.sample).slice(0, 120).trim();
+  if (q.length < 2 || q.includes('[已移除]')) return { status: 'needs_human', resolution: { type: 'contains_contact_or_link' } };
   const before = await verifyExpansion(db, q, [], 'expansion');
   // 1) 站内：错别字 / 近似词 → 已有关键词（不花钱，不用 AI）
   const local = ctx.vocab.map(k => ({ k, s: dice(q, k) })).filter(x => x.s >= 0.5 && norm(x.k) !== norm(q)).sort((a, b) => b.s - a.s).slice(0, 4).map(x => x.k);
@@ -137,13 +160,18 @@ export async function handleSearchGap(db: SupabaseClient, gap: Gap, ctx: { vocab
   const evidence = { before, after, local, from_web: fromWeb, ai_terms: aiTerms, web: web ? { title: web.title, url: web.url, extract: web.extract.slice(0, 240) } : null, translation_zh: ai?.translation_zh || null, at: new Date().toISOString() };
 
   if (terms.length && after > before && after >= 1) {
+    // #11：已上线 / 已停用 / 管理员录入的同义词一律不覆盖，交给人工
+    const { data: existing, error: exErr } = await db.from('learn_synonyms').select('id,status,source,role').eq('term_norm', gap.normalized);
+    if (exErr) throw new Error('SYN_READ ' + exErr.message);
+    const conflict = (existing || []).find((x: any) => x.status === 'active' || x.status === 'disabled' || x.source === 'admin');
+    if (conflict) return { status: 'needs_human', resolution: { type: 'synonym_conflict', existing: conflict.id, existing_status: conflict.status, existing_source: conflict.source, proposed: terms, role, after, before } };
     const status = ctx.autoOn && after >= 5 ? 'active' : 'pending';
     const { error } = await db.from('learn_synonyms').upsert({ term: q, term_norm: gap.normalized, expansions: terms, role, category, source: aiTerms.length ? 'ai' : fromWeb.length ? 'web' : 'mined', evidence, verified_hits: after, status }, { onConflict: 'term_norm,role' });
     if (error) throw new Error('SYN_WRITE ' + error.message);
     return { status: status === 'active' ? 'resolved' : 'proposed', resolution: { type: 'synonym', terms, role, after, before, resolved_at: new Date().toISOString() } };
   }
   // 站内确实缺资料 → 生成“资料草稿”给管理员，决定要不要补进资料库
-  const topic = String(ai?.missing_topic || '').trim() || (web ? `${web.title}：${web.extract.slice(0, 80)}` : '');
+  const topic = stripContacts(String(ai?.missing_topic || '').trim() || (web ? `${web.title}：${web.extract.slice(0, 80)}` : ''));
   if (topic) {
     await db.from('learn_kb').insert({ kind: 'material_draft', question: q, q_norm: gap.normalized, answer_zh: topic.slice(0, 1200), source: web ? 'web' : 'ai', source_url: web?.url || null, evidence, status: 'pending', gap_id: gap.id });
     return { status: 'needs_human', resolution: { type: 'material_draft', topic: topic.slice(0, 200), evidence } };
@@ -162,26 +190,32 @@ const SITE_FACTS = [
   '语言：中文、English、ភាសាខ្មែរ。',
 ].join('\n');
 
-export async function handleSupportGap(db: SupabaseClient, gap: Gap, ctx: { aiOn: boolean; autoOn: boolean }) {
+export async function handleSupportGap(db: SupabaseClient, gap: Gap, ctx: { aiOn: boolean }) {
   if (!ctx.aiOn) return { status: 'needs_human', resolution: { type: 'ai_disabled' } };
+  const question = stripContacts(gap.sample).slice(0, 300);
+  if (question.length < 2) return { status: 'needs_human', resolution: { type: 'empty_after_sanitize' } };
   const { data: known } = await db.from('learn_kb').select('question,answer_zh').eq('kind', 'support').eq('status', 'active').limit(40);
   const related = (known || []).map((k: any) => ({ ...k, s: dice(gap.sample, k.question) })).sort((a: any, b: any) => b.s - a.s).slice(0, 5).map(({ question, answer_zh }: any) => ({ question, answer_zh }));
   const ai = await askAi(
     '你是 GlobalYouXuan 客服知识库编辑。只能依据“站点事实”和“已审核问答”写答案，不知道就 answerable=false，绝不编造到账、退款、审核、发货状态，不承诺收益。答案简短礼貌。只输出 JSON：{"answerable":true|false,"answer_zh":"...","answer_en":"...","answer_km":"...","tags":["..."],"reason":"..."}',
-    { customer_question: gap.sample, site_facts: SITE_FACTS, approved_qa: related },
+    { customer_question: question, site_facts: SITE_FACTS, approved_qa: related },
   ).catch((e: Error) => ({ error: e.message }));
   if (!ai || ai.error || !ai.answerable || String(ai.answer_zh || '').trim().length < 6) {
     return { status: 'needs_human', resolution: { type: 'support_unanswerable', reason: String(ai?.reason || ai?.error || 'no_answer').slice(0, 200) } };
   }
-  const risk = MONEY.test(gap.sample) || MONEY.test(String(ai.answer_zh)) ? 'high' : 'low';
-  const status = ctx.autoOn && risk === 'low' ? 'active' : 'pending';
+  const rawAnswers = [ai.answer_zh, ai.answer_en, ai.answer_km].map((x: unknown) => String(x || ''));
+  const contactInAnswer = rawAnswers.some(hasForeignContact);
+  const [answerZh, answerEn, answerKm] = rawAnswers.map((x) => stripContacts(x, true).slice(0, 1200));
+  const risk = contactInAnswer || MONEY.test(question) || MONEY.test(answerZh) ? 'high' : 'low';
+  // #12：AI 生成的客服答案永远进入人工审核（pending），没有自动上线开关
+  const status = 'pending';
   const { error } = await db.from('learn_kb').insert({
-    kind: 'support', channel: gap.channel === 'member' ? 'member' : 'any', question: gap.sample, q_norm: gap.normalized,
-    answer_zh: String(ai.answer_zh).slice(0, 1200), answer_en: String(ai.answer_en || '').slice(0, 1200) || null, answer_km: String(ai.answer_km || '').slice(0, 1200) || null,
+    kind: 'support', channel: gap.channel === 'member' ? 'member' : 'any', question, q_norm: gap.normalized,
+    answer_zh: answerZh, answer_en: answerEn || null, answer_km: answerKm || null,
     tags: Array.isArray(ai.tags) ? ai.tags.slice(0, 8).map((x: unknown) => String(x).slice(0, 30)) : [], source: 'ai', risk, status, gap_id: gap.id,
-    evidence: { reason: String(ai.reason || '').slice(0, 200), related: related.length },
+    evidence: { reason: stripContacts(String(ai.reason || '')).slice(0, 200), related: related.length, contact_stripped: contactInAnswer },
   });
   if (error) throw new Error('KB_WRITE ' + error.message);
-  return { status: status === 'active' ? 'resolved' : 'proposed', resolution: { type: 'support_answer', risk, status, resolved_at: new Date().toISOString() } };
+  return { status: 'proposed', resolution: { type: 'support_answer', risk, status, resolved_at: new Date().toISOString() } };
 }
 

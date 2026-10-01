@@ -1,6 +1,9 @@
 -- =====================================================================
 -- 五轮搜索 + 在线客服 自我学习闭环（Self-learning loop）
--- 状态：只写成文件，未执行。需用户确认后再 apply。
+-- 状态：2026-10-02 按安全审查 #4 #5 #11 #12 修订后上线（apply_migration）。
+-- 修订要点：限流/去重按服务端可信身份（auth.uid() 或 cf-connecting-ip 哈希）而不是浏览器 session_id；
+--   kb_id 必须是服务端刚返回过的；没用票按身份去重 + 每日上限；管理员录入答案不会被自动降级；
+--   同义词挖掘只统计登录用户且 ≥5 个不同用户；缺口门槛 ≥3 个不同身份；客服答案永远人工审核。
 -- 不触碰：订单 / 付款 / 交付 / 商家骑手 / 现有 RPC。只新增 learn_* 表与函数。
 -- 浏览器只能：写日志（经限流 RPC）、读已启用同义词、查已启用客服知识。
 -- 所有学习产物默认 pending，管理员审核后 active；可停用、可按版本回滚。
@@ -30,6 +33,21 @@ as $$
   500);
 $$;
 
+-- 服务端可信身份：登录用户用 auth.uid()；匿名用 Cloudflare 的 cf-connecting-ip（客户端无法伪造）的加盐哈希。
+-- 浏览器传来的 session_id 只做关联展示，不参与限流 / 去重 / 计票。
+create or replace function public.learn_actor()
+returns text language plpgsql stable security definer set search_path = ''
+as $$
+declare h json; ip text; uid uuid := auth.uid();
+begin
+  if uid is not null then return 'u:' || uid::text; end if;
+  begin h := nullif(current_setting('request.headers', true), '')::json; exception when others then h := null; end;
+  ip := coalesce(nullif(btrim(h->>'cf-connecting-ip'), ''),
+                 nullif(btrim(split_part(coalesce(h->>'x-forwarded-for', ''), ',', -1)), ''));
+  if ip is null then return 'anon:unknown'; end if;
+  return 'ip:' || left(encode(extensions.digest(ip || ':gyx-learn-v1', 'sha256'), 'hex'), 32);
+end $$;
+
 -- ---------- 1. 设置（默认全部需要人工审核） ----------
 create table if not exists public.learn_settings (
   key text primary key,
@@ -38,8 +56,7 @@ create table if not exists public.learn_settings (
 );
 insert into public.learn_settings(key, value) values
   ('auto_activate_synonyms',        'false'::jsonb),  -- true = 验证通过的同义词自动上线
-  ('auto_activate_support_answers', 'false'::jsonb),  -- true = 低风险客服答案自动上线（钱相关永远人工）
-  ('min_hits_for_gap',              '1'::jsonb),
+  ('min_hits_for_gap',              '3'::jsonb),      -- 至少 3 个不同身份（用户/IP 哈希）报告才算缺口，最低强制 3
   ('worker_batch',                  '8'::jsonb),
   ('ai_enabled',                    'true'::jsonb),
   ('web_lookup_enabled',            'true'::jsonb),
@@ -54,6 +71,7 @@ as $$ select coalesce((select value from public.learn_settings where key = p_key
 create table if not exists public.learn_search_events (
   id bigint generated always as identity primary key,
   session_id text not null check (char_length(session_id) between 4 and 80),
+  actor text not null default 'anon:unknown',
   user_id uuid,
   query text not null,
   normalized text not null,
@@ -71,10 +89,13 @@ create table if not exists public.learn_search_events (
 );
 create index if not exists learn_search_events_norm_idx on public.learn_search_events (normalized, created_at desc);
 create index if not exists learn_search_events_session_idx on public.learn_search_events (session_id, created_at desc);
+create index if not exists learn_search_events_actor_idx on public.learn_search_events (actor, created_at desc);
+create index if not exists learn_search_events_created_idx on public.learn_search_events (created_at desc);
 
 create table if not exists public.learn_support_events (
   id bigint generated always as identity primary key,
   session_id text not null check (char_length(session_id) between 4 and 80),
+  actor text not null default 'anon:unknown',
   channel text not null check (channel in ('home','member')),
   user_id uuid,
   question text not null,
@@ -89,6 +110,8 @@ create table if not exists public.learn_support_events (
 );
 create index if not exists learn_support_events_norm_idx on public.learn_support_events (normalized, created_at desc);
 create index if not exists learn_support_events_session_idx on public.learn_support_events (session_id, created_at desc);
+create index if not exists learn_support_events_actor_idx on public.learn_support_events (actor, created_at desc);
+create index if not exists learn_support_events_created_idx on public.learn_support_events (created_at desc);
 
 -- ---------- 3. 缺口队列 ----------
 create table if not exists public.learn_gaps (
@@ -171,6 +194,27 @@ create table if not exists public.learn_history (
 );
 create index if not exists learn_history_row_idx on public.learn_history (table_name, row_id, version desc);
 
+-- #4：服务端记录“本次实际返回给这个身份的 kb 条目”，learn_log_support 只认这里的 kb_id
+create table if not exists public.learn_support_served (
+  id bigint generated always as identity primary key,
+  actor text not null,
+  kb_id bigint not null references public.learn_kb(id) on delete cascade,
+  served_at timestamptz not null default now(),
+  used boolean not null default false
+);
+create index if not exists learn_support_served_actor_idx on public.learn_support_served (actor, kb_id, served_at desc);
+create index if not exists learn_support_served_time_idx on public.learn_support_served (served_at);
+
+-- #4：没用票，每个身份对每条答案只算一次
+create table if not exists public.learn_kb_votes (
+  kb_id bigint not null references public.learn_kb(id) on delete cascade,
+  actor text not null,
+  voted_at timestamptz not null default now(),
+  primary key (kb_id, actor)
+);
+create index if not exists learn_kb_votes_actor_idx on public.learn_kb_votes (actor, voted_at desc);
+create index if not exists learn_kb_votes_time_idx on public.learn_kb_votes (kb_id, voted_at desc);
+
 create or replace function public.learn_version_trigger()
 returns trigger language plpgsql security definer set search_path = ''
 as $$
@@ -202,9 +246,12 @@ alter table public.learn_gaps           enable row level security;
 alter table public.learn_synonyms       enable row level security;
 alter table public.learn_kb             enable row level security;
 alter table public.learn_history        enable row level security;
+alter table public.learn_support_served enable row level security;
+alter table public.learn_kb_votes       enable row level security;
 
 revoke all on public.learn_settings, public.learn_search_events, public.learn_support_events,
-  public.learn_gaps, public.learn_synonyms, public.learn_kb, public.learn_history
+  public.learn_gaps, public.learn_synonyms, public.learn_kb, public.learn_history,
+  public.learn_support_served, public.learn_kb_votes
   from anon, authenticated;
 
 -- 管理员只读（后台以后可直接 select）
@@ -224,15 +271,17 @@ create or replace function public.learn_log_search(
   p_completed boolean default false, p_locale text default null)
 returns void language plpgsql security definer set search_path = ''
 as $$
-declare q text := public.learn_redact(left(trim(coalesce(p_query,'')),200));
+declare q text := public.learn_redact(left(trim(coalesce(p_query,'')),200)); a text := public.learn_actor();
 begin
   if char_length(coalesce(p_session,'')) not between 4 and 80 or char_length(q) < 1 then return; end if;
-  -- 每个会话每小时最多 60 条，防刷
+  -- 每个可信身份每小时最多 60 条；全站每分钟最多 300 条（总闸门）
   if (select count(*) from public.learn_search_events
-      where session_id = p_session and created_at > now() - interval '1 hour') >= 60 then return; end if;
-  insert into public.learn_search_events(session_id,user_id,query,normalized,category,mode,round,
+      where actor = a and created_at > now() - interval '1 hour') >= 60 then return; end if;
+  if (select count(*) from public.learn_search_events
+      where created_at > now() - interval '1 minute') >= 300 then return; end if;
+  insert into public.learn_search_events(session_id,actor,user_id,query,normalized,category,mode,round,
     result_count,strict_count,fill_count,picked_ids,picked_texts,completed,locale)
-  values (p_session, auth.uid(), q, public.learn_norm(q),
+  values (p_session, a, auth.uid(), q, public.learn_norm(q),
     nullif(left(coalesce(p_category,''),40),''),
     case when p_mode in ('manual','auto') then p_mode else null end,
     greatest(1,least(coalesce(p_round,1),6)),
@@ -252,18 +301,30 @@ create or replace function public.learn_log_support(
 returns bigint language plpgsql security definer set search_path = ''
 as $$
 declare q text := public.learn_redact(left(trim(coalesce(p_question,'')),500)); new_id bigint;
+        a text := public.learn_actor(); kb bigint := null;
 begin
   if char_length(coalesce(p_session,'')) not between 4 and 80 or char_length(q) < 1
      or p_channel not in ('home','member') then return null; end if;
   if (select count(*) from public.learn_support_events
-      where session_id = p_session and created_at > now() - interval '1 hour') >= 40 then return null; end if;
-  insert into public.learn_support_events(session_id,channel,user_id,question,normalized,topic,answer_source,kb_id,answered,locale)
-  values (p_session, p_channel, auth.uid(), q, public.learn_norm(q), left(coalesce(p_topic,''),40),
-    case when p_source in ('rule','kb','none') then p_source else 'none' end,
-    p_kb_id, coalesce(p_answered,false), left(coalesce(p_locale,''),10))
-  returning id into new_id;
+      where actor = a and created_at > now() - interval '1 hour') >= 40 then return null; end if;
+  if (select count(*) from public.learn_support_events
+      where created_at > now() - interval '1 minute') >= 300 then return null; end if;
+  -- 只接受 10 分钟内服务端真的返回给这个身份、且还没被记过的 kb_id（客户端传的 kb_id 不可信）
   if p_source = 'kb' and p_kb_id is not null then
-    update public.learn_kb set hits = hits + 1 where id = p_kb_id and status = 'active';
+    update public.learn_support_served s set used = true
+     where s.id = (select s2.id from public.learn_support_served s2
+                    where s2.actor = a and s2.kb_id = p_kb_id and s2.used = false
+                      and s2.served_at > now() - interval '10 minutes'
+                    order by s2.served_at desc limit 1)
+    returning s.kb_id into kb;
+  end if;
+  insert into public.learn_support_events(session_id,actor,channel,user_id,question,normalized,topic,answer_source,kb_id,answered,locale)
+  values (p_session, a, p_channel, auth.uid(), q, public.learn_norm(q), left(coalesce(p_topic,''),40),
+    case when p_source in ('rule','kb','none') then p_source else 'none' end,
+    kb, coalesce(p_answered,false), left(coalesce(p_locale,''),10))
+  returning id into new_id;
+  if kb is not null then
+    update public.learn_kb set hits = hits + 1 where id = kb and status = 'active';
   end if;
   return new_id;
 end $$;
@@ -272,13 +333,19 @@ end $$;
 create or replace function public.learn_mark_support_unhelpful(p_session text, p_event_id bigint)
 returns void language plpgsql security definer set search_path = ''
 as $$
-declare k bigint;
+declare k bigint; a text := public.learn_actor();
 begin
+  -- 事件必须属于同一个可信身份（不是浏览器自报的 session）
   update public.learn_support_events set unhelpful = true
-   where id = p_event_id and session_id = p_session and unhelpful = false
+   where id = p_event_id and actor = a and unhelpful = false
      and created_at > now() - interval '30 minutes'
   returning kb_id into k;
-  if k is not null then update public.learn_kb set unhelpful = unhelpful + 1 where id = k; end if;
+  if k is null then return; end if;
+  -- 每个身份每天最多 20 票；每条答案每天最多计 10 票；同一身份对同一答案只计一次
+  if (select count(*) from public.learn_kb_votes v where v.actor = a and v.voted_at > now() - interval '1 day') >= 20 then return; end if;
+  if (select count(*) from public.learn_kb_votes v where v.kb_id = k and v.voted_at > now() - interval '1 day') >= 10 then return; end if;
+  insert into public.learn_kb_votes(kb_id, actor) values (k, a) on conflict (kb_id, actor) do nothing;
+  if found then update public.learn_kb set unhelpful = unhelpful + 1 where id = k; end if;
 end $$;
 
 -- 运行时读取：已启用同义词
@@ -291,26 +358,35 @@ as $$
   order by s.verified_hits desc, s.id limit 2000;
 $$;
 
--- 运行时读取：客服知识库查找（只返回已启用条目）
+-- 运行时读取：客服知识库查找（只返回已启用条目）；返回的同时在服务端记下“给谁返回了哪条”
 create or replace function public.learn_support_lookup(p_question text, p_locale text default 'zh', p_channel text default 'home')
 returns table(kb_id bigint, answer text, score real)
-language sql stable security definer set search_path = ''
+language plpgsql volatile security definer set search_path = ''
 as $$
-  with q as (select public.learn_norm(p_question) s)
+declare a text := public.learn_actor(); qs text := public.learn_norm(p_question); r record;
+begin
+  if char_length(qs) < 2 then return; end if;
+  if (select count(*) from public.learn_support_served s
+       where s.actor = a and s.served_at > now() - interval '1 hour') >= 120 then return; end if;
   select k.id,
     case when p_locale like 'en%' and coalesce(k.answer_en,'') <> '' then k.answer_en
          when p_locale like 'km%' and coalesce(k.answer_km,'') <> '' then k.answer_km
-         else k.answer_zh end,
-    greatest(extensions.similarity(k.q_norm, q.s),
-             case when char_length(k.q_norm) >= 2 and q.s like '%'||k.q_norm||'%' then 0.9 else 0 end)::real as score
-  from public.learn_kb k, q
+         else k.answer_zh end as ans,
+    greatest(extensions.similarity(k.q_norm, qs),
+             case when char_length(k.q_norm) >= 2 and qs like '%'||k.q_norm||'%' then 0.9 else 0 end)::real as sc
+    into r
+  from public.learn_kb k
   where k.kind = 'support' and k.status = 'active' and k.channel in ('any', p_channel)
-    and char_length(q.s) >= 2
-    -- 被多次说“没用”的答案自动降级不再出
-    and not (k.unhelpful >= 3 and k.unhelpful * 2 > k.hits)
-    and (extensions.similarity(k.q_norm, q.s) >= 0.35 or (char_length(k.q_norm) >= 2 and q.s like '%'||k.q_norm||'%'))
-  order by score desc, k.hits desc limit 1;
-$$;
+    -- 被多个不同身份说“没用”的非管理员答案自动降级；管理员录入的答案只提示复核，不会被刷下线
+    and not (k.source <> 'admin' and k.unhelpful >= 5 and k.unhelpful * 2 > k.hits)
+    and (extensions.similarity(k.q_norm, qs) >= 0.35 or (char_length(k.q_norm) >= 2 and qs like '%'||k.q_norm||'%'))
+  order by sc desc, k.hits desc limit 1;
+  if not found then return; end if;
+  insert into public.learn_support_served(actor, kb_id) values (a, r.id);
+  delete from public.learn_support_served where served_at < now() - interval '2 days';
+  kb_id := r.id; answer := r.ans; score := r.sc;
+  return next;
+end $$;
 
 revoke all on function public.learn_log_search(text,text,text,text,integer,integer,integer,integer,bigint[],text[],boolean,text) from public;
 revoke all on function public.learn_log_support(text,text,text,text,text,bigint,boolean,text) from public;
@@ -328,18 +404,18 @@ grant execute on function public.learn_support_lookup(text,text,text) to anon, a
 create or replace function public.learn_refresh_gaps()
 returns jsonb language plpgsql security definer set search_path = ''
 as $$
-declare n_search int := 0; n_support int := 0; min_hits int := coalesce((public.learn_setting('min_hits_for_gap','1'::jsonb))::text::int,1);
+declare n_search int := 0; n_support int := 0; min_hits int := greatest(3, coalesce((public.learn_setting('min_hits_for_gap','3'::jsonb))::text::int,3));
         keep_days int := coalesce((public.learn_setting('event_retention_days','180'::jsonb))::text::int,180);
 begin
   with bad as (
     select normalized, (array_agg(query order by created_at desc))[1] sample,
-           (array_agg(locale order by created_at desc))[1] loc, count(*) c, max(created_at) last_at
+           (array_agg(locale order by created_at desc))[1] loc, count(distinct actor) c, max(created_at) last_at
     from public.learn_search_events
     where created_at > now() - interval '14 days'
       and ((round = 1 and (result_count = 0 or strict_count < 3 or fill_count >= 2))
            or (round between 2 and 5 and fill_count >= 1))   -- 后面几轮凑不满 5 个方向 = 资料深度不够
       and char_length(normalized) >= 2 and normalized !~ '^[0-9]+$'
-    group by normalized having count(*) >= min_hits
+    group by normalized having count(distinct actor) >= min_hits
   ), up as (
     insert into public.learn_gaps as g (kind, normalized, sample, locale, hits, last_seen)
     select 'search', normalized, sample, loc, c, last_at from bad
@@ -353,11 +429,11 @@ begin
   with bad as (
     select normalized, (array_agg(question order by created_at desc))[1] sample,
            (array_agg(channel order by created_at desc))[1] ch,
-           (array_agg(locale order by created_at desc))[1] loc, count(*) c, max(created_at) last_at
+           (array_agg(locale order by created_at desc))[1] loc, count(distinct actor) c, max(created_at) last_at
     from public.learn_support_events
     where created_at > now() - interval '14 days' and (answered = false or unhelpful = true)
       and char_length(normalized) >= 2 and normalized !~ '^[0-9]+$'
-    group by normalized having count(*) >= min_hits
+    group by normalized having count(distinct actor) >= min_hits
   ), up as (
     insert into public.learn_gaps as g (kind, normalized, sample, channel, locale, hits, last_seen)
     select 'support', normalized, sample, ch, loc, c, last_at from bad
@@ -383,17 +459,19 @@ declare n int := 0; auto boolean := coalesce((public.learn_setting('auto_activat
 begin
   with ok as (
     select e.normalized, (array_agg(e.query order by e.created_at desc))[1] q, e.category,
-           array_agg(distinct pid) pids, count(distinct e.session_id) sessions
+           array_agg(distinct pid) pids, count(distinct e.user_id) users
     from public.learn_search_events e
     cross join lateral unnest(e.picked_ids) pid
-    where e.completed and e.mode = 'manual' and e.created_at > now() - interval '30 days'
+    -- 只统计登录用户（匿名会话可无限伪造），且至少 5 个不同用户
+    where e.completed and e.mode = 'manual' and e.user_id is not null and e.created_at > now() - interval '30 days'
       and char_length(e.normalized) between 2 and 24
       -- 只学“第一轮没搜好但用户仍然走完”的问题
-      and exists (select 1 from public.learn_search_events f where f.session_id = e.session_id and f.round = 1
-                  and (f.strict_count < 3 or f.fill_count >= 1))
+      and exists (select 1 from public.learn_search_events f where f.session_id = e.session_id and f.user_id = e.user_id
+                  and f.round = 1 and (f.strict_count < 3 or f.fill_count >= 1))
     group by e.normalized, e.category
+    having count(distinct e.user_id) >= 5
   ), kw as (
-    select ok.normalized, ok.q, ok.category, ok.sessions,
+    select ok.normalized, ok.q, ok.category, ok.users,
            (select array_agg(k order by c desc) from (
               select k, count(*) c from public.product_answer_options p, unnest(p.keywords) k
               where p.id = any(ok.pids) and char_length(k) between 2 and 12
@@ -402,8 +480,8 @@ begin
   ), up as (
     insert into public.learn_synonyms as s (term, term_norm, expansions, role, category, source, evidence, verified_hits, status)
     select q, normalized, exps, 'expansion', category, 'mined',
-           jsonb_build_object('sessions', sessions, 'mined_at', now()), sessions,
-           case when auto and sessions >= 2 then 'active' else 'pending' end
+           jsonb_build_object('users', users, 'mined_at', now()), users,
+           case when auto and users >= 5 then 'active' else 'pending' end
     from kw where exps is not null and cardinality(exps) >= 1
     on conflict (term_norm, role) do update
       set expansions = (select array_agg(x) from (select distinct x from unnest(s.expansions || excluded.expansions) x limit 12) z),
@@ -415,21 +493,16 @@ begin
   return jsonb_build_object('mined', n);
 end $$;
 
--- 7c. 边缘函数鉴权：校验 cron 带来的密钥（密钥存 Vault，名字 gyx_learn_worker_secret）
-create or replace function public.learn_check_worker_secret(p text)
-returns boolean language sql stable security definer set search_path = ''
-as $$
-  select coalesce(p,'') <> '' and exists (
-    select 1 from vault.decrypted_secrets where name = 'gyx_learn_worker_secret' and decrypted_secret = p);
-$$;
+-- 7c. 边缘函数鉴权：learn-gap-worker 通过 public.gyx_internal_secret('gyx_learn_worker_secret')（仅 service_role）取 Vault 密钥，
+--     在函数内做常量时间比较（见 supabase/functions/learn-gap-worker/index.ts）。
 
 revoke all on function public.learn_refresh_gaps() from public, anon, authenticated;
 revoke all on function public.learn_mine_synonyms() from public, anon, authenticated;
-revoke all on function public.learn_check_worker_secret(text) from public, anon, authenticated;
+revoke all on function public.learn_actor() from public, anon, authenticated;
+revoke all on function public.learn_version_trigger() from public, anon, authenticated;
 revoke all on function public.learn_setting(text,jsonb) from public, anon, authenticated;
 grant execute on function public.learn_refresh_gaps() to service_role;
 grant execute on function public.learn_mine_synonyms() to service_role;
-grant execute on function public.learn_check_worker_secret(text) to service_role;
 grant execute on function public.learn_setting(text,jsonb) to service_role;
 grant select, insert, update on public.learn_gaps, public.learn_synonyms, public.learn_kb to service_role;
 grant select on public.learn_settings, public.learn_search_events, public.learn_support_events to service_role;
