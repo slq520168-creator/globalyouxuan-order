@@ -123,11 +123,11 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
 }
 
 @media (max-width: 960px) {
-  .home-page .home-stage, .home-page main { margin-top: -72px !important; }
+  .home-page .home-stage, .home-page main { margin-top: 0 !important; }
   .fixed-module-section .module-card { height: 190px !important; min-height: 190px !important; }
 }
 
 @media (max-width: 960px) {
-  .home-page .home-stage, .home-page main { margin-top: -72px !important; }
+  .home-page .home-stage, .home-page main { margin-top: 0 !important; }
   .home-page .fixed-plans-panel { margin-bottom: 56px !important; }
 }
