@@ -131,3 +131,11 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .home-page .home-stage, .home-page main { margin-top: 0 !important; }
   .home-page .fixed-plans-panel { margin-bottom: 56px !important; }
 }
+
+@media (max-width: 960px) {
+  .home-page .site-header { padding-top: 2px !important; padding-bottom: 0 !important; min-height: 0 !important; }
+  .home-page h1 { margin-top: 0 !important; margin-bottom: 2px !important; }
+  .home-page .search-stage { margin-top: 4px !important; }
+  .home-page .fixed-module-section { margin-top: 6px !important; }
+  .home-page .fixed-plans-panel { margin-top: 6px !important; }
+}
