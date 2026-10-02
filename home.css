@@ -57,7 +57,7 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   
   .home-page .home-lead, .home-page [data-i18n="homeLead"] { font-size: 13px !important; }
   .home-page .problem-input { font-size: 14px !important; }
-  .fixed-module-section .module-card { height: 156px !important; min-height: 156px !important; padding: 12px 8px !important; }
+  .fixed-module-section .module-card { height: 190px !important; min-height: 190px !important; padding: 12px 8px !important; }
   .fixed-module-section .module-card strong { font-size: 16px !important; }
   .fixed-module-section .module-card .module-subtitle { font-size: 12px !important; }
   .home-page .search-stage { position: relative; z-index: 5; }
@@ -108,7 +108,7 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .home-page h1 { font-size: 34px !important; line-height: 1.12 !important; }
   .home-page .home-stage { min-height: 0 !important; }
   .home-page .fixed-module-section { margin-top: 8px !important; }
-  .fixed-module-section .module-card { height: 148px !important; min-height: 148px !important; }
+  .fixed-module-section .module-card { height: 190px !important; min-height: 190px !important; }
   .home-page .fixed-plans-panel { margin-top: 8px !important; }
 }
 
@@ -117,7 +117,12 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .home-page .site-header, .home-page header { margin-bottom: 0 !important; padding-top: 4px !important; }
   .home-page h1 { margin: 4px 0 2px !important; }
   .home-page .search-stage { margin-top: 6px !important; }
-  .fixed-module-section .module-card { height: 132px !important; min-height: 132px !important; padding: 8px 8px !important; }
+  .fixed-module-section .module-card { height: 190px !important; min-height: 190px !important; }
   .home-page .fixed-plans-panel { margin-bottom: 8px !important; }
   .home-page .fixed-plans-panel ~ * { display: none !important; }
+}
+
+@media (max-width: 960px) {
+  .home-page .home-stage, .home-page main { margin-top: -28px !important; }
+  .fixed-module-section .module-card { height: 190px !important; min-height: 190px !important; }
 }
