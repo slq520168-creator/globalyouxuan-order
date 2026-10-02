@@ -91,3 +91,15 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .home-page .quiz-options { gap: 6px !important; }
   .home-page .problem-input { font-size: 13px !important; min-height: 36px !important; }
 }
+
+@media (max-width: 960px) {
+  .home-page #quizPanel:not(.hidden) { padding: 6px !important; border-radius: 12px !important; }
+  .home-page .kd-option, .home-page .quiz-option {
+    min-height: 32px !important; padding: 4px 8px !important; gap: 6px !important; border-radius: 10px !important;
+  }
+  .home-page .kd-option strong { font-size: 12px !important; }
+  .home-page .kd-option input { width: 16px !important; height: 16px !important; }
+  .home-page .kd-option > span { width: 18px !important; height: 18px !important; font-size: 11px !important; }
+  .home-page .quiz-options { gap: 4px !important; }
+  .home-page .kd-actions .btn { min-height: 30px !important; height: 30px !important; border-radius: 10px !important; }
+}
