@@ -111,3 +111,13 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .fixed-module-section .module-card { height: 148px !important; min-height: 148px !important; }
   .home-page .fixed-plans-panel { margin-top: 8px !important; }
 }
+
+@media (max-width: 960px) {
+  .home-page { padding-top: 0 !important; }
+  .home-page .site-header, .home-page header { margin-bottom: 0 !important; padding-top: 4px !important; }
+  .home-page h1 { margin: 4px 0 2px !important; }
+  .home-page .search-stage { margin-top: 6px !important; }
+  .fixed-module-section .module-card { height: 132px !important; min-height: 132px !important; padding: 8px 8px !important; }
+  .home-page .fixed-plans-panel { margin-bottom: 8px !important; }
+  .home-page .fixed-plans-panel ~ * { display: none !important; }
+}
