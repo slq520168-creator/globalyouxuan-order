@@ -54,7 +54,7 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
 /* 20261002 home fit */
 @media (max-width: 960px) {
   .home-page { font-size: 14px; }
-  .home-page h1 { font-size: 30px !important; line-height: 1.15 !important; }
+  
   .home-page .home-lead, .home-page [data-i18n="homeLead"] { font-size: 13px !important; }
   .home-page .problem-input { font-size: 14px !important; }
   .fixed-module-section .module-card { height: 156px !important; min-height: 156px !important; padding: 12px 8px !important; }
@@ -81,7 +81,7 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
 }
 
 @media (max-width: 960px) {
-  .home-page h1 { font-size: 22px !important; }
+  
   .home-page #quizQuestion { font-size: 15px !important; line-height: 1.3 !important; margin: 0 0 6px !important; }
   .home-page #quizPanel { padding: 8px !important; }
   .home-page .kd-option { min-height: 40px !important; padding: 6px 8px !important; gap: 6px !important; }
@@ -102,4 +102,12 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .home-page .kd-option > span { width: 18px !important; height: 18px !important; font-size: 11px !important; }
   .home-page .quiz-options { gap: 4px !important; }
   .home-page .kd-actions .btn { min-height: 30px !important; height: 30px !important; border-radius: 10px !important; }
+}
+
+@media (max-width: 960px) {
+  .home-page h1 { font-size: 34px !important; line-height: 1.12 !important; }
+  .home-page .home-stage { min-height: 0 !important; }
+  .home-page .fixed-module-section { margin-top: 8px !important; }
+  .fixed-module-section .module-card { height: 148px !important; min-height: 148px !important; }
+  .home-page .fixed-plans-panel { margin-top: 8px !important; }
 }
