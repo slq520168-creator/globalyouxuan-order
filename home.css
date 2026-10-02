@@ -50,3 +50,32 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .search-stage{width:min(100%,920px)}
   .fixed-module-section .module-card{height:222px!important;min-height:222px!important}
 }
+
+/* 20261002 home fit */
+@media (max-width: 960px) {
+  .home-page { font-size: 14px; }
+  .home-page h1 { font-size: 30px !important; line-height: 1.15 !important; }
+  .home-page .home-lead, .home-page [data-i18n="homeLead"] { font-size: 13px !important; }
+  .home-page .problem-input { font-size: 14px !important; }
+  .fixed-module-section .module-card { height: 156px !important; min-height: 156px !important; padding: 12px 8px !important; }
+  .fixed-module-section .module-card strong { font-size: 16px !important; }
+  .fixed-module-section .module-card .module-subtitle { font-size: 12px !important; }
+  .home-page .search-stage { position: relative; z-index: 5; }
+  .home-page #quizPanel:not(.hidden), .home-page #resultPanel:not(.hidden) {
+    position: absolute; left: 0; right: 0; top: calc(100% + 8px); z-index: 30;
+    background: #fff; border-radius: 16px; box-shadow: 0 12px 28px rgba(20,40,80,.16); padding: 10px;
+  }
+  .home-page .fixed-module-section, .home-page .fixed-plans-panel { transform: none !important; }
+  body { padding-bottom: calc(46px + env(safe-area-inset-bottom)) !important; }
+  .home-page .mobile-bottom-nav, .mobile-bottom-nav {
+    left: 0 !important; right: 0 !important; bottom: 0 !important; width: 100% !important;
+    transform: none !important; border-radius: 14px 14px 0 0 !important;
+    min-height: 0 !important; padding: 2px 2px env(safe-area-inset-bottom) !important;
+    box-shadow: 0 -4px 16px rgba(0,0,0,.08) !important;
+  }
+  .home-page .mobile-bottom-nav a, .mobile-bottom-nav a {
+    min-height: 42px !important; padding: 2px 0 4px !important; font-size: 10px !important; gap: 1px !important;
+  }
+  .home-page .mobile-bottom-nav svg, .mobile-bottom-nav svg,
+  .home-page .mobile-bottom-nav img, .mobile-bottom-nav img { width: 18px !important; height: 18px !important; }
+}
