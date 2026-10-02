@@ -139,3 +139,9 @@ html[data-theme="dark"] .home-copy p{color:#d7e1f5;text-shadow:0 4px 18px rgba(0
   .home-page .fixed-module-section { margin-top: 6px !important; }
   .home-page .fixed-plans-panel { margin-top: 6px !important; }
 }
+
+@media (max-width: 960px) {
+  .home-page .site-header { position: static !important; top: auto !important; padding: 4px 12px 0 !important; margin: 0 !important; }
+  .home-page h1 { margin: 0 52px 2px !important; padding-top: 0 !important; }
+  .home-page .home-stage { padding-top: 0 !important; margin-top: 0 !important; }
+}
