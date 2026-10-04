@@ -27,7 +27,7 @@ async function resolveMatchedProduct(m){
     const productId=String(ar.data?.product_id||'').trim();
     if(productId.startsWith('answer-')&&TIER_BY_PRODUCT[productId]){
       const pr=await db.from('products').select('id,product_name,product_price,description,is_active').eq('id',productId).eq('is_active',true).maybeSingle();
-      if(pr.data){m.product=pr.data;m.tier=TIER_BY_PRODUCT[productId];m.tier_label=pr.data.product_name||m.tier_label;m.__matchedProductResolved=true;return}
+      if(pr.data){m.product=pr.data;m.tier=TIER_BY_PRODUCT[productId];{const k='product.'+productId+'.name';m.tier_label=Object.prototype.hasOwnProperty.call(I.resources?.zh||{},k)?I.t(k):(I.locale==='zh'?pr.data.product_name:'')||m.tier_label}m.__matchedProductResolved=true;return}
     }
   }catch(err){console.error('resolve matched product',err)}
   m.product={id:GENERATED_PRODUCT_ID};

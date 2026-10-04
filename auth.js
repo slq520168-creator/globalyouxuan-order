@@ -90,8 +90,8 @@
     if (!e) return;
     let text = cleanText(message, '');
     if (!text) {
-      if (mode === 'recover') text = kind === 'success' ? '找回密码邮件已发送，请查看邮箱。' : '操作失败，请稍后再试。';
-      else text = '操作失败，请稍后再试。';
+      if (mode === 'recover') text = kind === 'success' ? tf('authRecoverSent','') : tf('authOpFailed','');
+      else text = tf('authOpFailed','');
     }
     e.textContent = text;
     e.className = `form-message show ${kind}`;
@@ -149,9 +149,9 @@
     $('registerTab').classList.toggle('active', registering);
     $('loginTab').setAttribute('aria-selected', String(!registering && !recovering));
     $('registerTab').setAttribute('aria-selected', String(registering));
-    $('forgotPasswordButton').textContent = '忘记密码';
-    $('backToLoginButton').textContent = '返回登录';
-    $('authSubmit').textContent = recovering ? '发送找回密码邮件' : registering ? tf('signUp','注册') : tf('signIn','登录');
+    $('forgotPasswordButton').textContent = tf('forgotPassword','');
+    $('backToLoginButton').textContent = tf('backToLogin','');
+    $('authSubmit').textContent = recovering ? tf('sendResetEmail','') : registering ? tf('register','') : tf('login','');
     updateRegisterLabels();
     syncPasswordToggleLabels();
     clearMessage();
@@ -165,12 +165,12 @@
     const rawCandidate = error?.message ?? error?.msg ?? '';
     const raw = cleanText(typeof rawCandidate === 'string' ? rawCandidate : '', '');
     const m = raw.toLowerCase();
-    if (status === 429 || code.includes('RATE_LIMIT') || m.includes('rate limit') || m.includes('too many requests')) return '请求过于频繁，请稍后再试。';
+    if (status === 429 || code.includes('RATE_LIMIT') || m.includes('rate limit') || m.includes('too many requests')) return tf('authCopy010','');
     if (code.includes('ACCOUNT_ALREADY_EXISTS') || m.includes('already registered')) return tf('authCopy011','该邮箱已经注册。');
     if (m.includes('email not confirmed') || m.includes('email_not_confirmed')) return tf('authCopy012','请先完成邮箱验证。');
     if (m.includes('invalid login')) return tf('authCopy013','邮箱或密码错误。');
-    if (mode === 'recover') return '找回密码邮件发送失败，请稍后再试。';
-    return raw || '操作失败，请稍后再试。';
+    if (mode === 'recover') return tf('authRecoverFailed','');
+    return raw || tf('authOpFailed','');
   }
 
   function getNext() { return window.gyxSafeNext(new URLSearchParams(location.search).get('next'), 'member.html'); }
@@ -203,9 +203,9 @@
     const phone = mode === 'register' ? normalizePhone() : '';
     const country = selectedCountry();
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMessage('请输入正确的邮箱地址'); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMessage(tf('authInvalidEmail','')); return; }
     if (mode !== 'recover' && !isValidPassword(password)) { showMessage(tf('authCopy014','密码请输入 8–20 位。')); return; }
-    if (mode === 'register' && password !== confirm) { showMessage('两次输入的密码不一致'); return; }
+    if (mode === 'register' && password !== confirm) { showMessage(tf('authPasswordMismatch','')); return; }
     if (mode === 'register' && !displayName) { showMessage(tf('authCopy015','请输入会员名称')); return; }
     if (mode === 'register' && !phone) { showMessage(tf('authCopy016','请输入正确的手机号')); return; }
 
@@ -215,7 +215,7 @@
       if (mode === 'recover') {
         const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://globalyouxuan-order.pages.dev/reset-password' });
         if (error) throw error;
-        showMessage('找回密码邮件已发送，请查看邮箱。', 'success');
+        showMessage(tf('authRecoverSent',''), 'success');
       } else if (mode === 'register') {
         const profile = { email, display_name: displayName, phone, phone_country_code: country.code, phone_country_name: country.name, locale: i18n.locale };
         localStorage.removeItem('gyx_pending_profile');
@@ -235,7 +235,7 @@
       showMessage(authErrorText(error));
     } finally {
       button.disabled = false;
-      button.textContent = mode === 'recover' ? '发送找回密码邮件' : mode === 'register' ? tf('signUp','注册') : tf('signIn','登录');
+      button.textContent = mode === 'recover' ? tf('sendResetEmail','') : mode === 'register' ? tf('register','') : tf('login','');
     }
   }
 
