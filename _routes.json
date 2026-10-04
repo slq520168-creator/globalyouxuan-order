@@ -5,6 +5,7 @@
     "/.git/*",
     "/supabase/*",
     "/workers/*",
+    "/tools/*",
     "/functions/*",
     "/*.md",
     "/SELF_LEARNING.md",

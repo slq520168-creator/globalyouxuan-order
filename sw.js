@@ -1,34 +1,88 @@
-/* GlobalYouXuan service worker: push notifications + instant navigation */
-const VERSION = 'gyx-sw-v20261002-pay-1';
-const CORE_ASSETS = [
-  './',
-  'shop.html',
-  'member.html',
-  'community.html',
-  'free-zone.html',
-  'login.html',
-  'index.html',
-  'face-translate.html',
-  'i18n.js?v=20260921-face-2',
-  'i18n-member.js?v=20260921-face-2',
-  'site.css',
-  'home.css?v=20260822-card-title-1',
-  'member-page.css?v=20260811-member-security-3',
-  'member-accordion.css?v=20260917-access-box-style-1',
-  'member-dashboard-v2.css?v=20260812-confirmed-profile-2',
-  'member-action-layout.css?v=20260819-modal-height-1',
-  'member-points.css?v=20260817-delivery-reader-2',
-  'member-accordion.css?v=20260813-no-content-flash-1',
-  'admin-panel-lock.css',
-  'face-translate.js?v=20260921-face-2',
-  'manifest.webmanifest',
-  'assets/member-logo.webp'
+/* GlobalYouXuan service worker: push notifications + instant page switching.
+   Pages: served from cache instantly and refreshed in the background (stale-while-revalidate),
+   so switching tabs never waits on the network or on the Pages .html -> pretty-URL redirect.
+   Assets: URLs carry a content hash (tools/build_assets.py), so they are cache-first. */
+/*BUILD:START*/
+const VERSION = "gyx-sw-e9bcb7d6280f";
+const PAGES = ["shop", "community", "free-zone", "member", "login", "face-translate"];
+const PRECACHE = [
+ "aimusic-guest-link.js?v=8b6e9a7c78",
+ "assets/member-logo.webp?v=0ee42fa49d",
+ "auth.js?v=196f522955",
+ "business-growth-cloud.js?v=cd8f13a033",
+ "community-page.js?v=25033a8fb8",
+ "core-foundation.js?v=9ea1d035b2",
+ "entry-auth-modal.js?v=5491ec2e37",
+ "face-translate.js?v=ec5c141ebc",
+ "fixed-modules.js?v=6a99050cd1",
+ "free-zone-tools.js?v=37b8c9e47a",
+ "guest-register-gate.js?v=91043a9a3b",
+ "home-ios-nav-lock.js?v=d8e6ffa0b8",
+ "home-register-support.js?v=7914ba843a",
+ "home-spare-time-plan.js?v=3419fc9c63",
+ "home.css?v=5b1a755ceb",
+ "i18n-member.js?v=2d6c27e2ba",
+ "i18n.js?v=29a087ccb5",
+ "knowledge-decision-v2.js?v=b179b636bb",
+ "learning-loop.js?v=ad84f9f2ce",
+ "member-accordion.css?v=f8b48d4ccb",
+ "member-accordion.js?v=03c4b829b1",
+ "member-action-layout.css?v=36185dde4a",
+ "member-bootstrap.js?v=54196056c7",
+ "member-checkout.js?v=eae30958be",
+ "member-cloud-service.js?v=472d0e97cf",
+ "member-dashboard-v2.css?v=a9a5f7eff3",
+ "member-dashboard-v2.js?v=f960464020",
+ "member-delivery-content.js?v=b696898ba9",
+ "member-download-action.js?v=8b4d752dae",
+ "member-fold-refresh-fix.js?v=3f8dcaa41e",
+ "member-growth-execution.js?v=4465228243",
+ "member-growth-favorite.js?v=2c15cb2f4a",
+ "member-inbox.js?v=74a6014fc5",
+ "member-order-watch.js?v=84dac43dc4",
+ "member-page.css?v=00396209b2",
+ "member-payment.js?v=1eff2d1319",
+ "member-points.css?v=0f2a22b978",
+ "member-points.js?v=790ecadafc",
+ "member-profile-support-v4.js?v=5b877a44ac",
+ "member-state-sync.js?v=02854b07d8",
+ "member.js?v=6d74ffa00d",
+ "search-actions-v2.js?v=ee6084e269",
+ "site-ui.js?v=8108814ecc",
+ "site.css?v=826461de42",
+ "speed-boost.js?v=1f3037b729",
+ "supabase-client.js?v=d351e72333",
+ "support-payment-intent.js?v=021131882f",
+ "ui-stability.js?v=ccd0b26a97",
+ "vendor/supabase-js-2.112.0.umd.js?v=5911578d8a"
 ];
+/*BUILD:END*/
+const PAGE_KEY = new Map();
+for (const p of PAGES) { PAGE_KEY.set('/' + p, p); PAGE_KEY.set('/' + p + '.html', p); }
+PAGE_KEY.set('/', 'shop');
+PAGE_KEY.set('/index.html', 'shop');
+const pageCacheKey = p => new Request(self.location.origin + '/__page/' + p);
+
+async function fetchPage(p) {
+  // canonical pretty URL: no redirect, so the response can answer any navigation
+  const res = await fetch('/' + p, { credentials: 'same-origin', cache: 'no-cache' });
+  if (!res || !res.ok || res.redirected || res.type !== 'basic') return null;
+  return res;
+}
+
+async function refreshPage(p) {
+  try {
+    const res = await fetchPage(p);
+    if (res) await (await caches.open(VERSION)).put(pageCacheKey(p), res.clone());
+    return res;
+  } catch (e) { return null; }
+}
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
     const cache = await caches.open(VERSION);
-    await Promise.allSettled(CORE_ASSETS.map(u => cache.add(new Request(u, { cache: 'reload' }))));
+    await Promise.allSettled(PRECACHE.map(u => cache.add(new Request(u, { cache: 'reload' }))));
+    await Promise.allSettled(PAGES.map(p => refreshPage(p)));
     await self.skipWaiting();
   })());
 });
@@ -41,38 +95,32 @@ self.addEventListener('activate', event => {
   })());
 });
 
-function isNavigation(request) {
-  return request.mode === 'navigate' || (request.method === 'GET' && request.destination === 'document');
-}
-
-async function staleWhileRevalidate(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request, { ignoreSearch: false });
-  const network = fetch(request).then(response => {
-    if (response && response.ok) cache.put(request, response.clone());
-    return response;
-  }).catch(() => null);
-  if (cached) return cached;
-  const fresh = await network;
-  return fresh || Response.error();
-}
-
-async function networkFirstHtml(request) {
+async function servePage(event, p) {
   const cache = await caches.open(VERSION);
+  const cached = await cache.match(pageCacheKey(p));
+  const fresh = refreshPage(p);
+  event.waitUntil(fresh);
+  if (cached) return cached;
+  const res = await fresh;
+  return res || fetch(event.request);
+}
+
+async function networkFirstDocument(request) {
   try {
-    const fresh = await fetch(request);
-    if (fresh && fresh.ok) {
-      const url = new URL(request.url);
-      const key = url.pathname.split('/').pop() || './';
-      cache.put(new Request(key, { method: 'GET' }), fresh.clone()).catch(() => {});
-      cache.put(request, fresh.clone()).catch(() => {});
-    }
-    return fresh;
+    return await fetch(request);
   } catch (e) {
-    const url = new URL(request.url);
-    const key = url.pathname.split('/').pop() || './';
-    return (await cache.match(request)) || (await cache.match(key)) || (await cache.match('./')) || (await cache.match('shop.html')) || Response.error();
+    const cache = await caches.open(VERSION);
+    return (await cache.match(pageCacheKey('shop'))) || Response.error();
   }
+}
+
+async function cacheFirst(request) {
+  const cache = await caches.open(VERSION);
+  const hit = await cache.match(request);
+  if (hit) return hit;
+  const res = await fetch(request);
+  if (res && res.ok && res.type === 'basic') cache.put(request, res.clone()).catch(() => {});
+  return res;
 }
 
 self.addEventListener('fetch', event => {
@@ -82,13 +130,14 @@ self.addEventListener('fetch', event => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/cdn-cgi/')) return;
 
-  if (isNavigation(request)) {
-    event.respondWith(networkFirstHtml(request));
+  if (request.mode === 'navigate') {
+    const p = PAGE_KEY.get(url.pathname);
+    event.respondWith(p ? servePage(event, p) : networkFirstDocument(request));
     return;
   }
 
-  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname.startsWith('/assets/')) {
-    event.respondWith(staleWhileRevalidate(request, VERSION));
+  if (/\.(js|css|webp|png|jpg|svg)$/.test(url.pathname) && url.searchParams.has('v')) {
+    event.respondWith(cacheFirst(request));
   }
 });
 
@@ -98,8 +147,8 @@ self.addEventListener('message', event => {
   const title = data.title || 'GlobalYouXuan';
   const options = {
     body: data.body || '',
-    icon: 'assets/member-logo.webp',
-    badge: 'assets/member-logo.webp',
+    icon: 'assets/member-logo.webp?v=0ee42fa49d',
+    badge: 'assets/member-logo.webp?v=0ee42fa49d',
     data: { url: data.url || 'shop.html' }
   };
   event.waitUntil(self.registration.showNotification(title, options));
@@ -111,8 +160,8 @@ self.addEventListener('push', event => {
   const title = payload.title || 'GlobalYouXuan';
   const options = {
     body: payload.body || '',
-    icon: payload.icon || 'assets/member-logo.webp',
-    badge: payload.badge || 'assets/member-logo.webp',
+    icon: payload.icon || 'assets/member-logo.webp?v=0ee42fa49d',
+    badge: payload.badge || 'assets/member-logo.webp?v=0ee42fa49d',
     data: { url: payload.url || 'shop.html' }
   };
   event.waitUntil(self.registration.showNotification(title, options));

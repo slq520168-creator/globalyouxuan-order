@@ -66,3 +66,15 @@ AI 搜索执行 5 轮选择并生成最终方案；后台回归测试要求每�
 仓库已加入 `vercel.json`，根路径 `/` 在 Vercel 直接映射到 `shop.html`，用于资料站入口，不影响原 Cloudflare Pages 部署。
 
 正式部署应保持 GitHub / Supabase / Cloudflare 三部分配置一致。部署后重点验收：登录、密码找回、五轮搜索、固定模块、收藏、下单、TXID 核验、会员订单、交付内容、中英柬切换、浅色/深色和移动端 Safari。
+
+## 静态资源版本号（2026-10-04）
+
+改了任何 JS/CSS/图片后，提交前在仓库根目录运行：
+
+```
+python3 tools/build_assets.py
+```
+
+它会把所有引用改成内容哈希 `?v=<hash>`（含被脚本动态加载的文件），并重新生成 `sw.js` 的预缓存清单和版本号。
+因此 `_headers` 对 JS/CSS/assets/vendor 用一年 immutable 缓存是安全的；页面由 Service Worker 先从缓存秒开、后台刷新。
+英文/高棉语词条在 `i18n-en.js` / `i18n-km.js`，只有选了该语言的访客才会加载；中文词条在 `i18n.js`。

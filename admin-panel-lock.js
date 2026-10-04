@@ -6,20 +6,20 @@
   document.documentElement.classList.add("gyx-admin-booting");
 
   const CORE_SCRIPTS = [
-    "admin-member-security.js?v=20260917-member-overview-fix-1",
-    "admin.js?v=20260917-admin-mobile-shell-1",
-    "admin-priority.js?v=20260819-payment-admin-repair-1",
+    "admin-member-security.js?v=d317ccb3ed",
+    "admin.js?v=908df012ed",
+    "admin-priority.js?v=e22beff96f",
   ];
 
   const SECONDARY_SCRIPTS = [
-    "admin-freezone-upload.js?v=20260813-freezone-upload-2",
-    "admin-profile-requests.js?v=20260917-profile-review-fix-1",
-    "admin-data.js?v=20260816-growth-human-3",
-    "admin-business-growth.js?v=20260816-growth-records-1",
-    "admin-fixed-card-answers.js?v=20261002-sec-1",
-    "admin-reporting.js?v=20260822-daily-views-1",
-    "admin-security-center.js?v=20260817-security-1",
-    "admin-visit-analytics.js?v=20260917-detailed-visits-1",
+    "admin-freezone-upload.js?v=53d1b085a2",
+    "admin-profile-requests.js?v=f42dfb514a",
+    "admin-data.js?v=fd498d9408",
+    "admin-business-growth.js?v=4d72cfa743",
+    "admin-fixed-card-answers.js?v=ed26914b0a",
+    "admin-reporting.js?v=1f9ae9f057",
+    "admin-security-center.js?v=672ad4c3d0",
+    "admin-visit-analytics.js?v=78dbd61665",
   ];
 
   function loadScript(src) {
@@ -74,18 +74,6 @@
     return token;
   }
 
-  async function adminApi(body) {
-    const token = await getSessionToken();
-    const res = await fetch("https://afzcohtnljnmucrkgcaz.supabase.co/functions/v1/admin-api", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-      body: JSON.stringify(body),
-    });
-    const json = await res.json().catch(() => ({}));
-    if (!res.ok || json.error) throw new Error(json.message || json.error || "请求失败");
-    return json;
-  }
-
   async function systemPush(body) {
     const token = await getSessionToken();
     const res = await fetch("https://afzcohtnljnmucrkgcaz.supabase.co/functions/v1/system-web-push", {
@@ -131,7 +119,7 @@
       <div class="admin-section-title"><h2>APP</h2><p>网站 APP 独立入口，与系统通知分开管理。</p></div>
       <div style="display:grid;gap:14px;border:1px solid #dce8fb;background:#fff;border-radius:14px;padding:14px">
         <div style="display:flex;align-items:center;gap:12px">
-          <img src="assets/member-logo.webp" alt="GlobalYouXuan" style="width:72px;height:72px;border-radius:16px;object-fit:cover;border:1px solid #e2e8f0;background:#fff">
+          <img src="assets/member-logo.webp?v=0ee42fa49d" alt="GlobalYouXuan" style="width:72px;height:72px;border-radius:16px;object-fit:cover;border:1px solid #e2e8f0;background:#fff">
           <div style="min-width:0"><strong style="display:block;font-size:17px">GlobalYouXuan</strong><small style="display:block;margin-top:5px;color:#667085;line-height:1.45">会员可在会员中心添加到手机桌面并开启平台通知。</small></div>
         </div>
         <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">
@@ -325,7 +313,7 @@
     account.type = "button";
     account.className = "admin-account-logo";
     account.setAttribute("aria-label", "后台账号");
-    account.innerHTML = '<img src="assets/member-logo.webp" alt="GlobalYouXuan">';
+    account.innerHTML = '<img src="assets/member-logo.webp?v=0ee42fa49d" alt="GlobalYouXuan">';
     const menu = document.createElement("div");
     menu.className = "admin-account-menu";
     menu.hidden = true;

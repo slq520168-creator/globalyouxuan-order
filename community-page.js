@@ -150,7 +150,27 @@
     await loadTranslations(rows.map((item) => item.id).filter(Boolean));
   }
 
+  const FEED_CACHE_KEY = 'gyx_community_feed_v1';
+  let feedCacheTried = false;
+  function readFeedCache() {
+    // Show the last public feed instantly on tab switch; the live query below always replaces it.
+    if (feedCacheTried || rows.length) return;
+    feedCacheTried = true;
+    try {
+      const c = JSON.parse(sessionStorage.getItem(FEED_CACHE_KEY) || 'null');
+      if (!c || !Array.isArray(c.rows) || Date.now() - (+c.at || 0) > 15 * 60 * 1000) return;
+      rows = c.rows;
+      if (!rows.some((item) => item.batch_code === active)) {
+        active = rows.some((item) => item.batch_code === 'A') ? 'A' : 'B';
+      }
+      applyStats(c.stats);
+      render();
+      renderTicker();
+    } catch {}
+  }
+
   async function doRefresh() {
+    readFeedCache();
     const cutoff = new Date(Date.now() - MAX_AGE_MS).toISOString();
     const feedPromise = db()
       .from('community_external_feed')
@@ -173,6 +193,7 @@
       return;
     }
     rows = data || [];
+    try { sessionStorage.setItem(FEED_CACHE_KEY, JSON.stringify({ at: Date.now(), rows, stats })); } catch {}
     if (!rows.some((item) => item.batch_code === active)) {
       active = rows.some((item) => item.batch_code === 'A') ? 'A' : 'B';
     }

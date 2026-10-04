@@ -32,8 +32,5 @@
       await client.functions.invoke('site-visit-track',{body});
     }catch{}
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(recordDetailedVisit,0),{once:true});else setTimeout(recordDetailedVisit,0);
-
-  // shop.html already loads home-search-category.js — no duplicate inject
-  // community auth is handled in community.html load() — avoid double gate/jank
+  {const idle=()=>(window.requestIdleCallback||(f=>setTimeout(f,300)))(recordDetailedVisit,{timeout:3000});if(document.readyState==='complete')idle();else window.addEventListener('load',idle,{once:true})}
 })();
