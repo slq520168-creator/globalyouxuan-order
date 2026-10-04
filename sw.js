@@ -3,7 +3,7 @@
    so switching tabs never waits on the network or on the Pages .html -> pretty-URL redirect.
    Assets: URLs carry a content hash (tools/build_assets.py), so they are cache-first. */
 /*BUILD:START*/
-const VERSION = "gyx-sw-ca95f628d530";
+const VERSION = "gyx-sw-497736cb097a";
 const PAGES = ["shop", "community", "free-zone", "member", "login", "face-translate"];
 const PRECACHE = [
  "aimusic-guest-link.js?v=1249880ada",
@@ -15,7 +15,7 @@ const PRECACHE = [
  "entry-auth-modal.js?v=5491ec2e37",
  "face-translate.js?v=ec5c141ebc",
  "fixed-modules.js?v=6a99050cd1",
- "free-zone-tools.js?v=217893a1a5",
+ "free-zone-tools.js?v=1c03b3e11a",
  "guest-register-gate.js?v=91043a9a3b",
  "home-ios-nav-lock.js?v=d8e6ffa0b8",
  "home-register-support.js?v=7914ba843a",
