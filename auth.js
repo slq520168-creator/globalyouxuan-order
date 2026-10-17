@@ -24,6 +24,32 @@
   const requestedMode = new URLSearchParams(location.search).get('mode');
   let mode = requestedMode === 'register' || requestedMode === 'recover' ? requestedMode : 'login';
   let activeUser = null;
+  let codeCooldownUntil = 0;
+  let authBusy = false;
+  let codeBusy = false;
+  const otpCopy = {
+    zh: {code:'6位邮箱验证码',send:'发送验证码',resend:'重新发送验证码',sent:'6位验证码已发送，请查看邮箱。',invalid:'请输入6位数字验证码',verify:'验证并完成注册',reset:'验证并设置新密码',newPassword:'新密码',back:'返回登录',expired:'验证码无效或已过期，请重新发送。'},
+    en: {code:'6-digit email code',send:'Send code',resend:'Resend code',sent:'A 6-digit code was sent to your email.',invalid:'Enter the 6-digit code',verify:'Verify and complete registration',reset:'Verify and set new password',newPassword:'New password',back:'Back to login',expired:'The code is invalid or expired. Request a new code.'},
+    km: {code:'លេខកូដអ៊ីមែល ៦ ខ្ទង់',send:'ផ្ញើលេខកូដ',resend:'ផ្ញើលេខកូដម្តងទៀត',sent:'លេខកូដ ៦ ខ្ទង់ត្រូវបានផ្ញើទៅអ៊ីមែល។',invalid:'បញ្ចូលលេខកូដ ៦ ខ្ទង់',verify:'ផ្ទៀងផ្ទាត់ និងចុះឈ្មោះ',reset:'ផ្ទៀងផ្ទាត់ និងកំណត់ពាក្យសម្ងាត់ថ្មី',newPassword:'ពាក្យសម្ងាត់ថ្មី',back:'ត្រឡប់ទៅចូលគណនី',expired:'លេខកូដមិនត្រឹមត្រូវ ឬផុតកំណត់។ សូមស្នើលេខកូដថ្មី។'}
+  };
+  const ot = key => otpCopy[String(i18n.locale||'zh').startsWith('en')?'en':String(i18n.locale||'').startsWith('km')?'km':'zh'][key];
+  function ensureCodeFields(){
+    if($('emailCodeGroup'))return;
+    const wrap=document.createElement('div');wrap.id='emailCodeGroup';wrap.className='form-group hidden';
+    wrap.innerHTML='<label for="authEmailCode"></label><input id="authEmailCode" class="field" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6"><button id="authResendCode" class="text-button" type="button"></button>';
+    $('authMessage').before(wrap);
+    $('authResendCode').addEventListener('click',()=>sendCodeAgain());
+  }
+  async function sendCodeAgain(){
+    if(codeBusy||Date.now()<codeCooldownUntil)return;
+    const email=String($('authEmail').value||'').trim().toLowerCase();
+    const b=$('authResendCode');codeBusy=true;b.disabled=true;
+    try{
+      const result=mode==='verifySignup'?await db.auth.resend({type:'signup',email}):await db.auth.resetPasswordForEmail(email);
+      if(result.error)throw result.error;
+      codeCooldownUntil=Date.now()+60000;showMessage(ot('sent'),'success');
+    }catch(e){showMessage(authErrorText(e));}finally{codeBusy=false;b.disabled=false;}
+  }
 
   const countries = [
     ['CN','+86'],['KH','+855'],['US','+1'],['GB','+44'],['AU','+61'],['SG','+65'],['MY','+60'],['TH','+66'],['VN','+84'],['PH','+63'],['ID','+62'],['JP','+81'],['KR','+82'],['IN','+91'],['AE','+971'],['FR','+33'],['DE','+49'],['IT','+39'],['ES','+34'],['BR','+55'],['MX','+52'],['ZA','+27'],['NG','+234'],['OTHER','']
@@ -128,33 +154,29 @@
   }
 
   function setMode(nextMode) {
-    mode = nextMode;
-    clearMessage();
-    ensureRegisterContactFields();
-    const registering = mode === 'register', recovering = mode === 'recover';
-    $('displayNameGroup').classList.toggle('hidden', !registering);
-    $('confirmPasswordGroup').classList.toggle('hidden', !registering);
-    $('registerContactGroup')?.classList.toggle('hidden', !registering);
-    $('registerComplianceNotice')?.classList.toggle('hidden', !registering);
-    $('displayName').required = registering;
-    $('confirmPassword').required = registering;
-    if ($('registerPhone')) $('registerPhone').required = registering;
-    if ($('registerCountry')) $('registerCountry').required = registering;
-    $('passwordGroup').classList.toggle('hidden', recovering);
-    $('authPassword').disabled = recovering;
-    $('authPassword').autocomplete = registering ? 'new-password' : 'current-password';
-    $('forgotPasswordButton').classList.toggle('hidden', mode !== 'login');
-    $('backToLoginButton').classList.toggle('hidden', !recovering);
-    $('loginTab').classList.toggle('active', !registering && !recovering);
-    $('registerTab').classList.toggle('active', registering);
-    $('loginTab').setAttribute('aria-selected', String(!registering && !recovering));
-    $('registerTab').setAttribute('aria-selected', String(registering));
-    $('forgotPasswordButton').textContent = tf('forgotPassword','');
-    $('backToLoginButton').textContent = tf('backToLogin','');
-    $('authSubmit').textContent = recovering ? tf('sendResetEmail','') : registering ? tf('register','') : tf('login','');
-    updateRegisterLabels();
-    syncPasswordToggleLabels();
-    clearMessage();
+    mode=nextMode;clearMessage();ensureRegisterContactFields();ensureCodeFields();
+    const registering=mode==='register',recovering=mode==='recover',verifying=mode==='verifySignup',resetting=mode==='reset';
+    $('displayNameGroup').classList.toggle('hidden',!registering);
+    $('confirmPasswordGroup').classList.toggle('hidden',!registering&&!resetting);
+    $('registerContactGroup')?.classList.toggle('hidden',!registering);
+    $('registerComplianceNotice')?.classList.toggle('hidden',!registering);
+    $('displayName').required=registering;$('confirmPassword').required=registering||resetting;
+    if($('registerPhone'))$('registerPhone').required=registering;
+    if($('registerCountry'))$('registerCountry').required=registering;
+    $('passwordGroup').classList.toggle('hidden',recovering||verifying);
+    $('authPassword').disabled=recovering||verifying;
+    $('authPassword').autocomplete=registering||resetting?'new-password':'current-password';
+    $('emailCodeGroup').classList.toggle('hidden',!verifying&&!resetting);
+    $('emailCodeGroup').querySelector('label').textContent=ot('code');
+    $('authEmailCode').required=verifying||resetting;
+    $('authResendCode').textContent=ot('resend');
+    $('forgotPasswordButton').classList.toggle('hidden',mode!=='login');
+    $('backToLoginButton').classList.toggle('hidden',!recovering&&!verifying&&!resetting);
+    $('loginTab').classList.toggle('active',mode==='login');$('registerTab').classList.toggle('active',registering||verifying);
+    $('loginTab').setAttribute('aria-selected',String(mode==='login'));$('registerTab').setAttribute('aria-selected',String(registering||verifying));
+    $('forgotPasswordButton').textContent=tf('forgotPassword','忘记密码');$('backToLoginButton').textContent=ot('back');
+    $('authSubmit').textContent=verifying?ot('verify'):resetting?ot('reset'):recovering?ot('send'):registering?tf('register','注册'):tf('login','登录');
+    updateRegisterLabels();syncPasswordToggleLabels();
   }
 
   function isValidPassword(password) { return password.length >= 8 && password.length <= 20; }
@@ -165,6 +187,7 @@
     const rawCandidate = error?.message ?? error?.msg ?? '';
     const raw = cleanText(typeof rawCandidate === 'string' ? rawCandidate : '', '');
     const m = raw.toLowerCase();
+    if(code.includes('OTP')||/token.*expired|otp.*invalid|otp.*expired/.test(m))return ot('expired');
     if (status === 429 || code.includes('RATE_LIMIT') || m.includes('rate limit') || m.includes('too many requests')) return tf('authCopy010','');
     if (code.includes('ACCOUNT_ALREADY_EXISTS') || m.includes('already registered')) return tf('authCopy011','该邮箱已经注册。');
     if (m.includes('email not confirmed') || m.includes('email_not_confirmed')) return tf('authCopy012','请先完成邮箱验证。');
@@ -195,6 +218,7 @@
 
   async function submitAuth(event) {
     event.preventDefault();
+    if(authBusy)return;
     clearMessage();
     const email = String($('authEmail').value || '').trim().toLowerCase();
     const password = String($('authPassword').value || '');
@@ -204,25 +228,36 @@
     const country = selectedCountry();
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMessage(tf('authInvalidEmail','')); return; }
-    if (mode !== 'recover' && !isValidPassword(password)) { showMessage(tf('authCopy014','密码请输入 8–20 位。')); return; }
-    if (mode === 'register' && password !== confirm) { showMessage(tf('authPasswordMismatch','')); return; }
+    if (!['recover','verifySignup'].includes(mode) && !isValidPassword(password)) { showMessage(tf('authCopy014','密码请输入 8–20 位。')); return; }
+    if (['register','reset'].includes(mode) && password !== confirm) { showMessage(tf('authPasswordMismatch','')); return; }
     if (mode === 'register' && !displayName) { showMessage(tf('authCopy015','请输入会员名称')); return; }
     if (mode === 'register' && !phone) { showMessage(tf('authCopy016','请输入正确的手机号')); return; }
 
+    const emailCode=String($('authEmailCode')?.value||'').trim();
+    if(['verifySignup','reset'].includes(mode)&&!/^\d{6}$/.test(emailCode)){showMessage(ot('invalid'));return;}
     const button = $('authSubmit');
+    authBusy = true;
     button.disabled = true;
     try {
       if (mode === 'recover') {
-        const { error } = await db.auth.resetPasswordForEmail(email, { redirectTo: 'https://globalyouxuan-order.pages.dev/reset-password' });
+        const { error } = await db.auth.resetPasswordForEmail(email);
         if (error) throw error;
-        showMessage(tf('authRecoverSent',''), 'success');
+        codeCooldownUntil=Date.now()+60000;setMode('reset');showMessage(ot('sent'),'success');
       } else if (mode === 'register') {
         const profile = { email, display_name: displayName, phone, phone_country_code: country.code, phone_country_name: country.name, locale: i18n.locale };
         localStorage.removeItem('gyx_pending_profile');
         await window.gyxInvokeFunction('register-member', { ...profile, password, website: $('registerWebsite')?.value || '' });
         $('authPassword').value = '';
         $('confirmPassword').value = '';
-        showMessage(tf('authCopy017','注册成功，请查看邮箱完成验证。'), 'success');
+        codeCooldownUntil=Date.now()+60000;setMode('verifySignup');showMessage(ot('sent'),'success');
+      } else if(mode==='verifySignup'){
+        const {data,error}=await db.auth.verifyOtp({email,token:emailCode,type:'signup'});if(error)throw error;
+        if(!data?.user?.email_confirmed_at)throw new Error('EMAIL_NOT_CONFIRMED');
+        await applyPendingProfile(data.user);location.href=getNext();
+      } else if(mode==='reset'){
+        const {error:ve}=await db.auth.verifyOtp({email,token:emailCode,type:'recovery'});if(ve)throw ve;
+        const {error:pe}=await db.auth.updateUser({password});if(pe)throw pe;
+        await db.auth.signOut({scope:'local'});$('authPassword').value='';$('confirmPassword').value='';$('authEmailCode').value='';setMode('login');showMessage(tf('resetDone','密码已更新，请登录'),'success');
       } else {
         const { data, error } = await db.auth.signInWithPassword({ email, password });
         if (error) throw error;
@@ -234,13 +269,14 @@
     } catch (error) {
       showMessage(authErrorText(error));
     } finally {
+      authBusy = false;
       button.disabled = false;
-      button.textContent = mode === 'recover' ? tf('sendResetEmail','') : mode === 'register' ? tf('register','') : tf('login','');
+      button.textContent=mode==='verifySignup'?ot('verify'):mode==='reset'?ot('reset'):mode==='recover'?ot('send'):mode==='register'?tf('register','注册'):tf('login','登录');
     }
   }
 
   async function inspectSession() {
-    if (mode === 'recover') return;
+    if (['recover','reset','verifySignup'].includes(mode)) return;
     activeUser = await window.gyxGetVerifiedUser();
     if (!activeUser) return;
     $('activeSession').classList.add('show');
@@ -259,7 +295,7 @@
   }
 
   window.addEventListener('gyx:languagechange', () => setMode(mode));
-  document.addEventListener('DOMContentLoaded', async () => {
+  const initializeAuthPage = async () => {
     ensureRegisterContactFields();
     bindPasswordToggles();
     document.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
@@ -269,5 +305,8 @@
     $('switchAccountButton').addEventListener('click', switchAccount);
     setMode(mode);
     await inspectSession();
-  });
+  };
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initializeAuthPage,{once:true});
+  else void initializeAuthPage();
 })();
+
